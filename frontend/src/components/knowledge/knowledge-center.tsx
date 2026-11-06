@@ -16,6 +16,13 @@ import {
   ArrowRightLeft,
   ShieldAlert,
   Sparkles,
+  Briefcase,
+  GraduationCap,
+  CheckCircle2,
+  Wrench,
+  ExternalLink,
+  ChevronRight,
+  AlertTriangle,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { VisualDatabaseAcademy } from "./visual-player";
@@ -508,12 +515,67 @@ MongoDB adalah database dokumen terdistribusi yang menyimpan data dalam format s
 
 type KnowledgeSection = "articles" | "visual" | "glossary" | "comparison" | "handbook";
 
+const ROLE_TITLES: Record<string, { en: string; id: string }> = {
+  "sql-developer": { en: "SQL Developer & Query Engineer", id: "Insinyur Kueri & SQL Developer" },
+  "dba-general": { en: "Enterprise Database Administrator", id: "Administrator Database Enterprise" },
+  "oracle-dba": { en: "Oracle Database Administrator", id: "Administrator Database Oracle" },
+  "postgres-dba": { en: "PostgreSQL Database Administrator", id: "Administrator Database PostgreSQL" },
+  "mysql-dba": { en: "MySQL & MariaDB Administrator", id: "Administrator MySQL & MariaDB" },
+  "sqlserver-dba": { en: "Microsoft SQL Server DBA", id: "Administrator Microsoft SQL Server" },
+  "db2-dba": { en: "IBM Db2 Database Administrator", id: "Administrator Database IBM Db2" },
+  "database-engineer": { en: "Database Engineer", id: "Insinyur Platform Database" },
+  "dbre": { en: "Database Reliability Engineer (DBRE)", id: "Insinyur Keandalan Database (DBRE)" },
+  "perf-engineer": { en: "Database Performance Engineer", id: "Insinyur Kinerja Database" },
+  "data-engineer": { en: "Data Engineer & Analytics Architect", id: "Insinyur Data & Analitik" },
+  "db-architect": { en: "Enterprise Database Architect", id: "Arsitek Database Enterprise" },
+};
+
+interface CareerContextRole {
+  role_slug: string;
+  stage: number;
+  importance: "required" | "recommended";
+  expected_proficiency: string;
+  competency_slug: string;
+}
+
+interface CareerContextCompetency {
+  slug: string;
+  category: string;
+  category_id: string;
+  title_en: string;
+  title_id: string;
+  description_en: string;
+  description_id: string;
+  expected_outcome_en: string;
+  expected_outcome_id: string;
+}
+
+interface ArticleCareerContext {
+  article_slug: string;
+  related_roles: CareerContextRole[];
+  competencies: CareerContextCompetency[];
+  related_exercise_slugs: string[];
+  related_tool_slugs: string[];
+  related_troubleshooting_slugs: string[];
+}
+
 interface KnowledgeCenterProps {
   language: "en" | "id";
   onOpenLab: () => void;
+  initialArticleSlug?: string | null;
+  onNavigateToRole?: (roleSlug: string) => void;
+  onNavigateToChallenge?: (challengeSlug: string) => void;
+  onNavigateToTool?: (toolSlug: string) => void;
 }
 
-export function KnowledgeCenter({ language, onOpenLab }: KnowledgeCenterProps) {
+export function KnowledgeCenter({
+  language,
+  onOpenLab,
+  initialArticleSlug,
+  onNavigateToRole,
+  onNavigateToChallenge,
+  onNavigateToTool,
+}: KnowledgeCenterProps) {
   const isId = language === "id";
   const [activeSection, setActiveSection] = useState<KnowledgeSection>("articles");
   const [articles, setArticles] = useState<ArticleItem[]>(FALLBACK_ARTICLES);
@@ -522,6 +584,10 @@ export function KnowledgeCenter({ language, onOpenLab }: KnowledgeCenterProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [mobileViewingArticle, setMobileViewingArticle] = useState(false);
   const [fullArticleDetail, setFullArticleDetail] = useState<string | null>(null);
+
+  const [careerContext, setCareerContext] = useState<ArticleCareerContext | null>(null);
+  const [readArticles, setReadArticles] = useState<string[]>([]);
+  const [markingRead, setMarkingRead] = useState(false);
 
   const subSections: {
     id: KnowledgeSection;
@@ -604,6 +670,66 @@ export function KnowledgeCenter({ language, onOpenLab }: KnowledgeCenterProps) {
         }
       });
   }, [selectedArticle?.slug, language, isId]);
+
+  // Fetch user learning progress
+  useEffect(() => {
+    api
+      .get("/learning/progress")
+      .then((res) => {
+        if (res.data?.articles_read) {
+          setReadArticles(res.data.articles_read);
+        }
+      })
+      .catch((err) => console.error("Error loading learning progress:", err));
+  }, []);
+
+  // Sync initialArticleSlug when provided
+  useEffect(() => {
+    if (!initialArticleSlug || articles.length === 0) return;
+    const target = articles.find((a) => a.slug === initialArticleSlug);
+    if (target) {
+      setSelectedArticle(target);
+      setActiveSection("articles");
+      setMobileViewingArticle(true);
+    }
+  }, [initialArticleSlug, articles]);
+
+  // Fetch Career Context whenever selectedArticle changes
+  useEffect(() => {
+    if (!selectedArticle) {
+      setCareerContext(null);
+      return;
+    }
+    api
+      .get(`/knowledge/articles/${selectedArticle.slug}/career-context`)
+      .then((res) => {
+        if (res.data) {
+          setCareerContext(res.data);
+        }
+      })
+      .catch((err) => {
+        console.error("Error loading career context:", err);
+        setCareerContext(null);
+      });
+  }, [selectedArticle?.slug]);
+
+  const handleToggleRead = async () => {
+    if (!selectedArticle || markingRead) return;
+    setMarkingRead(true);
+    try {
+      const res = await api.post("/learning/progress/track", {
+        activity_type: "article_read",
+        resource_slug: selectedArticle.slug,
+      });
+      if (res.data?.progress?.articles_read) {
+        setReadArticles(res.data.progress.articles_read);
+      }
+    } catch (err) {
+      console.error("Error tracking progress:", err);
+    } finally {
+      setMarkingRead(false);
+    }
+  };
 
   const filteredArticles = useMemo(() => {
     return articles.filter((a) => {
@@ -825,6 +951,216 @@ export function KnowledgeCenter({ language, onOpenLab }: KnowledgeCenterProps) {
                   <div className="my-4">
                     <ArticleMarkdown content={articleBodyToRender} />
                   </div>
+
+                  {/* Activity Separation & Learning Verification Bar */}
+                  <div className="mt-8 rounded-2xl border border-slate-800 bg-[#0c1f3d] p-5 shadow-lg">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
+                      <div>
+                        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#F2B84B] mb-1">
+                          <GraduationCap className="h-4 w-4" />
+                          <span>{isId ? "Status Pembelajaran Mandiri" : "Learning Progress & Verification"}</span>
+                        </div>
+                        <p className="text-xs text-slate-300">
+                          {isId
+                            ? "Tandai artikel setelah Anda menelaah prinsip arsitektural dan parameter operasionalnya."
+                            : "Mark this article as studied once you have reviewed the architectural principles and operational parameters."}
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={handleToggleRead}
+                        disabled={markingRead}
+                        className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all shadow-sm shrink-0 ${
+                          selectedArticle && readArticles.includes(selectedArticle.slug)
+                            ? "bg-emerald-950/60 border border-emerald-600/60 text-emerald-300 hover:bg-emerald-900/60"
+                            : "bg-[#F2B84B]/15 border border-[#F2B84B]/40 text-[#F2B84B] hover:bg-[#F2B84B]/25"
+                        }`}
+                      >
+                        {selectedArticle && readArticles.includes(selectedArticle.slug) ? (
+                          <>
+                            <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                            <span>{isId ? "Telah Dipelajari ✔️" : "Studied ✔️"}</span>
+                          </>
+                        ) : (
+                          <>
+                            <BookOpen className="h-4 w-4" />
+                            <span>{isId ? "Tandai Telah Dipelajari" : "Mark as Studied"}</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    <div className="mt-3.5 flex items-start gap-2.5 rounded-xl bg-amber-950/20 border border-amber-800/30 p-3 text-[11px] text-amber-200/90 leading-relaxed">
+                      <span className="font-bold text-amber-400 shrink-0">⚠️ {isId ? "Pemisahan Aktivitas Belajar:" : "Activity Separation Rule:"}</span>
+                      <span>
+                        {isId
+                          ? "Membaca artikel arsitektur memvalidasi literasi teoritis Anda. Sertifikasi kemahiran profesional WIYATA mensyaratkan penyelesaian tantangan kueri interaktif di Lab dan simulasi respon insiden operasional."
+                          : "Reading an architecture guide establishes theoretical literacy. Professional proficiency in WIYATA requires passing interactive query challenges in Studio & Lab and operational incident triage."}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Reverse Career Context: Integrated Career Paths & Competencies */}
+                  {careerContext && (careerContext.related_roles.length > 0 || careerContext.competencies.length > 0) && (
+                    <div className="mt-8 rounded-2xl border border-slate-800 bg-gradient-to-b from-[#0a1a36] to-[#07142b] p-5 sm:p-6 shadow-xl space-y-6">
+                      {/* Section Title */}
+                      <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+                        <div>
+                          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#F2B84B] mb-1">
+                            <Briefcase className="h-4 w-4" />
+                            <span>{isId ? "Integrasi Jalur Profesi & Kurikulum" : "Integrated Career Paths & Curricula"}</span>
+                          </div>
+                          <p className="text-xs text-slate-300">
+                            {isId
+                              ? "Materi teknis ini merupakan modul resmi pada jalur karir database profesional berikut:"
+                              : "This technical material is an official resource within the following professional database paths:"}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Related Roles Grid */}
+                      {careerContext.related_roles.length > 0 && (
+                        <div>
+                          <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wide mb-3 flex items-center gap-2">
+                            <span>{isId ? "Jalur Karir yang Menggunakan Artikel Ini" : "Career Paths Requiring This Guide"}</span>
+                            <span className="rounded-full bg-[#10264A] px-2 py-0.5 text-[10px] text-[#F2B84B] border border-slate-700 font-mono">
+                              {careerContext.related_roles.length}
+                            </span>
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {careerContext.related_roles.map((r, idx) => {
+                              const titleObj = ROLE_TITLES[r.role_slug];
+                              const roleTitle = titleObj ? (isId ? titleObj.id : titleObj.en) : r.role_slug;
+                              return (
+                                <div
+                                  key={`${r.role_slug}-${idx}`}
+                                  onClick={() => onNavigateToRole?.(r.role_slug)}
+                                  className="group flex flex-col justify-between rounded-xl border border-slate-800 bg-slate-900/60 p-3.5 hover:border-[#F2B84B]/60 hover:bg-[#10264A]/50 transition-all cursor-pointer shadow-sm"
+                                >
+                                  <div>
+                                    <div className="flex items-center justify-between gap-2 mb-2">
+                                      <span className="rounded-md bg-blue-950/60 border border-blue-700/40 px-2 py-0.5 text-[10px] font-semibold text-blue-300">
+                                        {isId ? `Tahap ${r.stage}` : `Stage ${r.stage}`}
+                                      </span>
+                                      <span
+                                        className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                                          r.importance === "required"
+                                            ? "bg-emerald-950/70 border border-emerald-600/50 text-emerald-300"
+                                            : "bg-slate-800 border border-slate-700 text-slate-300"
+                                        }`}
+                                      >
+                                        {r.importance === "required"
+                                          ? isId
+                                            ? "Wajib"
+                                            : "Required"
+                                          : isId
+                                          ? "Disarankan"
+                                          : "Recommended"}
+                                      </span>
+                                    </div>
+                                    <h5 className="text-xs font-bold text-white group-hover:text-[#F2B84B] transition-colors leading-snug">
+                                      {roleTitle}
+                                    </h5>
+                                    <p className="mt-1 text-[11px] text-slate-400">
+                                      {isId ? "Tingkat Kemahiran:" : "Expected Proficiency:"}{" "}
+                                      <span className="font-semibold text-slate-200">{r.expected_proficiency}</span>
+                                    </p>
+                                  </div>
+                                  <div className="mt-3 pt-2.5 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-[#F2B84B] font-semibold">
+                                    <span>{isId ? "Buka Roadmap Karir" : "View Career Roadmap"}</span>
+                                    <ChevronRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Related Competencies */}
+                      {careerContext.competencies.length > 0 && (
+                        <div>
+                          <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wide mb-3">
+                            {isId ? "Kompetensi yang Dibangun (Learning Outcomes)" : "Competencies Developed (Learning Outcomes)"}
+                          </h4>
+                          <div className="space-y-3">
+                            {careerContext.competencies.map((c) => (
+                              <div
+                                key={c.slug}
+                                className="rounded-xl border border-slate-800 bg-[#09172e] p-4 space-y-2.5"
+                              >
+                                <div className="flex items-center justify-between gap-2 flex-wrap">
+                                  <span className="rounded bg-slate-800 px-2 py-0.5 text-[10px] font-mono text-[#F2B84B] font-semibold border border-slate-700">
+                                    {isId ? c.category_id : c.category}
+                                  </span>
+                                  <span className="text-[10px] text-slate-400 font-mono">
+                                    competency: {c.slug}
+                                  </span>
+                                </div>
+                                <h5 className="text-xs font-bold text-white">
+                                  {isId ? c.title_id : c.title_en}
+                                </h5>
+                                <p className="text-[11px] text-slate-300 leading-relaxed">
+                                  {isId ? c.description_id : c.description_en}
+                                </p>
+                                <div className="rounded-lg bg-[#10264A]/50 border border-slate-800/90 p-2.5 text-[11px] text-slate-200 leading-relaxed">
+                                  <span className="font-bold text-[#F2B84B]">
+                                    {isId ? "Target Penguasaan Produksi: " : "Production Mastery Target: "}
+                                  </span>
+                                  <span>{isId ? c.expected_outcome_id : c.expected_outcome_en}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Practical Exercises & Tools Cross-Links */}
+                      {((careerContext.related_exercise_slugs && careerContext.related_exercise_slugs.length > 0) ||
+                        (careerContext.related_tool_slugs && careerContext.related_tool_slugs.length > 0) ||
+                        (careerContext.related_troubleshooting_slugs && careerContext.related_troubleshooting_slugs.length > 0)) && (
+                        <div className="pt-2 border-t border-slate-800 space-y-3">
+                          <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wide">
+                            {isId ? "Verifikasi Praktis & Alat Lapangan" : "Practical Verification & Field Tooling"}
+                          </h4>
+                          <div className="flex flex-wrap gap-2">
+                            {careerContext.related_exercise_slugs?.map((exSlug) => (
+                              <button
+                                key={exSlug}
+                                onClick={() => onNavigateToChallenge?.(exSlug)}
+                                className="flex items-center gap-1.5 rounded-lg bg-amber-500/15 border border-amber-500/30 px-3 py-1.5 text-xs font-bold text-[#F2B84B] hover:bg-amber-500/25 transition-all shadow-sm"
+                              >
+                                <Database className="h-3.5 w-3.5" />
+                                <span>{isId ? `Tantangan SQL: ${exSlug}` : `SQL Lab: ${exSlug}`}</span>
+                              </button>
+                            ))}
+
+                            {careerContext.related_tool_slugs?.map((toolSlug) => (
+                              <button
+                                key={toolSlug}
+                                onClick={() => onNavigateToTool?.(toolSlug)}
+                                className="flex items-center gap-1.5 rounded-lg bg-blue-500/15 border border-blue-500/30 px-3 py-1.5 text-xs font-bold text-blue-300 hover:bg-blue-500/25 transition-all shadow-sm"
+                              >
+                                <Wrench className="h-3.5 w-3.5" />
+                                <span>{isId ? `Katalog Alat: ${toolSlug}` : `Tool Catalog: ${toolSlug}`}</span>
+                              </button>
+                            ))}
+
+                            {careerContext.related_troubleshooting_slugs?.map((trSlug) => (
+                              <button
+                                key={trSlug}
+                                onClick={() => setActiveSection("handbook")}
+                                className="flex items-center gap-1.5 rounded-lg bg-rose-500/15 border border-rose-500/30 px-3 py-1.5 text-xs font-bold text-rose-300 hover:bg-rose-500/25 transition-all shadow-sm"
+                              >
+                                <ShieldAlert className="h-3.5 w-3.5" />
+                                <span>{isId ? `Buku Saku: ${trSlug}` : `Runbook: ${trSlug}`}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Quick Action Footer */}
                   <div className="mt-8 border-t border-slate-800 pt-5 flex items-center justify-between flex-wrap gap-3">

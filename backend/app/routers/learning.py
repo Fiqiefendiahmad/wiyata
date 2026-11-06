@@ -3,8 +3,11 @@ import secrets
 import sqlite3
 import time
 from typing import Any
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.deps import get_db
 import psycopg
 import pymysql
 
@@ -1678,6 +1681,60 @@ async def get_profession(role_id: str) -> dict:
     if not role:
         raise HTTPException(status_code=404, detail="Profession role not found")
     return role
+
+
+@router.get("/roles/{role_id}/roadmap")
+async def get_role_learning_roadmap(role_id: str) -> dict:
+    from app.templates.career_knowledge_graph import get_roadmap_for_role
+    return get_roadmap_for_role(role_id)
+
+
+@router.get("/career-knowledge-graph/audit")
+async def audit_graph(db: AsyncSession = Depends(get_db)) -> dict:
+    from app.templates.career_knowledge_graph import audit_career_knowledge_graph
+    from app.models.knowledge import KnowledgeArticle
+    result = await db.execute(select(KnowledgeArticle.slug).where(KnowledgeArticle.language == "en"))
+    slugs = list(result.scalars().all())
+    return audit_career_knowledge_graph(slugs)
+
+
+class ProgressTrackRequest(BaseModel):
+    activity_type: str  # "article_read" | "exercise_solved" | "assessment_passed" | "portfolio_completed"
+    resource_slug: str
+    role_slug: str | None = None
+    competency_slug: str | None = None
+
+
+# Activity-separated progress store
+_USER_PROGRESS_STORE: dict[str, Any] = {
+    "articles_read": ["postgresql-17-architecture-internals", "understanding-acid-properties"],
+    "exercises_solved": ["low-stock-alert"],
+    "assessments_passed": [],
+    "demonstrated_competencies": ["acid-transactions"],
+    "portfolio_completed": []
+}
+
+
+@router.get("/progress")
+async def get_learning_progress() -> dict:
+    return _USER_PROGRESS_STORE
+
+
+@router.post("/progress/track")
+async def track_learning_progress(body: ProgressTrackRequest) -> dict:
+    t = body.activity_type
+    slug = body.resource_slug
+    if t == "article_read" and slug not in _USER_PROGRESS_STORE["articles_read"]:
+        _USER_PROGRESS_STORE["articles_read"].append(slug)
+    elif t == "exercise_solved" and slug not in _USER_PROGRESS_STORE["exercises_solved"]:
+        _USER_PROGRESS_STORE["exercises_solved"].append(slug)
+    elif t == "assessment_passed" and slug not in _USER_PROGRESS_STORE["assessments_passed"]:
+        _USER_PROGRESS_STORE["assessments_passed"].append(slug)
+    if body.competency_slug and body.competency_slug not in _USER_PROGRESS_STORE["demonstrated_competencies"]:
+        if t in ("exercise_solved", "assessment_passed", "portfolio_completed"):
+            _USER_PROGRESS_STORE["demonstrated_competencies"].append(body.competency_slug)
+
+    return {"status": "ok", "progress": _USER_PROGRESS_STORE}
 
 
 @router.get("/exercises")

@@ -156,3 +156,43 @@ async def test_knowledge_v2_endpoints() -> None:
             "dbre", "perf-engineer", "data-engineer", "db-architect"
         }
         assert expected_roles.issubset(role_ids)
+
+        # 7. Role Learning Roadmap
+        roadmap_res = await client.get("/api/v1/learning/roles/postgres-dba/roadmap")
+        assert roadmap_res.status_code == 200
+        roadmap = roadmap_res.json()
+        assert roadmap["role_slug"] == "postgres-dba"
+        assert roadmap["total_stages"] >= 3
+        assert len(roadmap["stages"]) >= 3
+
+        # 8. Article Reverse Career Context
+        ctx_res = await client.get("/api/v1/knowledge/articles/postgresql-17-architecture-internals/career-context")
+        assert ctx_res.status_code == 200
+        ctx = ctx_res.json()
+        assert any(r["role_slug"] == "postgres-dba" for r in ctx["related_roles"])
+        assert len(ctx["competencies"]) >= 1
+
+        # 9. Graph Integrity Audit
+        audit_res = await client.get("/api/v1/learning/career-knowledge-graph/audit")
+        assert audit_res.status_code == 200
+        audit_data = audit_res.json()
+        assert audit_data["status"] == "HEALTHY"
+        assert audit_data["broken_references_count"] == 0
+
+        # 10. User Progress Tracking
+        prog_res = await client.get("/api/v1/learning/progress")
+        assert prog_res.status_code == 200
+        assert "articles_read" in prog_res.json()
+
+        track_res = await client.post(
+            "/api/v1/learning/progress/track",
+            json={
+                "activity_type": "exercise_solved",
+                "resource_slug": "optimize-composite-index",
+                "role_slug": "postgres-dba",
+                "competency_slug": "b-tree-indexing"
+            }
+        )
+        assert track_res.status_code == 200
+        assert "optimize-composite-index" in track_res.json()["progress"]["exercises_solved"]
+        assert "b-tree-indexing" in track_res.json()["progress"]["demonstrated_competencies"]

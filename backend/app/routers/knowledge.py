@@ -57,6 +57,12 @@ async def get_article(
     return ArticleDetail.model_validate(article)
 
 
+@router.get("/articles/{slug}/career-context")
+async def get_article_career_context(slug: str) -> dict:
+    from app.templates.career_knowledge_graph import get_career_context_for_article
+    return get_career_context_for_article(slug)
+
+
 @router.get("/glossary")
 async def list_glossary_terms(
     category: str | None = None,
