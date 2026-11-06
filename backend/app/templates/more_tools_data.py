@@ -128,7 +128,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
         ],
         "career_connections": [
             {
-                "role_id": "sql-server-dba",
+                "role_id": "sqlserver-dba",
                 "role_name_en": "SQL Server DBA",
                 "role_name_id": "SQL Server DBA",
                 "competency_id": "mssql-sqlos-querystore",
@@ -140,7 +140,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
             },
         ],
         "knowledge_connections": [
-            {"article_slug": "database-acid-transactions-deep-dive", "title_en": "ACID Transactions & Isolation Levels", "title_id": "Transaksi ACID & Tingkat Isolasi", "relationship_type": "operational_guide"},
+            {"article_slug": "understanding-acid-properties", "title_en": "ACID Properties & Transaction Consistency", "title_id": "Prinsip ACID & Konsistensi Transaksi", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
             {"exercise_slug": "concurrency-serializable-anomaly", "title_en": "Serializable Anomaly & Write Skew", "title_id": "Anomali Serializable & Write Skew", "lab_type": "sql_query"},
@@ -285,7 +285,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
             },
         ],
         "knowledge_connections": [
-            {"article_slug": "database-acid-transactions-deep-dive", "title_en": "ACID Transactions & Isolation Levels", "title_id": "Transaksi ACID & Tingkat Isolasi", "relationship_type": "operational_guide"},
+            {"article_slug": "understanding-acid-properties", "title_en": "ACID Properties & Transaction Consistency", "title_id": "Prinsip ACID & Konsistensi Transaksi", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
             {"exercise_slug": "concurrency-serializable-anomaly", "title_en": "Serializable Anomaly & Write Skew", "title_id": "Anomali Serializable & Write Skew", "lab_type": "sql_query"},
@@ -420,7 +420,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
         ],
         "career_connections": [
             {
-                "role_id": "mysql-mariadb-dba",
+                "role_id": "mysql-dba",
                 "role_name_en": "MySQL/MariaDB DBA",
                 "role_name_id": "MySQL/MariaDB DBA",
                 "competency_id": "observability-golden-signals",
@@ -432,7 +432,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
             },
         ],
         "knowledge_connections": [
-            {"article_slug": "database-observability-golden-signals", "title_en": "Database Observability: The Four Golden Signals", "title_id": "Observabilitas Database: Empat Sinyal Emas", "relationship_type": "operational_guide"},
+            {"article_slug": "database-monitoring-golden-signals", "title_en": "Database Observability: The Four Golden Signals", "title_id": "Observabilitas Database: Empat Sinyal Emas", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
             {"exercise_slug": "top-spending-customers", "title_en": "Aggregate Analytics with GROUP BY", "title_id": "Analisis Agregat dengan GROUP BY", "lab_type": "data_analytics"},
@@ -579,7 +579,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
             },
         ],
         "knowledge_connections": [
-            {"article_slug": "database-acid-transactions-deep-dive", "title_en": "ACID Transactions & Isolation Levels", "title_id": "Transaksi ACID & Tingkat Isolasi", "relationship_type": "operational_guide"},
+            {"article_slug": "understanding-acid-properties", "title_en": "ACID Properties & Transaction Consistency", "title_id": "Prinsip ACID & Konsistensi Transaksi", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
             {"exercise_slug": "concurrency-serializable-anomaly", "title_en": "Serializable Anomaly & Write Skew", "title_id": "Anomali Serializable & Write Skew", "lab_type": "sql_query"},
@@ -715,7 +715,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
         ],
         "career_connections": [
             {
-                "role_id": "mysql-mariadb-dba",
+                "role_id": "mysql-dba",
                 "role_name_en": "MySQL/MariaDB DBA",
                 "role_name_id": "MySQL/MariaDB DBA",
                 "competency_id": "innodb-buffer-pool",
@@ -727,7 +727,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
             },
         ],
         "knowledge_connections": [
-            {"article_slug": "database-acid-transactions-deep-dive", "title_en": "ACID Transactions & Isolation Levels", "title_id": "Transaksi ACID & Tingkat Isolasi", "relationship_type": "operational_guide"},
+            {"article_slug": "understanding-acid-properties", "title_en": "ACID Properties & Transaction Consistency", "title_id": "Prinsip ACID & Konsistensi Transaksi", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
             {"exercise_slug": "concurrency-serializable-anomaly", "title_en": "Serializable Anomaly & Write Skew", "title_id": "Anomali Serializable & Write Skew", "lab_type": "sql_query"},
@@ -871,7 +871,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
             },
         ],
         "knowledge_connections": [
-            {"article_slug": "database-acid-transactions-deep-dive", "title_en": "ACID Transactions & Isolation Levels", "title_id": "Transaksi ACID & Tingkat Isolasi", "relationship_type": "operational_guide"},
+            {"article_slug": "understanding-acid-properties", "title_en": "ACID Properties & Transaction Consistency", "title_id": "Prinsip ACID & Konsistensi Transaksi", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
             {"exercise_slug": "concurrency-serializable-anomaly", "title_en": "Serializable Anomaly & Write Skew", "title_id": "Anomali Serializable & Write Skew", "lab_type": "sql_query"},
@@ -992,7 +992,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
         ],
         "career_connections": [
             {
-                "role_id": "database-reliability-engineer",
+                "role_id": "dbre",
                 "role_name_en": "Database Reliability Engineer",
                 "role_name_id": "Database Reliability Engineer",
                 "competency_id": "observability-golden-signals",
@@ -1004,7 +1004,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
             },
         ],
         "knowledge_connections": [
-            {"article_slug": "database-acid-transactions-deep-dive", "title_en": "ACID Transactions & Isolation Levels", "title_id": "Transaksi ACID & Tingkat Isolasi", "relationship_type": "operational_guide"},
+            {"article_slug": "understanding-acid-properties", "title_en": "ACID Properties & Transaction Consistency", "title_id": "Prinsip ACID & Konsistensi Transaksi", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
             {"exercise_slug": "concurrency-serializable-anomaly", "title_en": "Serializable Anomaly & Write Skew", "title_id": "Anomali Serializable & Write Skew", "lab_type": "sql_query"},
@@ -1124,7 +1124,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
         ],
         "career_connections": [
             {
-                "role_id": "database-reliability-engineer",
+                "role_id": "dbre",
                 "role_name_en": "Database Reliability Engineer",
                 "role_name_id": "Database Reliability Engineer",
                 "competency_id": "observability-golden-signals",
@@ -1136,7 +1136,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
             },
         ],
         "knowledge_connections": [
-            {"article_slug": "database-acid-transactions-deep-dive", "title_en": "ACID Transactions & Isolation Levels", "title_id": "Transaksi ACID & Tingkat Isolasi", "relationship_type": "operational_guide"},
+            {"article_slug": "understanding-acid-properties", "title_en": "ACID Properties & Transaction Consistency", "title_id": "Prinsip ACID & Konsistensi Transaksi", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
             {"exercise_slug": "concurrency-serializable-anomaly", "title_en": "Serializable Anomaly & Write Skew", "title_id": "Anomali Serializable & Write Skew", "lab_type": "sql_query"},
@@ -1268,7 +1268,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
             },
         ],
         "knowledge_connections": [
-            {"article_slug": "database-acid-transactions-deep-dive", "title_en": "ACID Transactions & Isolation Levels", "title_id": "Transaksi ACID & Tingkat Isolasi", "relationship_type": "operational_guide"},
+            {"article_slug": "understanding-acid-properties", "title_en": "ACID Properties & Transaction Consistency", "title_id": "Prinsip ACID & Konsistensi Transaksi", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
             {"exercise_slug": "top-spending-customers", "title_en": "Aggregate Analytics with GROUP BY", "title_id": "Analisis Agregat dengan GROUP BY", "lab_type": "data_analytics"},
@@ -1411,7 +1411,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
             },
         ],
         "knowledge_connections": [
-            {"article_slug": "database-acid-transactions-deep-dive", "title_en": "ACID Transactions & Isolation Levels", "title_id": "Transaksi ACID & Tingkat Isolasi", "relationship_type": "operational_guide"},
+            {"article_slug": "understanding-acid-properties", "title_en": "ACID Properties & Transaction Consistency", "title_id": "Prinsip ACID & Konsistensi Transaksi", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
             {"exercise_slug": "top-spending-customers", "title_en": "Aggregate Analytics with GROUP BY", "title_id": "Analisis Agregat dengan GROUP BY", "lab_type": "data_analytics"},
@@ -1531,7 +1531,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
         ],
         "career_connections": [
             {
-                "role_id": "database-reliability-engineer",
+                "role_id": "dbre",
                 "role_name_en": "Database Reliability Engineer",
                 "role_name_id": "Database Reliability Engineer",
                 "competency_id": "observability-golden-signals",
@@ -1543,7 +1543,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
             },
         ],
         "knowledge_connections": [
-            {"article_slug": "database-acid-transactions-deep-dive", "title_en": "ACID Transactions & Isolation Levels", "title_id": "Transaksi ACID & Tingkat Isolasi", "relationship_type": "operational_guide"},
+            {"article_slug": "understanding-acid-properties", "title_en": "ACID Properties & Transaction Consistency", "title_id": "Prinsip ACID & Konsistensi Transaksi", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
             {"exercise_slug": "concurrency-serializable-anomaly", "title_en": "Serializable Anomaly & Write Skew", "title_id": "Anomali Serializable & Write Skew", "lab_type": "sql_query"},
@@ -1661,7 +1661,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
         ],
         "career_connections": [
             {
-                "role_id": "postgresql-dba",
+                "role_id": "postgres-dba",
                 "role_name_en": "PostgreSQL DBA",
                 "role_name_id": "PostgreSQL DBA",
                 "competency_id": "pg-internals-mvcc",
@@ -1673,7 +1673,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
             },
         ],
         "knowledge_connections": [
-            {"article_slug": "database-observability-golden-signals", "title_en": "Database Observability: The Four Golden Signals", "title_id": "Observabilitas Database: Empat Sinyal Emas", "relationship_type": "operational_guide"},
+            {"article_slug": "database-monitoring-golden-signals", "title_en": "Database Observability: The Four Golden Signals", "title_id": "Observabilitas Database: Empat Sinyal Emas", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
             {"exercise_slug": "top-spending-customers", "title_en": "Aggregate Analytics with GROUP BY", "title_id": "Analisis Agregat dengan GROUP BY", "lab_type": "data_analytics"},
@@ -1792,7 +1792,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
         ],
         "career_connections": [
             {
-                "role_id": "postgresql-dba",
+                "role_id": "postgres-dba",
                 "role_name_en": "PostgreSQL DBA",
                 "role_name_id": "PostgreSQL DBA",
                 "competency_id": "pg-internals-mvcc",
@@ -1804,7 +1804,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
             },
         ],
         "knowledge_connections": [
-            {"article_slug": "postgresql-17-internals-deep-dive", "title_en": "PostgreSQL 17 Architecture & Internals", "title_id": "Arsitektur & Internal PostgreSQL 17", "relationship_type": "operational_guide"},
+            {"article_slug": "postgresql-17-architecture-internals", "title_en": "PostgreSQL 17 Architecture & Internals", "title_id": "Arsitektur & Internal PostgreSQL 17", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
             {"exercise_slug": "concurrency-serializable-anomaly", "title_en": "Serializable Anomaly & Write Skew", "title_id": "Anomali Serializable & Write Skew", "lab_type": "sql_query"},
@@ -1923,7 +1923,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
         ],
         "career_connections": [
             {
-                "role_id": "database-architect",
+                "role_id": "db-architect",
                 "role_name_en": "Database Architect",
                 "role_name_id": "Database Architect",
                 "competency_id": "b-tree-indexing",
@@ -1935,7 +1935,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
             },
         ],
         "knowledge_connections": [
-            {"article_slug": "database-acid-transactions-deep-dive", "title_en": "ACID Transactions & Isolation Levels", "title_id": "Transaksi ACID & Tingkat Isolasi", "relationship_type": "operational_guide"},
+            {"article_slug": "understanding-acid-properties", "title_en": "ACID Properties & Transaction Consistency", "title_id": "Prinsip ACID & Konsistensi Transaksi", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
             {"exercise_slug": "concurrency-serializable-anomaly", "title_en": "Serializable Anomaly & Write Skew", "title_id": "Anomali Serializable & Write Skew", "lab_type": "sql_query"},
@@ -2215,7 +2215,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
                 "relevance_why_id": "Standar enterprise utama untuk menjadwalkan backup Oracle RMAN, pemrosesan batch harian, dan pertukaran data di institusi keuangan.",
             },
             {
-                "role_id": "database-administrator",
+                "role_id": "dba-general",
                 "role_name_en": "Database Administrator",
                 "role_name_id": "Database Administrator",
                 "competency_id": "b-tree-indexing",

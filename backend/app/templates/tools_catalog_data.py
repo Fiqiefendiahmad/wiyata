@@ -237,7 +237,7 @@ VERIFIED_TOOLS_DATA: list[dict[str, Any]] = [
                 "relevance_why_id": "Alat kerja harian utama untuk menulis kueri kompleks, menganalisis rencana eksekusi, dan menjelajahi skema objek database.",
             },
             {
-                "role_id": "database-administrator",
+                "role_id": "dba-general",
                 "role_name_en": "Database Administrator",
                 "role_name_id": "Database Administrator",
                 "competency_id": "b-tree-indexing",
@@ -249,8 +249,8 @@ VERIFIED_TOOLS_DATA: list[dict[str, Any]] = [
             },
         ],
         "knowledge_connections": [
-            {"article_slug": "postgresql-17-internals-deep-dive", "title_en": "PostgreSQL 17 Architecture & Internals", "title_id": "Arsitektur & Internal PostgreSQL 17", "relationship_type": "operational_guide"},
-            {"article_slug": "b-tree-indexing-mechanics", "title_en": "B-Tree Indexing Mechanics & Optimization", "title_id": "Mekanika Pengindeksan B-Tree & Optimasi", "relationship_type": "troubleshooting"},
+            {"article_slug": "postgresql-17-architecture-internals", "title_en": "PostgreSQL 17 Architecture & Internals", "title_id": "Arsitektur & Internal PostgreSQL 17", "relationship_type": "operational_guide"},
+            {"article_slug": "b-tree-indexes-deep-dive", "title_en": "B-Tree Indexes Deep Dive", "title_id": "Bedah Mendalam Indeks B-Tree", "relationship_type": "troubleshooting"},
         ],
         "exercise_connections": [
             {"exercise_slug": "low-stock-alert", "title_en": "Restock Warning Alert (WHERE Filter)", "title_id": "Peringatan Stok Barang Menipis", "lab_type": "sql_query"},
@@ -426,7 +426,7 @@ VERIFIED_TOOLS_DATA: list[dict[str, Any]] = [
         ],
         "career_connections": [
             {
-                "role_id": "postgresql-dba",
+                "role_id": "postgres-dba",
                 "role_name_en": "PostgreSQL DBA",
                 "role_name_id": "PostgreSQL DBA",
                 "competency_id": "pg-internals-mvcc",
@@ -437,7 +437,7 @@ VERIFIED_TOOLS_DATA: list[dict[str, Any]] = [
                 "relevance_why_id": "Konsol visual utama untuk memantau aktivitas WAL, konfigurasi autovacuum, dan administrasi katalog PostgreSQL.",
             },
             {
-                "role_id": "database-reliability-engineer",
+                "role_id": "dbre",
                 "role_name_en": "Database Reliability Engineer",
                 "role_name_id": "Database Reliability Engineer",
                 "competency_id": "observability-golden-signals",
@@ -449,8 +449,8 @@ VERIFIED_TOOLS_DATA: list[dict[str, Any]] = [
             },
         ],
         "knowledge_connections": [
-            {"article_slug": "postgresql-17-internals-deep-dive", "title_en": "PostgreSQL 17 Architecture & Internals", "title_id": "Arsitektur & Internal PostgreSQL 17", "relationship_type": "operational_guide"},
-            {"article_slug": "mvcc-vacuum-freeze-deep-dive", "title_en": "PostgreSQL MVCC & Autovacuum Tuning", "title_id": "Tuning MVCC & Autovacuum PostgreSQL", "relationship_type": "troubleshooting"},
+            {"article_slug": "postgresql-17-architecture-internals", "title_en": "PostgreSQL 17 Architecture & Internals", "title_id": "Arsitektur & Internal PostgreSQL 17", "relationship_type": "operational_guide"},
+            {"article_slug": "database-isolation-levels", "title_en": "SQL Transaction Isolation Levels & Concurrency", "title_id": "Tingkat Isolasi Transaksi SQL & Fenomena Konkurensi", "relationship_type": "troubleshooting"},
         ],
         "exercise_connections": [
             {"exercise_slug": "blocking-sessions-root-cause", "title_en": "Triage Blocking Sessions", "title_id": "Triage Sesi Pemblokir Akar", "lab_type": "incident_response"},
@@ -627,7 +627,7 @@ VERIFIED_TOOLS_DATA: list[dict[str, Any]] = [
         ],
         "career_connections": [
             {
-                "role_id": "database-reliability-engineer",
+                "role_id": "dbre",
                 "role_name_en": "Database Reliability Engineer",
                 "role_name_id": "Database Reliability Engineer",
                 "competency_id": "observability-golden-signals",
@@ -639,8 +639,8 @@ VERIFIED_TOOLS_DATA: list[dict[str, Any]] = [
             },
         ],
         "knowledge_connections": [
-            {"article_slug": "database-observability-golden-signals", "title_en": "Database Observability: The Four Golden Signals", "title_id": "Observabilitas Database: Empat Sinyal Emas", "relationship_type": "architecture"},
-            {"article_slug": "database-connection-pooling-guide", "title_en": "Connection Pooling & Starvation Mitigation", "title_id": "Manajemen Connection Pooling & Mitigasi Saturasi", "relationship_type": "troubleshooting"},
+            {"article_slug": "database-monitoring-golden-signals", "title_en": "Database Observability: The Four Golden Signals", "title_id": "Observabilitas Database: Empat Sinyal Emas", "relationship_type": "architecture"},
+            {"article_slug": "kubernetes-and-docker-for-enterprise-databases", "title_en": "Containerized Databases & Kubernetes Telemetry", "title_id": "Database Kontainer & Telemetri Kubernetes", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
             {"exercise_slug": "k8s-pod-buffer-cache-ratio", "title_en": "Kubernetes Pod Buffer Cache Ratio", "title_id": "Rasio Cache Buffer Pod K8s", "lab_type": "observability"},
@@ -807,7 +807,7 @@ VERIFIED_TOOLS_DATA: list[dict[str, Any]] = [
         ],
         "career_connections": [
             {
-                "role_id": "database-reliability-engineer",
+                "role_id": "dbre",
                 "role_name_en": "Database Reliability Engineer",
                 "role_name_id": "Database Reliability Engineer",
                 "competency_id": "observability-golden-signals",
@@ -819,7 +819,7 @@ VERIFIED_TOOLS_DATA: list[dict[str, Any]] = [
             },
         ],
         "knowledge_connections": [
-            {"article_slug": "database-observability-golden-signals", "title_en": "Database Observability: The Four Golden Signals", "title_id": "Observabilitas Database: Empat Sinyal Emas", "relationship_type": "operational_guide"},
+            {"article_slug": "database-monitoring-golden-signals", "title_en": "Database Observability: The Four Golden Signals", "title_id": "Observabilitas Database: Empat Sinyal Emas", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
             {"exercise_slug": "low-stock-alert", "title_en": "Restock Warning Alert (WHERE Filter)", "title_id": "Peringatan Stok Barang Menipis", "lab_type": "sql_query"},
@@ -970,7 +970,7 @@ VERIFIED_TOOLS_DATA: list[dict[str, Any]] = [
             },
         ],
         "knowledge_connections": [
-            {"article_slug": "database-acid-transactions-deep-dive", "title_en": "ACID Transactions & Isolation Levels", "title_id": "Transaksi ACID & Tingkat Isolasi", "relationship_type": "operational_guide"},
+            {"article_slug": "understanding-acid-properties", "title_en": "Understanding ACID Properties in Databases", "title_id": "Memahami Prinsip ACID pada Database", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
             {"exercise_slug": "blocking-sessions-root-cause", "title_en": "Triage Blocking Sessions", "title_id": "Triage Sesi Pemblokir Akar", "lab_type": "incident_response"},
@@ -1108,7 +1108,7 @@ VERIFIED_TOOLS_DATA: list[dict[str, Any]] = [
         ],
         "career_connections": [
             {
-                "role_id": "postgresql-dba",
+                "role_id": "postgres-dba",
                 "role_name_en": "PostgreSQL DBA",
                 "role_name_id": "PostgreSQL DBA",
                 "competency_id": "pg-internals-mvcc",
@@ -1120,7 +1120,7 @@ VERIFIED_TOOLS_DATA: list[dict[str, Any]] = [
             },
         ],
         "knowledge_connections": [
-            {"article_slug": "postgresql-17-internals-deep-dive", "title_en": "PostgreSQL 17 Architecture & Internals", "title_id": "Arsitektur & Internal PostgreSQL 17", "relationship_type": "operational_guide"},
+            {"article_slug": "postgresql-17-architecture-internals", "title_en": "PostgreSQL 17 Architecture & Internals", "title_id": "Arsitektur & Internal PostgreSQL 17", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
             {"exercise_slug": "blocking-sessions-root-cause", "title_en": "Triage Blocking Sessions", "title_id": "Triage Sesi Pemblokir Akar", "lab_type": "incident_response"},

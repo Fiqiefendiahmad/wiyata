@@ -1817,7 +1817,7 @@ CHALLENGE_ECOSYSTEM_RELATIONS: dict[str, dict[str, list[dict]]] = {
         ],
         "related_roles": [
             {"slug": "sql-developer", "title_en": "SQL Developer", "title_id": "Pengembang SQL"},
-            {"slug": "performance-engineer", "title_en": "Database Performance Engineer", "title_id": "Insinyur Performa Database"},
+            {"slug": "perf-engineer", "title_en": "Database Performance Engineer", "title_id": "Insinyur Performa Database"},
         ],
         "related_tools": [
             {"slug": "dbeaver", "name": "DBeaver Community"},
@@ -1854,7 +1854,7 @@ CHALLENGE_ECOSYSTEM_RELATIONS: dict[str, dict[str, list[dict]]] = {
         ],
         "related_roles": [
             {"slug": "data-engineer", "title_en": "Data Engineer", "title_id": "Insinyur Data"},
-            {"slug": "database-architect", "title_en": "Database Architect", "title_id": "Arsitek Database"},
+            {"slug": "db-architect", "title_en": "Database Architect", "title_id": "Arsitek Database"},
         ],
         "related_tools": [
             {"slug": "dbt", "name": "dbt Core"},
@@ -1884,7 +1884,7 @@ CHALLENGE_ECOSYSTEM_RELATIONS: dict[str, dict[str, list[dict]]] = {
         ],
         "related_roles": [
             {"slug": "postgres-dba", "title_en": "PostgreSQL DBA", "title_id": "Administrator PostgreSQL"},
-            {"slug": "performance-engineer", "title_en": "Database Performance Engineer", "title_id": "Insinyur Performa Database"},
+            {"slug": "perf-engineer", "title_en": "Database Performance Engineer", "title_id": "Insinyur Performa Database"},
             {"slug": "dbre", "title_en": "Database Reliability Engineer", "title_id": "Insinyur Keandalan Database"},
         ],
         "related_tools": [
@@ -1916,7 +1916,7 @@ CHALLENGE_ECOSYSTEM_RELATIONS: dict[str, dict[str, list[dict]]] = {
         ],
         "related_roles": [
             {"slug": "dbre", "title_en": "Database Reliability Engineer", "title_id": "Insinyur Keandalan Database"},
-            {"slug": "performance-engineer", "title_en": "Performance Engineer", "title_id": "Insinyur Performa"},
+            {"slug": "perf-engineer", "title_en": "Performance Engineer", "title_id": "Insinyur Performa"},
         ],
         "related_tools": [
             {"slug": "prometheus", "name": "Prometheus"},
@@ -1960,7 +1960,7 @@ CHALLENGE_ECOSYSTEM_RELATIONS: dict[str, dict[str, list[dict]]] = {
         ],
         "related_roles": [
             {"slug": "postgres-dba", "title_en": "PostgreSQL DBA", "title_id": "Administrator PostgreSQL"},
-            {"slug": "database-architect", "title_en": "Database Architect", "title_id": "Arsitek Database"},
+            {"slug": "db-architect", "title_en": "Database Architect", "title_id": "Arsitek Database"},
             {"slug": "dbre", "title_en": "Database Reliability Engineer", "title_id": "Insinyur Keandalan Database"},
         ],
         "related_tools": [
