@@ -17,893 +17,1298 @@ import {
   Terminal,
   Cpu,
   Server,
+  Key,
+  ShieldCheck,
+  Check,
+  Copy,
+  Info,
+  ArrowRight,
+  GitBranch,
+  RefreshCw,
+  FolderGit2,
+  Workflow,
+  Lock,
+  Compass,
+  GraduationCap,
+  Sparkles,
+  SlidersHorizontal,
 } from "lucide-react";
 import { api } from "@/lib/api";
 
-interface MonitoringGuide {
-  goldenSignals: string[];
-  goldenSignalsId: string[];
-  sampleAlertQuery?: string;
-  architectureOverview: string;
-  architectureOverviewId: string;
-  whenToUse: string;
-  whenToUseId: string;
+// ─── Interfaces ─────────────────────────────────────────────────────────────
+
+interface FeatureItem {
+  name_en: string;
+  name_id: string;
+  description_en: string;
+  description_id: string;
+  edition_scope: string;
+  verification_status: string;
 }
 
-interface Tool {
+interface CompatibilityTarget {
+  target_type: string;
+  target_name: string;
+  version_scope: string;
+  support_level: string;
+  notes_en: string;
+  notes_id: string;
+  verification_status: string;
+}
+
+interface SecurityConsiderations {
+  credential_storage: string;
+  network_and_ports: string;
+  tls_ssl_support: string;
+  privilege_model: string;
+  audit_logging: string;
+}
+
+interface GettingStartedStep {
+  step_number: number;
+  title_en: string;
+  title_id: string;
+  command?: string | null;
+  instruction_en: string;
+  instruction_id: string;
+  checkpoint_en?: string | null;
+  checkpoint_id?: string | null;
+}
+
+interface GettingStartedWorkflow {
+  prerequisites_en: string[];
+  prerequisites_id: string[];
+  steps: GettingStartedStep[];
+  safe_first_test_en: string;
+  safe_first_test_id: string;
+  troubleshooting_tips_en: string[];
+  troubleshooting_tips_id: string[];
+}
+
+interface ProfessionalScenario {
+  scenario_id: string;
+  title_en: string;
+  title_id: string;
+  role: string;
+  goal_en: string;
+  goal_id: string;
+  environment: string;
+  steps_en: string[];
+  steps_id: string[];
+  commands: string[];
+  validation_en: string;
+  validation_id: string;
+  expected_result_en: string;
+  expected_result_id: string;
+  rollback_en?: string | null;
+  rollback_id?: string | null;
+}
+
+interface CareerConnection {
+  role_id: string;
+  role_name_en: string;
+  role_name_id: string;
+  competency_id: string;
+  competency_name_en: string;
+  competency_name_id: string;
+  proficiency_level: string;
+  relevance_why_en: string;
+  relevance_why_id: string;
+}
+
+interface KnowledgeConnection {
+  article_slug: string;
+  title_en: string;
+  title_id: string;
+  relationship_type: string;
+}
+
+interface ExerciseConnection {
+  exercise_slug: string;
+  title_en: string;
+  title_id: string;
+  lab_type: string;
+}
+
+interface ToolAlternative {
   slug: string;
   name: string;
-  vendor: string;
-  category:
-    | "Clients & Administration"
-    | "Monitoring & Observability"
-    | "Backup & Migration"
-    | "Linux & Systems Diagnostics"
-    | "Automation & Infrastructure";
-  license: string;
-  engines: string[];
-  summary: string;
-  summaryId?: string;
-  url: string;
-  lifecycleStatus?: "Active" | "Maintenance / Deprecated";
-  guide?: MonitoringGuide;
+  product_type: string;
+  license_model: string;
+  tradeoff_en: string;
+  tradeoff_id: string;
 }
 
-const DEFAULT_TOOLS: Tool[] = [
-  // 1. Clients & Administration
-  {
-    slug: "dbeaver",
-    name: "DBeaver Community",
-    vendor: "DBeaver Corp",
-    category: "Clients & Administration",
-    license: "Open Source (Apache 2.0)",
-    engines: ["PostgreSQL", "MySQL", "Oracle", "SQL Server", "IBM Db2", "SQLite"],
-    summary:
-      "Universal multi-platform database client for developers, SQL programmers, analysts, and DBAs supporting JDBC.",
-    summaryId:
-      "Aplikasi GUI multi-platform universal untuk developer dan DBA yang mendukung hampir semua mesin database via JDBC.",
-    url: "https://dbeaver.io/",
-  },
-  {
-    slug: "pgadmin",
-    name: "pgAdmin 4",
-    vendor: "PostgreSQL Global Development Group",
-    category: "Clients & Administration",
-    license: "Open Source (PostgreSQL License)",
-    engines: ["PostgreSQL"],
-    summary:
-      "The premier open-source graphical administration and development platform for PostgreSQL with query analysis.",
-    summaryId:
-      "Platform administrasi dan manajemen database terkemuka khusus untuk ekosistem PostgreSQL.",
-    url: "https://www.pgadmin.org/",
-  },
-  {
-    slug: "mysql-workbench",
-    name: "MySQL Workbench",
-    vendor: "Oracle Corporation",
-    category: "Clients & Administration",
-    license: "Open Source (GPL)",
-    engines: ["MySQL", "MariaDB"],
-    summary:
-      "Visual tool for database architects, developers, and DBAs providing data modeling, SQL development, and server configuration.",
-    summaryId:
-      "Aplikasi visual resmi untuk pemodelan data, pengembangan SQL, dan administrasi server MySQL.",
-    url: "https://www.mysql.com/products/workbench/",
-  },
-  {
-    slug: "oracle-sql-developer",
-    name: "Oracle SQL Developer",
-    vendor: "Oracle Corporation",
-    category: "Clients & Administration",
-    license: "Free Proprietary",
-    engines: ["Oracle"],
-    summary:
-      "Integrated development environment for database tasks in Oracle Database, providing PL/SQL development and DBA consoles.",
-    summaryId:
-      "Aplikasi visual resmi Oracle untuk pengembangan PL/SQL, manajemen objek skema, dan konsol administrasi DBA.",
-    url: "https://www.oracle.com/database/sqldeveloper/",
-  },
-  {
-    slug: "sqlcl",
-    name: "Oracle SQLcl",
-    vendor: "Oracle Corporation",
-    category: "Clients & Administration",
-    license: "Free Proprietary",
-    engines: ["Oracle"],
-    summary:
-      "Modern, feature-packed command-line interface for Oracle with inline editing, SQL history, auto-completion, and Liquibase.",
-    summaryId:
-      "CLI modern untuk Oracle Database dengan fitur auto-complete, format output interaktif, dan integrasi Liquibase.",
-    url: "https://www.oracle.com/database/sqldeveloper/technologies/sqlcl/",
-  },
-  {
-    slug: "sqlplus",
-    name: "Oracle SQL*Plus",
-    vendor: "Oracle Corporation",
-    category: "Clients & Administration",
-    license: "Proprietary",
-    engines: ["Oracle"],
-    summary:
-      "Standard interactive and batch query command-line tool installed with every Oracle Database edition.",
-    summaryId:
-      "Alat baris perintah standar bawaan Oracle Database untuk administrasi, eksekusi skrip, dan operasi darurat DBA.",
-    url: "https://docs.oracle.com/en/database/oracle/oracle-database/23/sqpug/",
-  },
-  {
-    slug: "ssms",
-    name: "SQL Server Management Studio (SSMS)",
-    vendor: "Microsoft",
-    category: "Clients & Administration",
-    license: "Free Proprietary",
-    engines: ["SQL Server"],
-    summary:
-      "The definitive Windows desktop environment for configuring, managing, and administering all SQL Server components.",
-    summaryId:
-      "Aplikasi desktop utama untuk konfigurasi, pemantauan, dan administrasi seluruh komponen Microsoft SQL Server.",
-    url: "https://learn.microsoft.com/en-us/ssms/",
-  },
-  {
-    slug: "azure-data-studio",
-    name: "Azure Data Studio",
-    vendor: "Microsoft",
-    category: "Clients & Administration",
-    license: "Open Source (MIT)",
-    lifecycleStatus: "Maintenance / Deprecated",
-    engines: ["SQL Server", "PostgreSQL"],
-    summary:
-      "Cross-platform desktop database tool for data professionals. (Note: Microsoft placed ADS into maintenance; active development shifted to VS Code mssql extension).",
-    summaryId:
-      "Alat database lintas platform. (Catatan: Microsoft mengumumkan status maintenance; pengembangan aktif dialihkan ke ekstensi mssql di VS Code).",
-    url: "https://learn.microsoft.com/en-us/azure-data-studio/",
-  },
-  {
-    slug: "ibm-dmc",
-    name: "IBM Data Management Console (DMC)",
-    vendor: "IBM",
-    category: "Clients & Administration",
-    license: "Commercial / Community",
-    engines: ["IBM Db2"],
-    summary:
-      "Browser-based unified administration, performance tuning, and alert console for IBM Db2 instances.",
-    summaryId:
-      "Konsol berbasis web untuk memantau performa, tuning memori, dan mengelola database IBM Db2.",
-    url: "https://www.ibm.com/products/db2-data-management-console",
-  },
-  {
-    slug: "db2-clp",
-    name: "IBM Db2 Command Line Processor (CLP)",
-    vendor: "IBM",
-    category: "Clients & Administration",
-    license: "Proprietary",
-    engines: ["IBM Db2"],
-    summary:
-      "Native command-line environment for Db2 database administration, HADR takeover commands, and storage management.",
-    summaryId:
-      "Lingkungan CLI native untuk mengendalikan database Db2, aktivasi HADR, dan konfigurasi bufferpool.",
-    url: "https://www.ibm.com/docs/en/db2/11.5?topic=commands-command-line-processor-clp",
-  },
-  {
-    slug: "datagrip",
-    name: "JetBrains DataGrip",
-    vendor: "JetBrains",
-    category: "Clients & Administration",
-    license: "Commercial",
-    engines: ["PostgreSQL", "MySQL", "Oracle", "SQL Server", "IBM Db2", "SQLite", "Snowflake", "ClickHouse"],
-    summary:
-      "Powerful multi-engine database IDE with smart schema introspection, refactoring, and Git integration.",
-    summaryId:
-      "IDE database multi-mesin profesional dengan auto-completion cerdas, refactoring skema, dan integrasi Git.",
-    url: "https://www.jetbrains.com/datagrip/",
-  },
-  {
-    slug: "heidisql",
-    name: "HeidiSQL",
-    vendor: "Ansgar Becker",
-    category: "Clients & Administration",
-    license: "Open Source (GPL)",
-    engines: ["MariaDB", "MySQL", "SQL Server", "PostgreSQL", "SQLite"],
-    summary:
-      "Lightweight, blazing-fast native Windows tool for managing MariaDB, MySQL, SQL Server, and PostgreSQL.",
-    summaryId:
-      "Aplikasi klien native Windows yang sangat ringan dan cepat untuk mengelola database MariaDB, MySQL, dan PostgreSQL.",
-    url: "https://www.heidisql.com/",
-  },
-  {
-    slug: "litecli",
-    name: "LiteCLI",
-    vendor: "DBCLI Community",
-    category: "Clients & Administration",
-    license: "Open Source (BSD-3)",
-    engines: ["SQLite"],
-    summary:
-      "Interactive command-line interface for SQLite featuring auto-completion and syntax highlighting.",
-    summaryId:
-      "CLI interaktif untuk SQLite dengan auto-completion cerdas dan pewarnaan sintaks di terminal.",
-    url: "https://litecli.com/",
-  },
+interface VerifiedSourceCitation {
+  claim_topic: string;
+  source_url: string;
+  source_title: string;
+  verified_at: string;
+  status: string;
+}
 
-  // 2. Monitoring & Observability
-  {
-    slug: "pmm",
-    name: "Percona Monitoring and Management (PMM)",
-    vendor: "Percona",
-    category: "Monitoring & Observability",
-    license: "Open Source",
-    engines: ["MySQL", "PostgreSQL", "MongoDB"],
-    summary:
-      "Best-of-breed open-source database monitoring, query analytics (QAN), and performance troubleshooting platform.",
-    summaryId:
-      "Platform monitoring database open-source terbaik untuk analisis performa query dan troubleshooting mendalam.",
-    url: "https://www.percona.com/software/database-tools/percona-monitoring-and-management",
-    guide: {
-      goldenSignals: [
-        "QAN (Query Analytics): Slow query execution count and latency histogram",
-        "InnoDB Buffer Pool: Read efficiency hit ratio (must stay > 99%)",
-        "Disk I/O: Temp tables created on disk per second",
-        "Replication Lag: Thread delay in seconds between primary and replicas",
-      ],
-      goldenSignalsId: [
-        "QAN (Query Analytics): Frekuensi kueri lambat dan histogram latensi",
-        "InnoDB Buffer Pool: Rasio efisiensi cache pembacaan (target > 99%)",
-        "I/O Disk: Pembuatan tabel sementara di disk per detik",
-        "Lag Replikasi: Keterlambatan thread dalam detik antara primary dan replika",
-      ],
-      sampleAlertQuery: "increase(mysql_global_status_innodb_deadlocks[1h]) > 0",
-      architectureOverview:
-        "Central PMM Server running Prometheus & Grafana in a Docker container, polling lightweight pmm-agent on hosts.",
-      architectureOverviewId:
-        "Server terpusat PMM yang menjalankan Prometheus & Grafana di kontainer Docker, mengumpulkan metrik dari pmm-agent.",
-      whenToUse:
-        "Essential for production MySQL and PostgreSQL clusters requiring granular slow query triage without commercial fees.",
-      whenToUseId:
-        "Wajib digunakan untuk klaster MySQL dan PostgreSQL produksi yang membutuhkan analisis kueri lambat tanpa biaya lisensi.",
-    },
-  },
-  {
-    slug: "prometheus",
-    name: "Prometheus & Database Exporters",
-    vendor: "CNCF",
-    category: "Monitoring & Observability",
-    license: "Open Source (Apache 2.0)",
-    engines: ["PostgreSQL", "MySQL", "Oracle", "SQL Server", "Universal"],
-    summary:
-      "Industry-standard metrics scraping and alerting system with PromQL, powering database exporters across all engines.",
-    summaryId:
-      "Standar industri pengumpul metrik time-series dengan PromQL untuk memantau performa semua jenis database.",
-    url: "https://prometheus.io/",
-    guide: {
-      goldenSignals: [
-        "Saturation: Active connections vs max_connections capacity (> 85% alert)",
-        "Latency: Average query duration via rate(pg_stat_statements_total_time)",
-        "Throughput: Commits and rollbacks per second (TPS)",
-        "Traffic: Network bytes transmitted and received per second",
-      ],
-      goldenSignalsId: [
-        "Saturasi: Koneksi aktif berbanding kapasitas max_connections (> 85% waspada)",
-        "Latensi: Durasi rata-rata kueri via rate(pg_stat_statements_total_time)",
-        "Throughput: Jumlah transaksi commit dan rollback per detik (TPS)",
-        "Trafik: Kecepatan transmisi data jaringan per detik",
-      ],
-      sampleAlertQuery: "rate(pg_stat_database_xact_rollback[5m]) > 5",
-      architectureOverview:
-        "Pull-based metrics collection server pulling data from postgres_exporter, mysqld_exporter, and node_exporter.",
-      architectureOverviewId:
-        "Server metrik berbasis pull yang menarik data dari postgres_exporter, mysqld_exporter, dan node_exporter.",
-      whenToUse:
-        "The backbone for any modern cloud-native or Kubernetes infrastructure needing unified SLO alerting.",
-      whenToUseId:
-        "Fondasi telemetri untuk infrastruktur modern atau Kubernetes yang membutuhkan sistem alert SLO terintegrasi.",
-    },
-  },
-  {
-    slug: "grafana",
-    name: "Grafana Dashboards",
-    vendor: "Grafana Labs",
-    category: "Monitoring & Observability",
-    license: "Open Source (AGPLv3)",
-    engines: ["PostgreSQL", "MySQL", "Oracle", "SQL Server", "Universal"],
-    summary:
-      "Visualization and observability platform turning database metrics, logs, and traces into operational dashboards.",
-    summaryId:
-      "Platform visualisasi telemetri untuk mengubah metrik database dan server menjadi dashboard operasional real-time.",
-    url: "https://grafana.com/",
-  },
-  {
-    slug: "zabbix",
-    name: "Zabbix Enterprise Monitoring",
-    vendor: "Zabbix LLC",
-    category: "Monitoring & Observability",
-    license: "Open Source (AGPLv3)",
-    engines: ["PostgreSQL", "MySQL", "Oracle", "SQL Server", "IBM Db2"],
-    summary:
-      "Enterprise-class distributed monitoring platform with native agent and agentless templates for all enterprise databases.",
-    summaryId:
-      "Platform monitoring enterprise terdistribusi open-source dengan template bawaan untuk memantau performa database.",
-    url: "https://www.zabbix.com/",
-  },
-  {
-    slug: "datadog",
-    name: "Datadog Database Monitoring (DBM)",
-    vendor: "Datadog",
-    category: "Monitoring & Observability",
-    license: "Commercial SaaS",
-    engines: ["PostgreSQL", "MySQL", "SQL Server", "Oracle"],
-    summary:
-      "Cloud observability platform providing normalized query samples, execution plan tracking, and host infrastructure telemetry.",
-    summaryId:
-      "Platform observabilitas cloud enterprise untuk pelacakan explain plan, historis kueri lambat, dan metrik infrastruktur.",
-    url: "https://www.datadoghq.com/product/database-monitoring/",
-  },
-  {
-    slug: "pgmustard",
-    name: "pgMustard",
-    vendor: "pgMustard Ltd",
-    category: "Monitoring & Observability",
-    license: "Commercial",
-    engines: ["PostgreSQL"],
-    summary:
-      "Visual EXPLAIN ANALYZE plan explainer identifying bad estimates, sequential scans, and buffer cache misses in PostgreSQL.",
-    summaryId:
-      "Alat visualisasi EXPLAIN ANALYZE untuk mendeteksi estimasi baris salah, scan berurutan, dan memori cache miss di PostgreSQL.",
-    url: "https://www.pgmustard.com/",
-  },
-  {
-    slug: "oracle-enterprise-manager",
-    name: "Oracle Enterprise Manager (OEM)",
-    vendor: "Oracle Corporation",
-    category: "Monitoring & Observability",
-    license: "Commercial Enterprise",
-    engines: ["Oracle"],
-    summary:
-      "The complete enterprise management solution for Oracle Database estates with AWR, ASH, ADDM, and Data Guard consoles.",
-    summaryId:
-      "Platform manajemen enterprise terpusat untuk memantau klaster Oracle Database, AWR, ASH, dan Data Guard.",
-    url: "https://www.oracle.com/enterprise-manager/",
-  },
+interface ToolSummary {
+  id: string;
+  slug: string;
+  name: string;
+  vendor?: string | null;
+  category_slug?: string | null;
+  category_name?: string | null;
+  category_name_id?: string | null;
+  product_type: string;
+  summary?: string | null;
+  summary_id?: string | null;
+  official_url?: string | null;
+  documentation_url?: string | null;
+  license_model?: string | null;
+  supported_platforms: string[];
+  supported_engines: string[];
+  verification_status: string;
+  publication_status: string;
+  lifecycle_status: string;
+  last_verified_at?: string | null;
+}
 
-  // 3. Backup & Migration
-  {
-    slug: "pgbackrest",
-    name: "pgBackRest",
-    vendor: "pgBackRest Community",
-    category: "Backup & Migration",
-    license: "Open Source (MIT)",
-    engines: ["PostgreSQL"],
-    summary:
-      "Enterprise physical backup and restore for PostgreSQL with parallel processing, delta restore, compression, and S3 streaming.",
-    summaryId:
-      "Solusi backup dan restore fisik tingkat enterprise untuk PostgreSQL dengan kompresi dan streaming ke S3.",
-    url: "https://pgbackrest.org/",
-  },
-  {
-    slug: "xtrabackup",
-    name: "Percona XtraBackup",
-    vendor: "Percona",
-    category: "Backup & Migration",
-    license: "Open Source (GPL)",
-    engines: ["MySQL", "MariaDB"],
-    summary:
-      "Non-blocking physical hot backup utility for MySQL and MariaDB without locking tables during backups.",
-    summaryId:
-      "Aplikasi backup fisik tanpa penguncian (hot backup) untuk MySQL dan MariaDB tanpa memblokir transaksi pengguna.",
-    url: "https://www.percona.com/software/mysql-database/percona-xtrabackup",
-  },
-  {
-    slug: "flyway",
-    name: "Flyway",
-    vendor: "Redgate",
-    category: "Backup & Migration",
-    license: "Open Source / Commercial",
-    engines: ["PostgreSQL", "MySQL", "Oracle", "SQL Server", "SQLite", "IBM Db2"],
-    summary:
-      "Database version control and evolutionary migration tool supporting 25+ database engines in CI/CD pipelines.",
-    summaryId:
-      "Alat version control database dan migrasi skema evolusioner yang mendukung lebih dari 25 mesin database di pipeline CI/CD.",
-    url: "https://www.red-gate.com/products/flyway/",
-  },
-  {
-    slug: "liquibase",
-    name: "Liquibase",
-    vendor: "Liquibase Inc",
-    category: "Backup & Migration",
-    license: "Open Source / Commercial",
-    engines: ["PostgreSQL", "MySQL", "Oracle", "SQL Server", "IBM Db2", "SQLite"],
-    summary:
-      "Database-independent library for tracking, managing, and applying database schema changes across SQL, YAML, and XML formats.",
-    summaryId:
-      "Alat otomasi perubahan skema database multi-format (SQL, YAML, XML) dengan kemampuan rollback terstruktur.",
-    url: "https://www.liquibase.com/",
-  },
-  {
-    slug: "bytebase",
-    name: "Bytebase",
-    vendor: "Bytebase Inc",
-    category: "Backup & Migration",
-    license: "Freemium",
-    engines: ["PostgreSQL", "MySQL", "Snowflake", "ClickHouse", "Oracle"],
-    summary:
-      "GitOps-style database schema change management, SQL linting, and access control for modern engineering teams.",
-    summaryId:
-      "Platform manajemen perubahan skema database bergaya GitOps dengan linting SQL dan kontrol akses terpadu.",
-    url: "https://www.bytebase.com",
-  },
-  {
-    slug: "percona-toolkit",
-    name: "Percona Toolkit",
-    vendor: "Percona",
-    category: "Backup & Migration",
-    license: "Open Source (GPL)",
-    engines: ["MySQL", "MariaDB", "MongoDB"],
-    summary:
-      "Collection of advanced command-line tools (pt-online-schema-change, pt-query-digest, pt-table-checksum) for mission-critical operations.",
-    summaryId:
-      "Koleksi utilitas baris perintah canggih untuk migrasi skema online, digest kueri lambat, dan verifikasi checksum replika.",
-    url: "https://www.percona.com/software/database-tools/percona-toolkit",
-  },
+interface ToolDetail extends ToolSummary {
+  repository_url?: string | null;
+  download_url?: string | null;
+  overview_en?: string | null;
+  overview_id?: string | null;
+  primary_use_cases_en: string[];
+  primary_use_cases_id: string[];
+  explicit_boundaries_en: string[];
+  explicit_boundaries_id: string[];
+  features: FeatureItem[];
+  compatibility_matrix: CompatibilityTarget[];
+  security_considerations?: SecurityConsiderations | null;
+  getting_started?: GettingStartedWorkflow | null;
+  practical_scenarios: ProfessionalScenario[];
+  career_connections: CareerConnection[];
+  knowledge_connections: KnowledgeConnection[];
+  exercise_connections: ExerciseConnection[];
+  alternatives: ToolAlternative[];
+  verified_sources: VerifiedSourceCitation[];
+  content_reviewed_at?: string | null;
+}
 
-  // 4. Linux & Systems Diagnostics
-  {
-    slug: "htop",
-    name: "htop / btop",
-    vendor: "Hisham Muhammad & Community",
-    category: "Linux & Systems Diagnostics",
-    license: "Open Source (GPL)",
-    engines: ["Universal", "Linux"],
-    summary:
-      "Interactive process viewer and system monitor for Linux, displaying per-core CPU utilization, memory pressure, and database threads.",
-    summaryId:
-      "Monitor proses interaktif untuk Linux yang menampilkan utilisasi CPU per-core, konsumsi memori, dan thread proses database.",
-    url: "https://htop.dev/",
-  },
-  {
-    slug: "iostat",
-    name: "sysstat (iostat / sar / mpstat)",
-    vendor: "Sebastien Godard & Community",
-    category: "Linux & Systems Diagnostics",
-    license: "Open Source (GPL)",
-    engines: ["Universal", "Linux"],
-    summary:
-      "Indispensable Linux I/O monitoring tools measuring disk read/write throughput, await latency, and %util saturation.",
-    summaryId:
-      "Utilitas utama Linux untuk memantau performa I/O disk, throughput baca/tulis, latensi await, dan persentase saturasi %util.",
-    url: "https://github.com/sysstat/sysstat",
-  },
-  {
-    slug: "vmstat",
-    name: "vmstat",
-    vendor: "procps-ng Community",
-    category: "Linux & Systems Diagnostics",
-    license: "Open Source (GPL)",
-    engines: ["Universal", "Linux"],
-    summary:
-      "Reports processes, memory, paging, block I/O, traps, and CPU activity to detect database swap thrashing.",
-    summaryId:
-      "Menampilkan telemetri proses, paging memori, I/O blok, dan aktivitas CPU untuk mendeteksi bahaya swap thrashing pada server database.",
-    url: "https://gitlab.com/procps-ng/procps",
-  },
-  {
-    slug: "nmon",
-    name: "nmon (Nigel's Monitor)",
-    vendor: "Nigel Griffiths",
-    category: "Linux & Systems Diagnostics",
-    license: "Open Source (GPL)",
-    engines: ["Universal", "Linux", "AIX"],
-    summary:
-      "Single-screen performance tuner for Linux and AIX displaying CPU, disks, memory, network, and file systems simultaneously.",
-    summaryId:
-      "Monitor performa terpadu untuk Linux dan AIX yang menampilkan grafik CPU, disk I/O, memori, dan jaringan secara simultan.",
-    url: "https://nmon.sourceforge.net/",
-  },
-  {
-    slug: "tcpdump-wireshark",
-    name: "tcpdump & Wireshark",
-    vendor: "Wireshark Foundation & TCPDUMP Team",
-    category: "Linux & Systems Diagnostics",
-    license: "Open Source (GPL)",
-    engines: ["Universal", "PostgreSQL", "MySQL", "Oracle", "SQL Server"],
-    summary:
-      "Packet analyzer capturing database wire protocol packets (PostgreSQL FE/BE, MySQL, TDS, TNS) to diagnose TCP resets and TLS handshakes.",
-    summaryId:
-      "Penganalisis paket jaringan untuk membedah protokol database, latensi TCP handshake, reset koneksi, dan negosiasi TLS.",
-    url: "https://www.wireshark.org/",
-  },
-
-  // 5. Automation & Infrastructure
-  {
-    slug: "ansible",
-    name: "Ansible",
-    vendor: "Red Hat",
-    category: "Automation & Infrastructure",
-    license: "Open Source (GPLv3)",
-    engines: ["Universal", "PostgreSQL", "MySQL", "Oracle", "SQL Server"],
-    summary:
-      "Agentless automation engine used by DBAs for cluster provisioning, configuration drift remediation, and automated OS patching.",
-    summaryId:
-      "Mesin otomasi tanpa agen untuk provisioning cluster database, manajemen konfigurasi seragam, dan patching OS otomatis.",
-    url: "https://www.ansible.com/",
-  },
-  {
-    slug: "terraform",
-    name: "Terraform & OpenTofu",
-    vendor: "HashiCorp & Linux Foundation",
-    category: "Automation & Infrastructure",
-    license: "BSL / MPL 2.0",
-    engines: ["Universal", "PostgreSQL", "MySQL", "Oracle", "SQL Server"],
-    summary:
-      "Infrastructure as Code (IaC) tool for provisioning database instances, private subnets, security groups, and storage volumes deterministically.",
-    summaryId:
-      "Alat Infrastructure as Code (IaC) untuk mengelola instance database cloud, subnet privat, security group, dan volume penyimpanan.",
-    url: "https://www.opentofu.org/",
-  },
-  {
-    slug: "docker-kubernetes",
-    name: "Docker & Kubernetes (StatefulSets & Operators)",
-    vendor: "CNCF",
-    category: "Automation & Infrastructure",
-    license: "Open Source (Apache 2.0)",
-    engines: ["PostgreSQL", "MySQL", "Redis", "Cassandra"],
-    summary:
-      "Container orchestration platform powering database operators (CloudNativePG, Percona K8s Operators) with automated self-healing failover.",
-    summaryId:
-      "Platform orkestrasi kontainer yang menggerakkan operator database StatefulSet dengan fitur pemulihan failover otomatis.",
-    url: "https://kubernetes.io/",
-  },
-];
+interface ToolCategory {
+  id: string;
+  slug: string;
+  name_en: string;
+  name_id: string;
+  description_en?: string | null;
+  description_id?: string | null;
+  tool_count: number;
+}
 
 interface ToolsCatalogProps {
   language: "en" | "id";
+  onNavigateToKnowledge?: (slug: string) => void;
+  onNavigateToExercise?: (slug: string) => void;
 }
 
-export function ToolsCatalog({ language }: ToolsCatalogProps) {
+type DetailTab =
+  | "overview"
+  | "features"
+  | "getting_started"
+  | "scenarios"
+  | "compatibility"
+  | "learning"
+  | "alternatives"
+  | "sources";
+
+export function ToolsCatalog({
+  language,
+  onNavigateToKnowledge,
+  onNavigateToExercise,
+}: ToolsCatalogProps) {
   const isId = language === "id";
-  const [tools, setTools] = useState<Tool[]>(DEFAULT_TOOLS);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("All");
-  const [selectedEngine, setSelectedEngine] = useState<string>("All");
-  const [activeGuideTool, setActiveGuideTool] = useState<Tool | null>(null);
 
-  const categories = [
-    { id: "All", label: isId ? "Semua Kategori" : "All Categories" },
-    {
-      id: "Clients & Administration",
-      label: isId ? "Klien & Administrasi" : "Clients & Administration",
-    },
-    {
-      id: "Monitoring & Observability",
-      label: isId ? "Monitoring & Observabilitas" : "Monitoring & Observability",
-    },
-    {
-      id: "Backup & Migration",
-      label: isId ? "Backup & Migrasi" : "Backup & Migration",
-    },
-    {
-      id: "Linux & Systems Diagnostics",
-      label: isId ? "Diagnostik Linux & Sistem" : "Linux & Diagnostics",
-    },
-    {
-      id: "Automation & Infrastructure",
-      label: isId ? "Otomasi & Infrastruktur" : "Automation & Infra",
-    },
+  // Catalog State
+  const [tools, setTools] = useState<ToolSummary[]>([]);
+  const [categories, setCategories] = useState<ToolCategory[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Filters State
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedEngine, setSelectedEngine] = useState<string>("all");
+  const [selectedPlatform, setSelectedPlatform] = useState<string>("all");
+  const [selectedLicense, setSelectedLicense] = useState<string>("all");
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("name");
+
+  // Detail Modal State
+  const [activeToolSlug, setActiveToolSlug] = useState<string | null>(null);
+  const [activeDetail, setActiveDetail] = useState<ToolDetail | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<DetailTab>("overview");
+  const [copiedCommand, setCopiedCommand] = useState<string | null>(null);
+
+  // Engine & Platform options
+  const engineOptions = [
+    { id: "all", label: isId ? "Semua Mesin" : "All Engines" },
+    { id: "PostgreSQL", label: "PostgreSQL" },
+    { id: "MySQL", label: "MySQL / MariaDB" },
+    { id: "Oracle", label: "Oracle Database" },
+    { id: "SQL Server", label: "SQL Server" },
+    { id: "SQLite", label: "SQLite" },
+    { id: "Snowflake", label: "Snowflake" },
+    { id: "DuckDB", label: "DuckDB" },
   ];
 
-  const engines = [
-    "All",
-    "PostgreSQL",
-    "MySQL",
-    "Oracle",
-    "SQL Server",
-    "IBM Db2",
-    "SQLite",
-    "Linux",
+  const platformOptions = [
+    { id: "all", label: isId ? "Semua OS" : "All Platforms" },
+    { id: "Linux", label: "Linux" },
+    { id: "Windows", label: "Windows" },
+    { id: "macOS", label: "macOS" },
+    { id: "Docker", label: "Docker" },
   ];
 
-  const filteredTools = tools.filter((tool) => {
-    if (selectedCategory !== "All" && tool.category !== selectedCategory) {
-      return false;
-    }
-    if (selectedEngine !== "All") {
-      const matchEngine = tool.engines.some((e) =>
-        e.toLowerCase().includes(selectedEngine.toLowerCase())
+  // Fetch Tools List
+  const fetchTools = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const params: Record<string, any> = {
+        sort: sortBy,
+        limit: 100,
+      };
+      if (searchTerm.trim()) params.search = searchTerm.trim();
+      if (selectedCategory !== "all") params.category = selectedCategory;
+      if (selectedEngine !== "all") params.engine = selectedEngine;
+      if (selectedPlatform !== "all") params.platform = selectedPlatform;
+      if (selectedLicense !== "all") params.license = selectedLicense;
+      if (selectedStatus !== "all") params.status = selectedStatus;
+
+      const res = await api.get("/tools", { params });
+      if (res.data) {
+        setTools(res.data.items || []);
+        if (res.data.categories && res.data.categories.length > 0) {
+          setCategories(res.data.categories);
+        }
+      }
+    } catch (err: any) {
+      console.error("Error fetching tools catalog:", err);
+      setError(
+        isId
+          ? "Gagal memuat katalog alat dari server."
+          : "Failed to load tools catalog from backend."
       );
-      if (!matchEngine) return false;
+    } finally {
+      setLoading(false);
     }
-    if (searchTerm.trim()) {
-      const q = searchTerm.toLowerCase();
-      const matchName = tool.name.toLowerCase().includes(q);
-      const matchDesc = tool.summary.toLowerCase().includes(q);
-      const matchVendor = tool.vendor.toLowerCase().includes(q);
-      return matchName || matchDesc || matchVendor;
+  };
+
+  useEffect(() => {
+    fetchTools();
+  }, [
+    searchTerm,
+    selectedCategory,
+    selectedEngine,
+    selectedPlatform,
+    selectedLicense,
+    selectedStatus,
+    sortBy,
+  ]);
+
+  // Fetch Single Tool Detail
+  const handleOpenDetail = async (slug: string) => {
+    try {
+      setActiveToolSlug(slug);
+      setLoadingDetail(true);
+      setActiveTab("overview");
+      const res = await api.get(`/tools/${slug}`);
+      if (res.data) {
+        setActiveDetail(res.data);
+      }
+    } catch (err: any) {
+      console.error("Error loading tool detail:", err);
+    } finally {
+      setLoadingDetail(false);
     }
-    return true;
-  });
+  };
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedCommand(text);
+    setTimeout(() => setCopiedCommand(null), 2000);
+  };
 
   return (
     <div className="flex flex-col h-auto lg:h-[calc(100dvh-3.5rem)] w-full overflow-hidden bg-[#071A3A] text-slate-200">
-      {/* Header & Filter Controls Bar */}
-      <div className="border-b border-slate-800 bg-[#10264A]/40 p-4 sm:p-5 shrink-0">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+      {/* ── Top Header & Filter Controls Bar ─────────────────────────────── */}
+      <div className="border-b border-slate-800 bg-[#10264A]/40 p-3 sm:p-5 shrink-0 space-y-3">
+        {/* Title & Search Line */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div>
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#F2B84B] mb-1">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#F2B84B] mb-0.5">
               <Wrench className="h-4 w-4" />
               <span>
                 {isId
-                  ? "Katalog Alat & Observabilitas Database"
-                  : "Database Tooling & Observability Catalog"}
+                  ? "Katalog Alat & Observabilitas Database Profesional"
+                  : "Professional Database Tools & Observability Catalog"}
               </span>
             </div>
-            <h1 className="text-lg sm:text-xl font-bold text-white">
+            <p className="text-xs text-slate-400">
               {isId
-                ? "Ekosistem Perangkat Lunak & Administrasi Database"
-                : "Database Engineering & Systems Ecosystem"}
-            </h1>
+                ? "Direktori terverifikasi untuk administrasi, keandalan (DBRE), migrasi, dan pipeline data."
+                : "Authoritative verified directory for DBA administration, reliability engineering, and migrations."}
+            </p>
           </div>
 
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute left-3 top-3 h-3.5 w-3.5 text-slate-400" />
+          {/* Search Bar */}
+          <div className="relative w-full md:w-80 shrink-0">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
             <input
               type="text"
               placeholder={
                 isId
-                  ? "Cari alat, CLI, atau monitoring..."
-                  : "Search tools, CLIs, or monitoring..."
+                  ? "Cari nama, vendor, atau kapabilitas..."
+                  : "Search tool, vendor, capability..."
               }
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-xl bg-slate-900 border border-slate-700/80 pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#F2B84B]"
+              className="w-full rounded-xl bg-slate-900 border border-slate-700/80 pl-9 pr-8 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#F2B84B] min-h-[38px]"
             />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm("")}
+                className="absolute right-2.5 top-2.5 text-slate-500 hover:text-slate-200"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Filter Pills */}
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          {/* Categories */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar touch-scroll">
-            {categories.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => setSelectedCategory(c.id)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors min-h-[36px] ${
-                  selectedCategory === c.id
-                    ? "bg-[#F2B84B] text-[#071A3A] font-bold"
-                    : "bg-slate-900/80 text-slate-400 hover:text-white border border-slate-800"
-                }`}
-              >
-                {c.label}
-              </button>
-            ))}
+        {/* Category Tabs */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar touch-scroll pt-1 border-t border-slate-800/80">
+          <button
+            onClick={() => setSelectedCategory("all")}
+            className={`rounded-lg px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-all min-h-[34px] ${
+              selectedCategory === "all"
+                ? "bg-[#F2B84B] text-[#071A3A] font-bold shadow-xs"
+                : "bg-slate-900/80 text-slate-400 hover:text-white border border-slate-800"
+            }`}
+          >
+            {isId ? "Semua Kategori" : "All Categories"} ({tools.length})
+          </button>
+          {categories.map((c) => (
+            <button
+              key={c.slug}
+              onClick={() => setSelectedCategory(c.slug)}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-all min-h-[34px] ${
+                selectedCategory === c.slug
+                  ? "bg-[#F2B84B] text-[#071A3A] font-bold shadow-xs"
+                  : "bg-slate-900/80 text-slate-400 hover:text-white border border-slate-800"
+              }`}
+            >
+              <span>{isId ? c.name_id || c.name_en : c.name_en}</span>
+              {c.tool_count > 0 && (
+                <span className="ml-1.5 opacity-75 text-[10px]">({c.tool_count})</span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Secondary Filter Badges */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar touch-scroll">
+            <span className="text-[11px] font-semibold text-slate-400 shrink-0">
+              {isId ? "Filter Mesin:" : "Engine:"}
+            </span>
+            <div className="flex items-center gap-1">
+              {engineOptions.map((e) => (
+                <button
+                  key={e.id}
+                  onClick={() => setSelectedEngine(e.id)}
+                  className={`rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
+                    selectedEngine === e.id
+                      ? "bg-slate-700 text-[#F2B84B] border border-[#F2B84B]/40 font-bold"
+                      : "bg-slate-900/60 text-slate-400 hover:text-slate-200 border border-slate-800"
+                  }`}
+                >
+                  {e.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="h-4 w-px bg-slate-800 mx-1 hidden sm:block" />
+
+            <span className="text-[11px] font-semibold text-slate-400 shrink-0 hidden sm:inline">
+              OS:
+            </span>
+            <div className="hidden sm:flex items-center gap-1">
+              {platformOptions.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => setSelectedPlatform(p.id)}
+                  className={`rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
+                    selectedPlatform === p.id
+                      ? "bg-slate-700 text-[#F2B84B] border border-[#F2B84B]/40 font-bold"
+                      : "bg-slate-900/60 text-slate-400 hover:text-slate-200 border border-slate-800"
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Engine Filter */}
-          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar touch-scroll">
-            <span className="text-[11px] font-semibold text-slate-400 mr-1 hidden sm:inline">
-              {isId ? "Mesin:" : "Engine:"}
-            </span>
-            {engines.map((eng) => (
-              <button
-                key={eng}
-                onClick={() => setSelectedEngine(eng)}
-                className={`rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
-                  selectedEngine === eng
-                    ? "bg-slate-700 text-[#F2B84B] border border-[#F2B84B]/40 font-bold"
-                    : "bg-slate-900/60 text-slate-400 hover:text-slate-200 border border-slate-800/80"
-                }`}
-              >
-                {eng}
-              </button>
-            ))}
+          {/* Sort Selector */}
+          <div className="flex items-center gap-1.5 shrink-0 text-[11px] font-mono">
+            <span className="text-slate-400">{isId ? "Urutkan:" : "Sort:"}</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="rounded-lg bg-slate-900 border border-slate-700 text-slate-200 px-2 py-1 text-xs focus:outline-none"
+            >
+              <option value="name">{isId ? "Nama (A-Z)" : "Alphabetical (A-Z)"}</option>
+              <option value="verified">{isId ? "Verifikasi Terbaru" : "Recently Verified"}</option>
+              <option value="recent">{isId ? "Baru Ditambahkan" : "Recently Added"}</option>
+            </select>
           </div>
         </div>
       </div>
 
-      {/* Grid of Tool Cards */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-w-7xl mx-auto">
-          {filteredTools.map((tool) => {
-            const hasGuide = Boolean(tool.guide);
-
-            return (
+      {/* ── Main Catalog Grid ────────────────────────────────────────────── */}
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 no-scrollbar touch-scroll">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 text-slate-400 space-y-3">
+            <RefreshCw className="h-7 w-7 animate-spin text-[#F2B84B]" />
+            <p className="text-xs font-mono">
+              {isId ? "Memuat katalog alat terverifikasi..." : "Loading verified tools catalog..."}
+            </p>
+          </div>
+        ) : error ? (
+          <div className="rounded-xl border border-red-500/40 bg-red-950/30 p-6 text-center text-red-300 max-w-md mx-auto">
+            <AlertTriangle className="h-6 w-6 text-red-400 mx-auto mb-2" />
+            <p className="text-xs">{error}</p>
+            <button
+              onClick={fetchTools}
+              className="mt-3 rounded-lg bg-red-800 hover:bg-red-700 px-3 py-1.5 text-xs font-bold text-white"
+            >
+              {isId ? "Coba Lagi" : "Retry"}
+            </button>
+          </div>
+        ) : tools.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-slate-500 space-y-2">
+            <Wrench className="h-8 w-8 text-slate-600" />
+            <p className="text-sm font-semibold">
+              {isId ? "Tidak ada alat yang cocok dengan filter." : "No tools match active filters."}
+            </p>
+            <button
+              onClick={() => {
+                setSearchTerm("");
+                setSelectedCategory("all");
+                setSelectedEngine("all");
+                setSelectedPlatform("all");
+                setSelectedLicense("all");
+                setSelectedStatus("all");
+              }}
+              className="text-xs text-[#F2B84B] hover:underline"
+            >
+              {isId ? "Reset semua filter" : "Clear all filters"}
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-w-7xl mx-auto">
+            {tools.map((tool) => (
               <div
                 key={tool.slug}
-                className="flex flex-col justify-between rounded-2xl border border-slate-800 bg-[#071329]/80 p-4 sm:p-5 hover:border-slate-700 transition-all hover:bg-slate-900/40 shadow-sm"
+                onClick={() => handleOpenDetail(tool.slug)}
+                className="group flex flex-col justify-between rounded-2xl border border-slate-800 bg-[#071329]/80 p-4 sm:p-5 hover:border-[#F2B84B]/50 transition-all hover:bg-slate-900/50 shadow-sm cursor-pointer"
               >
                 <div>
-                  {/* Category & License Header */}
-                  <div className="flex items-center justify-between text-[11px] mb-2.5">
-                    <span className="rounded-full bg-slate-800 px-2.5 py-0.5 text-slate-300 font-medium">
-                      {tool.category}
+                  {/* Category & Status Badges */}
+                  <div className="flex items-center justify-between text-[11px] mb-2.5 gap-2">
+                    <span className="rounded-md bg-[#10264A] border border-slate-700/80 px-2.5 py-0.5 text-slate-300 font-semibold truncate">
+                      {isId ? tool.category_name_id || tool.category_name : tool.category_name}
                     </span>
-                    <span
-                      className={`font-semibold ${
-                        tool.license.includes("Open Source")
-                          ? "text-emerald-400"
-                          : "text-amber-400"
-                      }`}
-                    >
-                      {tool.license}
+                    <span className="flex items-center gap-1 rounded-full bg-emerald-950/70 border border-emerald-600/50 px-2 py-0.5 text-[10px] text-emerald-300 font-bold shrink-0">
+                      <ShieldCheck className="h-3 w-3 text-emerald-400" />
+                      <span>{isId ? "Terverifikasi" : "Verified"}</span>
                     </span>
                   </div>
 
-                  {/* Lifecycle Warning for Deprecated / Maintenance Tools */}
-                  {tool.lifecycleStatus === "Maintenance / Deprecated" && (
-                    <div className="mb-2 flex items-center gap-1.5 rounded-lg bg-amber-950/60 border border-amber-600/60 px-2 py-1 text-[10px] text-amber-300 font-semibold">
-                      <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0" />
-                      <span>
-                        {isId
-                          ? "Status: Maintenance Mode (Dialihkan ke VS Code mssql)"
-                          : "Status: Maintenance Mode (Transition to VS Code mssql)"}
-                      </span>
-                    </div>
-                  )}
-
-                  <h3 className="text-sm sm:text-base font-bold text-white mb-1">
+                  {/* Name and Vendor */}
+                  <h3 className="text-base font-bold text-white group-hover:text-[#F2B84B] transition-colors mb-0.5">
                     {tool.name}
                   </h3>
                   <div className="text-[11px] font-mono text-slate-400 mb-2">
-                    {isId ? "Oleh" : "By"} {tool.vendor}
+                    {isId ? "Oleh" : "By"} {tool.vendor || "Community"} •{" "}
+                    <span className="text-slate-300 font-semibold">{tool.license_model}</span>
                   </div>
 
+                  {/* Summary */}
                   <p className="text-xs text-slate-300 leading-relaxed line-clamp-3 mb-4">
-                    {isId ? tool.summaryId || tool.summary : tool.summary}
+                    {isId ? tool.summary_id || tool.summary : tool.summary}
                   </p>
                 </div>
 
                 <div>
-                  {/* Supported Engines */}
+                  {/* Supported Engines Tags */}
                   <div className="flex flex-wrap gap-1 mb-4">
-                    {tool.engines.map((e) => (
+                    {tool.supported_engines.slice(0, 5).map((eng) => (
                       <span
-                        key={e}
+                        key={eng}
                         className="rounded bg-slate-900/90 border border-slate-800 px-1.5 py-0.5 text-[10px] font-mono text-slate-400"
                       >
-                        {e}
+                        {eng}
                       </span>
                     ))}
+                    {tool.supported_engines.length > 5 && (
+                      <span className="rounded bg-slate-900/90 border border-slate-800 px-1.5 py-0.5 text-[10px] font-mono text-slate-500">
+                        +{tool.supported_engines.length - 5}
+                      </span>
+                    )}
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center justify-between border-t border-slate-800/80 pt-3 gap-2">
-                    {hasGuide ? (
-                      <button
-                        onClick={() => setActiveGuideTool(tool)}
-                        className="flex items-center gap-1.5 rounded-lg bg-[#10264A] border border-[#F2B84B]/40 px-3 py-1.5 text-xs font-semibold text-[#F2B84B] hover:bg-[#F2B84B] hover:text-[#071A3A] transition-colors"
-                      >
-                        <Activity className="h-3.5 w-3.5" />
-                        <span>
-                          {isId ? "Panduan Monitoring" : "Observability Guide"}
-                        </span>
-                      </button>
-                    ) : (
-                      <div className="text-[11px] text-slate-500 font-mono">
-                        {isId ? "Aplikasi Standar" : "Standard Utility"}
-                      </div>
-                    )}
-
-                    <a
-                      href={tool.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-xs text-slate-400 hover:text-white transition-colors"
+                  {/* Card Actions */}
+                  <div className="flex items-center justify-between border-t border-slate-800/80 pt-3">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenDetail(tool.slug);
+                      }}
+                      className="flex items-center gap-1 text-xs font-bold text-[#F2B84B] group-hover:underline"
                     >
-                      <span>{isId ? "Situs Resmi" : "Official Site"}</span>
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </a>
+                      <span>{isId ? "Lihat Detail & Panduan" : "Full Specs & Guide"}</span>
+                      <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+                    </button>
+
+                    {tool.official_url && (
+                      <a
+                        href={tool.official_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        title={isId ? "Kunjungi situs resmi" : "Visit official website"}
+                        className="p-1 text-slate-400 hover:text-white"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </a>
+                    )}
                   </div>
                 </div>
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* MONITORING GUIDE POPUP MODAL */}
-      {activeGuideTool && activeGuideTool.guide && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3 sm:p-4 backdrop-blur-sm animate-fade-in">
-          <div className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl border border-slate-700 bg-[#071A3A] p-5 sm:p-6 shadow-2xl space-y-4">
-            {/* Header */}
-            <div className="flex items-start justify-between border-b border-slate-800 pb-3">
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#F2B84B]">
-                  {isId
-                    ? "Panduan Observabilitas Mendalam"
-                    : "Observability Architecture Guide"}
-                </span>
-                <h2 className="text-base sm:text-xl font-bold text-white flex items-center gap-2 mt-0.5">
-                  <Activity className="h-5 w-5 text-[#F2B84B]" />
-                  <span>{activeGuideTool.name}</span>
-                </h2>
-              </div>
+      {/* ── Comprehensive Tool Detail Modal ──────────────────────────────── */}
+      {activeToolSlug && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-2 sm:p-4 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-4xl max-h-[92vh] flex flex-col rounded-2xl border border-slate-700 bg-[#071A3A] shadow-2xl overflow-hidden">
+            {/* Modal Header */}
+            <div className="border-b border-slate-800 bg-[#10264A]/70 p-4 sm:p-5 shrink-0 flex items-start justify-between gap-4">
+              {loadingDetail || !activeDetail ? (
+                <div className="flex items-center gap-3">
+                  <RefreshCw className="h-5 w-5 animate-spin text-[#F2B84B]" />
+                  <span className="text-sm text-slate-400 font-mono">
+                    {isId ? "Memuat spesifikasi teknis..." : "Loading technical specs..."}
+                  </span>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-md bg-slate-900 border border-slate-700 px-2.5 py-0.5 text-[11px] font-semibold text-slate-300">
+                      {isId
+                        ? activeDetail.category_name_id || activeDetail.category_name
+                        : activeDetail.category_name}
+                    </span>
+                    <span className="rounded-md bg-slate-900/80 border border-slate-700 px-2 py-0.5 text-[10px] font-mono text-[#F2B84B]">
+                      {activeDetail.product_type}
+                    </span>
+                    <span className="flex items-center gap-1 rounded-full bg-emerald-950/80 border border-emerald-600/50 px-2 py-0.5 text-[10px] text-emerald-300 font-bold">
+                      <ShieldCheck className="h-3 w-3 text-emerald-400" />
+                      <span>{isId ? "Klaim Terverifikasi" : "Verified Claims"}</span>
+                    </span>
+                  </div>
+                  <h2 className="text-lg sm:text-2xl font-bold text-white flex items-center gap-2">
+                    <span>{activeDetail.name}</span>
+                  </h2>
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
+                    <span>
+                      {isId ? "Vendor / Proyek:" : "Vendor / Project:"}{" "}
+                      <strong className="text-slate-200">{activeDetail.vendor}</strong>
+                    </span>
+                    <span>•</span>
+                    <span>
+                      {isId ? "Lisensi:" : "License:"}{" "}
+                      <strong className="text-emerald-400">{activeDetail.license_model}</strong>
+                    </span>
+                    {activeDetail.official_url && (
+                      <>
+                        <span>•</span>
+                        <a
+                          href={activeDetail.official_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-[#F2B84B] hover:underline"
+                        >
+                          <span>{isId ? "Situs Resmi" : "Official Website"}</span>
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <button
-                onClick={() => setActiveGuideTool(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+                onClick={() => {
+                  setActiveToolSlug(null);
+                  setActiveDetail(null);
+                }}
+                className="rounded-lg p-2 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            {/* When to use */}
-            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3.5 text-xs text-slate-300 leading-relaxed">
-              <strong className="text-white block mb-1">
-                {isId ? "Kapan Menggunakan Alat Ini?" : "When to Use This Tool:"}
-              </strong>
-              {isId
-                ? activeGuideTool.guide.whenToUseId
-                : activeGuideTool.guide.whenToUse}
-            </div>
-
-            {/* Architecture Overview */}
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-[#F2B84B] mb-1.5 flex items-center gap-1.5">
-                <Layers className="h-3.5 w-3.5" />
-                <span>
-                  {isId
-                    ? "Arsitektur Pengumpulan Metrik"
-                    : "Metrics Architecture"}
-                </span>
-              </h4>
-              <p className="text-xs text-slate-300 leading-relaxed bg-[#10264A]/40 p-3 rounded-xl border border-slate-800">
-                {isId
-                  ? activeGuideTool.guide.architectureOverviewId
-                  : activeGuideTool.guide.architectureOverview}
-              </p>
-            </div>
-
-            {/* Golden Signals */}
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-[#F2B84B] mb-2 flex items-center gap-1.5">
-                <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
-                <span>
-                  {isId
-                    ? "Sinyal Emas Observabilitas (Golden Signals)"
-                    : "Observability Golden Signals"}
-                </span>
-              </h4>
-              <ul className="space-y-1.5 text-xs text-slate-300">
-                {(isId
-                  ? activeGuideTool.guide.goldenSignalsId
-                  : activeGuideTool.guide.goldenSignals
-                ).map((signal, idx) => (
-                  <li
-                    key={idx}
-                    className="flex items-start gap-2 bg-slate-900/40 p-2 rounded-lg border border-slate-800/80"
-                  >
-                    <span className="text-[#F2B84B] font-bold">•</span>
-                    <span>{signal}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Sample Alert Query */}
-            {activeGuideTool.guide.sampleAlertQuery && (
-              <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-[#F2B84B] mb-1.5 flex items-center gap-1.5">
-                  <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
-                  <span>
-                    {isId ? "Contoh Kueri Peringatan (Alert Rule)" : "Sample Alert Rule Query"}
-                  </span>
-                </h4>
-                <pre className="rounded-xl border border-slate-800 bg-[#071329] p-3 font-mono text-xs text-emerald-300 overflow-x-auto">
-                  <code>{activeGuideTool.guide.sampleAlertQuery}</code>
-                </pre>
+            {/* Modal Detail Tabs */}
+            {activeDetail && (
+              <div className="border-b border-slate-800 bg-[#071329] px-4 sm:px-6 flex items-center gap-1 overflow-x-auto no-scrollbar touch-scroll shrink-0">
+                {[
+                  { id: "overview" as const, label: isId ? "Ikhtisar" : "Overview", icon: Info },
+                  { id: "features" as const, label: isId ? "Fitur & Keamanan" : "Features & Security", icon: Shield },
+                  { id: "getting_started" as const, label: isId ? "Panduan Memulai" : "Getting Started", icon: Terminal },
+                  { id: "scenarios" as const, label: isId ? "Skenario Produksi" : "Production Scenarios", icon: Workflow },
+                  { id: "compatibility" as const, label: isId ? "Kompatibilitas" : "Compatibility", icon: Database },
+                  { id: "learning" as const, label: isId ? "Jalur Karir & Belajar" : "Careers & Learning", icon: GraduationCap },
+                  { id: "alternatives" as const, label: isId ? "Alternatif" : "Alternatives", icon: GitBranch },
+                  { id: "sources" as const, label: isId ? "Sumber & Bukti" : "Verified Sources", icon: BookOpen },
+                ].map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`flex items-center gap-1.5 px-3 py-2.5 text-xs font-semibold whitespace-nowrap transition-colors border-b-2 ${
+                        isActive
+                          ? "border-[#F2B84B] text-[#F2B84B] font-bold"
+                          : "border-transparent text-slate-400 hover:text-slate-200"
+                      }`}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      <span>{tab.label}</span>
+                    </button>
+                  );
+                })}
               </div>
             )}
 
-            {/* Footer */}
-            <div className="border-t border-slate-800 pt-3 flex items-center justify-between">
-              <span className="text-[11px] text-slate-500 font-mono">
-                {isId ? "Lisensi:" : "License:"} {activeGuideTool.license}
+            {/* Modal Body Container */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 no-scrollbar touch-scroll text-slate-300 text-xs">
+              {!activeDetail ? (
+                <div className="py-20 text-center text-slate-500 font-mono">
+                  {isId ? "Sedang memuat data detail..." : "Loading detailed specs..."}
+                </div>
+              ) : (
+                <>
+                  {/* ── 1. Tab: Overview ── */}
+                  {activeTab === "overview" && (
+                    <div className="space-y-5 animate-fade-in">
+                      {/* Summary & Technical Overview */}
+                      <div className="space-y-3">
+                        <div className="rounded-xl border border-slate-800 bg-[#10264A]/30 p-4 text-sm leading-relaxed text-slate-200">
+                          {isId
+                            ? activeDetail.summary_id || activeDetail.summary
+                            : activeDetail.summary}
+                        </div>
+                        {activeDetail.overview_en && (
+                          <div className="space-y-1.5">
+                            <h4 className="text-xs font-bold uppercase tracking-wider text-[#F2B84B]">
+                              {isId ? "Tinjauan Teknis Mendalam" : "In-Depth Technical Overview"}
+                            </h4>
+                            <p className="leading-relaxed text-slate-300">
+                              {isId
+                                ? activeDetail.overview_id || activeDetail.overview_en
+                                : activeDetail.overview_en}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Primary Use Cases */}
+                      {activeDetail.primary_use_cases_en.length > 0 && (
+                        <div className="space-y-2">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                            <CheckCircle className="h-4 w-4" />
+                            <span>
+                              {isId ? "Kapan Alat Ini Tepat Digunakan (Jobs-To-Be-Done)" : "Primary Jobs-To-Be-Done"}
+                            </span>
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {(isId
+                              ? activeDetail.primary_use_cases_id.length > 0
+                                ? activeDetail.primary_use_cases_id
+                                : activeDetail.primary_use_cases_en
+                              : activeDetail.primary_use_cases_en
+                            ).map((uc, i) => (
+                              <div
+                                key={i}
+                                className="flex items-start gap-2 rounded-xl border border-slate-800 bg-slate-900/60 p-3"
+                              >
+                                <span className="text-emerald-400 font-bold">•</span>
+                                <span>{uc}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Explicit Boundaries (What it does NOT do) */}
+                      {activeDetail.explicit_boundaries_en.length > 0 && (
+                        <div className="rounded-xl border border-amber-600/40 bg-amber-950/20 p-4 space-y-2">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
+                            <AlertTriangle className="h-4 w-4 text-amber-400" />
+                            <span>
+                              {isId
+                                ? "Batasan Eksplisit (Kapan Alat Ini Tidak Tepat)"
+                                : "Explicit Boundaries & Anti-Patterns"}
+                            </span>
+                          </h4>
+                          <ul className="space-y-1.5 text-amber-200/90 text-xs">
+                            {(isId
+                              ? activeDetail.explicit_boundaries_id.length > 0
+                                ? activeDetail.explicit_boundaries_id
+                                : activeDetail.explicit_boundaries_en
+                              : activeDetail.explicit_boundaries_en
+                            ).map((b, i) => (
+                              <li key={i} className="flex items-start gap-2">
+                                <span className="text-amber-400 font-bold">×</span>
+                                <span>{b}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Quick Facts Grid */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-800">
+                        <div className="rounded-lg bg-slate-900/80 border border-slate-800 p-2.5">
+                          <span className="text-[10px] text-slate-500 uppercase block">
+                            {isId ? "Tipe Produk" : "Product Type"}
+                          </span>
+                          <strong className="text-slate-200">{activeDetail.product_type}</strong>
+                        </div>
+                        <div className="rounded-lg bg-slate-900/80 border border-slate-800 p-2.5">
+                          <span className="text-[10px] text-slate-500 uppercase block">
+                            {isId ? "Model Lisensi" : "License Model"}
+                          </span>
+                          <strong className="text-emerald-400">{activeDetail.license_model}</strong>
+                        </div>
+                        <div className="rounded-lg bg-slate-900/80 border border-slate-800 p-2.5">
+                          <span className="text-[10px] text-slate-500 uppercase block">
+                            {isId ? "Status Siklus Hidup" : "Lifecycle Status"}
+                          </span>
+                          <strong className="text-slate-200 capitalize">
+                            {activeDetail.lifecycle_status}
+                          </strong>
+                        </div>
+                        <div className="rounded-lg bg-slate-900/80 border border-slate-800 p-2.5">
+                          <span className="text-[10px] text-slate-500 uppercase block">
+                            {isId ? "Terakhir Diverifikasi" : "Last Verified"}
+                          </span>
+                          <strong className="text-[#F2B84B] font-mono">
+                            {activeDetail.last_verified_at
+                              ? new Date(activeDetail.last_verified_at).toLocaleDateString()
+                              : "2026-11-06"}
+                          </strong>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── 2. Tab: Features & Security ── */}
+                  {activeTab === "features" && (
+                    <div className="space-y-5 animate-fade-in">
+                      {/* Features List */}
+                      <div>
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-[#F2B84B] mb-3 flex items-center gap-1.5">
+                          <Layers className="h-4 w-4" />
+                          <span>{isId ? "Fitur Utama & Lingkup Edisi" : "Key Capabilities & Editions"}</span>
+                        </h4>
+                        <div className="space-y-2.5">
+                          {activeDetail.features.map((feat, idx) => (
+                            <div
+                              key={idx}
+                              className="rounded-xl border border-slate-800 bg-[#071329] p-3.5 space-y-1"
+                            >
+                              <div className="flex items-center justify-between">
+                                <h5 className="font-bold text-white text-xs">
+                                  {isId ? feat.name_id || feat.name_en : feat.name_en}
+                                </h5>
+                                <span className="rounded bg-slate-800 px-2 py-0.5 text-[10px] font-mono text-slate-400 uppercase">
+                                  {feat.edition_scope}
+                                </span>
+                              </div>
+                              <p className="text-slate-300 leading-relaxed">
+                                {isId ? feat.description_id || feat.description_en : feat.description_en}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Security Considerations Card */}
+                      {activeDetail.security_considerations && (
+                        <div className="rounded-xl border border-blue-900/60 bg-[#10264A]/30 p-4 space-y-3">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1.5">
+                            <Lock className="h-4 w-4 text-blue-400" />
+                            <span>
+                              {isId
+                                ? "Pertimbangan Keamanan & Tata Kelola (Security Considerations)"
+                                : "Security & Governance Architecture"}
+                            </span>
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                            <div className="rounded-lg bg-slate-900/70 p-3 border border-slate-800">
+                              <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
+                                {isId ? "Penyimpanan Kredensial" : "Credential Storage"}
+                              </span>
+                              <p className="text-slate-300">
+                                {activeDetail.security_considerations.credential_storage}
+                              </p>
+                            </div>
+                            <div className="rounded-lg bg-slate-900/70 p-3 border border-slate-800">
+                              <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
+                                {isId ? "Jaringan & Port" : "Network Exposure & Ports"}
+                              </span>
+                              <p className="text-slate-300">
+                                {activeDetail.security_considerations.network_and_ports}
+                              </p>
+                            </div>
+                            <div className="rounded-lg bg-slate-900/70 p-3 border border-slate-800">
+                              <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
+                                {isId ? "Dukungan TLS / SSL" : "TLS / SSL Encryption"}
+                              </span>
+                              <p className="text-slate-300">
+                                {activeDetail.security_considerations.tls_ssl_support}
+                              </p>
+                            </div>
+                            <div className="rounded-lg bg-slate-900/70 p-3 border border-slate-800">
+                              <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
+                                {isId ? "Model Hak Akses" : "Least Privilege Model"}
+                              </span>
+                              <p className="text-slate-300">
+                                {activeDetail.security_considerations.privilege_model}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* ── 3. Tab: Getting Started ── */}
+                  {activeTab === "getting_started" && activeDetail.getting_started && (
+                    <div className="space-y-5 animate-fade-in">
+                      {/* Prerequisites */}
+                      {activeDetail.getting_started.prerequisites_en.length > 0 && (
+                        <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 space-y-1.5">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-[#F2B84B]">
+                            {isId ? "Prasyarat Sistem" : "Prerequisites"}
+                          </h4>
+                          <ul className="space-y-1 text-slate-300 list-disc list-inside">
+                            {(isId
+                              ? activeDetail.getting_started.prerequisites_id
+                              : activeDetail.getting_started.prerequisites_en
+                            ).map((pre, i) => (
+                              <li key={i}>{pre}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Step-by-Step Instructions */}
+                      <div className="space-y-3">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-white">
+                          {isId ? "Langkah Pemasangan & Konfigurasi" : "Installation & Setup Steps"}
+                        </h4>
+                        {activeDetail.getting_started.steps.map((step) => (
+                          <div
+                            key={step.step_number}
+                            className="rounded-xl border border-slate-800 bg-[#071329] p-4 space-y-2.5"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#F2B84B] text-[11px] font-bold text-[#071A3A]">
+                                {step.step_number}
+                              </span>
+                              <h5 className="font-bold text-white text-xs">
+                                {isId ? step.title_id : step.title_en}
+                              </h5>
+                            </div>
+                            <p className="text-slate-300 leading-relaxed">
+                              {isId ? step.instruction_id : step.instruction_en}
+                            </p>
+                            {step.command && (
+                              <div className="relative group rounded-lg bg-black/60 border border-slate-800 p-2.5 font-mono text-xs text-emerald-300">
+                                <code>{step.command}</code>
+                                <button
+                                  onClick={() => handleCopy(step.command!)}
+                                  className="absolute right-2 top-2 rounded bg-slate-800 p-1 text-slate-400 hover:text-white"
+                                  title="Copy"
+                                >
+                                  {copiedCommand === step.command ? (
+                                    <Check className="h-3.5 w-3.5 text-emerald-400" />
+                                  ) : (
+                                    <Copy className="h-3.5 w-3.5" />
+                                  )}
+                                </button>
+                              </div>
+                            )}
+                            {(step.checkpoint_en || step.checkpoint_id) && (
+                              <div className="text-[11px] text-slate-400 flex items-center gap-1.5 pt-1">
+                                <CheckCircle className="h-3.5 w-3.5 text-[#F2B84B]" />
+                                <span>
+                                  {isId
+                                    ? `Titik periksa: ${step.checkpoint_id}`
+                                    : `Checkpoint: ${step.checkpoint_en}`}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Safe First Test Workflow */}
+                      <div className="rounded-xl border border-emerald-600/40 bg-emerald-950/20 p-4 space-y-1">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                          <CheckCircle className="h-4 w-4" />
+                          <span>
+                            {isId ? "Uji Coba Pertama yang Aman" : "Safe First Test Workflow"}
+                          </span>
+                        </h4>
+                        <p className="text-emerald-200/90 text-xs leading-relaxed">
+                          {isId
+                            ? activeDetail.getting_started.safe_first_test_id
+                            : activeDetail.getting_started.safe_first_test_en}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── 4. Tab: Scenarios ── */}
+                  {activeTab === "scenarios" && (
+                    <div className="space-y-5 animate-fade-in">
+                      <div className="space-y-4">
+                        {activeDetail.practical_scenarios.map((scen, idx) => (
+                          <div
+                            key={scen.scenario_id || idx}
+                            className="rounded-xl border border-slate-800 bg-[#071329] p-4 sm:p-5 space-y-3"
+                          >
+                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+                              <div>
+                                <span className="text-[10px] font-mono text-[#F2B84B] uppercase block">
+                                  {isId ? "Peran:" : "Role:"} {scen.role}
+                                </span>
+                                <h5 className="text-sm font-bold text-white">
+                                  {isId ? scen.title_id : scen.title_en}
+                                </h5>
+                              </div>
+                              <span className="rounded-md bg-slate-900 border border-slate-800 px-2 py-0.5 text-[10px] font-mono text-slate-400">
+                                {scen.environment}
+                              </span>
+                            </div>
+
+                            {/* Goal */}
+                            <div>
+                              <strong className="text-slate-200 block mb-0.5">
+                                {isId ? "Tujuan Operasional:" : "Operational Goal:"}
+                              </strong>
+                              <p className="text-slate-300">{isId ? scen.goal_id : scen.goal_en}</p>
+                            </div>
+
+                            {/* Steps */}
+                            <div className="space-y-1">
+                              <strong className="text-slate-200 block mb-1">
+                                {isId ? "Langkah-Langkah Eksekusi:" : "Execution Steps:"}
+                              </strong>
+                              <ol className="space-y-1 list-decimal list-inside text-slate-300">
+                                {(isId ? scen.steps_id : scen.steps_en).map((st, sidx) => (
+                                  <li key={sidx}>{st}</li>
+                                ))}
+                              </ol>
+                            </div>
+
+                            {/* Commands */}
+                            {scen.commands && scen.commands.length > 0 && (
+                              <div className="space-y-1">
+                                <strong className="text-slate-200 block text-[11px]">
+                                  {isId ? "Perintah / Kueri Validasi:" : "Commands / Snippets:"}
+                                </strong>
+                                {scen.commands.map((cmd, cidx) => (
+                                  <div
+                                    key={cidx}
+                                    className="relative group rounded-lg bg-black/60 border border-slate-800 p-2.5 font-mono text-xs text-emerald-300 overflow-x-auto"
+                                  >
+                                    <code>{cmd}</code>
+                                    <button
+                                      onClick={() => handleCopy(cmd)}
+                                      className="absolute right-2 top-2 rounded bg-slate-800 p-1 text-slate-400 hover:text-white"
+                                      title="Copy"
+                                    >
+                                      {copiedCommand === cmd ? (
+                                        <Check className="h-3.5 w-3.5 text-emerald-400" />
+                                      ) : (
+                                        <Copy className="h-3.5 w-3.5" />
+                                      )}
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Validation & Expected Result */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                              <div className="rounded-lg bg-slate-900/60 p-3 border border-slate-800">
+                                <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
+                                  {isId ? "Kriteria Validasi" : "Validation Criteria"}
+                                </span>
+                                <p className="text-slate-300">
+                                  {isId ? scen.validation_id : scen.validation_en}
+                                </p>
+                              </div>
+                              <div className="rounded-lg bg-slate-900/60 p-3 border border-slate-800">
+                                <span className="text-[10px] uppercase font-bold text-emerald-400 block mb-1">
+                                  {isId ? "Hasil yang Diharapkan" : "Expected Result"}
+                                </span>
+                                <p className="text-slate-300">
+                                  {isId ? scen.expected_result_id : scen.expected_result_en}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Rollback */}
+                            {(scen.rollback_en || scen.rollback_id) && (
+                              <div className="rounded-lg bg-slate-900/40 p-2.5 border border-slate-800/80 text-[11px] text-slate-400">
+                                <strong className="text-slate-300">
+                                  {isId ? "Panduan Rollback / Pembatalan:" : "Rollback Guidance:"}{" "}
+                                </strong>
+                                <span>{isId ? scen.rollback_id : scen.rollback_en}</span>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── 5. Tab: Compatibility ── */}
+                  {activeTab === "compatibility" && (
+                    <div className="space-y-4 animate-fade-in">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-[#F2B84B] flex items-center gap-1.5">
+                        <Database className="h-4 w-4" />
+                        <span>{isId ? "Matriks Kompatibilitas Mesin & Platform" : "Engine & Platform Support Matrix"}</span>
+                      </h4>
+
+                      <div className="overflow-x-auto rounded-xl border border-slate-800 bg-[#071329]">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-[#10264A]/70 text-[11px] font-bold text-[#F2B84B] uppercase tracking-wider">
+                            <tr>
+                              <th className="p-3">{isId ? "Target / Mesin" : "Target / Engine"}</th>
+                              <th className="p-3">{isId ? "Cakupan Versi" : "Version Scope"}</th>
+                              <th className="p-3">{isId ? "Tingkat Dukungan" : "Support Level"}</th>
+                              <th className="p-3">{isId ? "Catatan Teknis" : "Technical Notes"}</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-800/80 text-slate-300">
+                            {activeDetail.compatibility_matrix.map((c, i) => (
+                              <tr key={i} className="hover:bg-slate-800/30">
+                                <td className="p-3 font-semibold text-white">{c.target_name}</td>
+                                <td className="p-3 font-mono text-[11px]">{c.version_scope}</td>
+                                <td className="p-3">
+                                  <span className="rounded bg-slate-800 px-2 py-0.5 text-[10px] font-mono text-emerald-400 capitalize">
+                                    {c.support_level}
+                                  </span>
+                                </td>
+                                <td className="p-3 text-slate-300">
+                                  {isId ? c.notes_id : c.notes_en}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── 6. Tab: Careers & Learning ── */}
+                  {activeTab === "learning" && (
+                    <div className="space-y-5 animate-fade-in">
+                      {/* Career Connections */}
+                      <div className="space-y-3">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-[#F2B84B] flex items-center gap-1.5">
+                          <GraduationCap className="h-4 w-4" />
+                          <span>
+                            {isId ? "Integrasi Kompetensi Jalur Profesi" : "Career Path Competencies"}
+                          </span>
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {activeDetail.career_connections.map((cc, i) => (
+                            <div
+                              key={i}
+                              className="rounded-xl border border-slate-800 bg-[#071329] p-3.5 space-y-2"
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-white text-xs">
+                                  {isId ? cc.role_name_id : cc.role_name_en}
+                                </span>
+                                <span className="rounded bg-amber-950/80 border border-amber-600/40 px-2 py-0.5 text-[10px] font-mono text-amber-300 uppercase">
+                                  {cc.proficiency_level}
+                                </span>
+                              </div>
+                              <div className="text-[11px] text-[#F2B84B] font-medium">
+                                {isId ? cc.competency_name_id : cc.competency_name_en}
+                              </div>
+                              <p className="text-slate-300 leading-relaxed text-xs">
+                                <strong className="text-slate-400 block mb-0.5">
+                                  {isId ? "Mengapa alat ini relevan?" : "Why this tool is relevant:"}
+                                </strong>
+                                {isId ? cc.relevance_why_id : cc.relevance_why_en}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Related Knowledge Articles */}
+                      {activeDetail.knowledge_connections.length > 0 && (
+                        <div className="space-y-2 pt-2 border-t border-slate-800">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-1.5">
+                            <BookOpen className="h-4 w-4 text-[#F2B84B]" />
+                            <span>
+                              {isId ? "Artikel Terkait di Pusat Pengetahuan" : "Related Knowledge Articles"}
+                            </span>
+                          </h4>
+                          <div className="flex flex-wrap gap-2">
+                            {activeDetail.knowledge_connections.map((kc, i) => (
+                              <button
+                                key={i}
+                                onClick={() => {
+                                  if (onNavigateToKnowledge) {
+                                    onNavigateToKnowledge(kc.article_slug);
+                                    setActiveToolSlug(null);
+                                  }
+                                }}
+                                className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-1.5 text-xs text-slate-200 hover:border-[#F2B84B] hover:text-[#F2B84B] transition-colors"
+                              >
+                                <span>{isId ? kc.title_id : kc.title_en}</span>
+                                <ArrowRight className="h-3 w-3" />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* ── 7. Tab: Alternatives ── */}
+                  {activeTab === "alternatives" && (
+                    <div className="space-y-4 animate-fade-in">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-[#F2B84B] flex items-center gap-1.5">
+                        <GitBranch className="h-4 w-4" />
+                        <span>
+                          {isId ? "Komparasi Alternatif & Trade-off" : "Comparable Tools & Trade-offs"}
+                        </span>
+                      </h4>
+                      <div className="space-y-3">
+                        {activeDetail.alternatives.map((alt, i) => (
+                          <div
+                            key={i}
+                            className="rounded-xl border border-slate-800 bg-[#071329] p-4 space-y-2"
+                          >
+                            <div className="flex items-center justify-between">
+                              <h5 className="font-bold text-white text-xs">{alt.name}</h5>
+                              <span className="rounded bg-slate-800 px-2 py-0.5 text-[10px] text-slate-400">
+                                {alt.license_model}
+                              </span>
+                            </div>
+                            <p className="text-slate-300 leading-relaxed text-xs">
+                              {isId ? alt.tradeoff_id : alt.tradeoff_en}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── 8. Tab: Sources & References ── */}
+                  {activeTab === "sources" && (
+                    <div className="space-y-4 animate-fade-in">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-[#F2B84B] flex items-center gap-1.5">
+                        <BookOpen className="h-4 w-4" />
+                        <span>
+                          {isId
+                            ? "Sumber Primer & Bukti Verifikasi (Provenance)"
+                            : "Primary Sources & Verification Evidence"}
+                        </span>
+                      </h4>
+
+                      <div className="overflow-x-auto rounded-xl border border-slate-800 bg-[#071329]">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-[#10264A]/70 text-[11px] font-bold text-[#F2B84B] uppercase tracking-wider">
+                            <tr>
+                              <th className="p-3">{isId ? "Topik Klaim" : "Claim Topic"}</th>
+                              <th className="p-3">{isId ? "Judul Dokumen / Sumber" : "Source Document"}</th>
+                              <th className="p-3">{isId ? "Tanggal Verifikasi" : "Verified Date"}</th>
+                              <th className="p-3">{isId ? "Status" : "Status"}</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-800/80 text-slate-300">
+                            {activeDetail.verified_sources.map((src, i) => (
+                              <tr key={i} className="hover:bg-slate-800/30">
+                                <td className="p-3 font-semibold text-white">{src.claim_topic}</td>
+                                <td className="p-3">
+                                  <a
+                                    href={src.source_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[#F2B84B] hover:underline flex items-center gap-1"
+                                  >
+                                    <span>{src.source_title}</span>
+                                    <ExternalLink className="h-3 w-3 shrink-0" />
+                                  </a>
+                                </td>
+                                <td className="p-3 font-mono text-[11px]">{src.verified_at}</td>
+                                <td className="p-3">
+                                  <span className="rounded bg-emerald-950/70 border border-emerald-600/40 px-2 py-0.5 text-[10px] text-emerald-300 font-bold uppercase">
+                                    {src.status}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="border-t border-slate-800 bg-[#10264A]/50 p-3 sm:px-6 flex items-center justify-between text-xs text-slate-400">
+              <span className="text-[11px] font-mono">
+                WIYATA Database Learning Center • {isId ? "Katalog Terverifikasi" : "Verified Reference"}
               </span>
-              <a
-                href={activeGuideTool.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 rounded-lg bg-[#F2B84B] px-3.5 py-1.5 text-xs font-bold text-[#071A3A] hover:bg-[#F2B84B]/90 transition-colors"
+              <button
+                onClick={() => {
+                  setActiveToolSlug(null);
+                  setActiveDetail(null);
+                }}
+                className="rounded-lg bg-slate-800 hover:bg-slate-700 px-4 py-1.5 font-bold text-white transition-colors"
               >
-                <span>
-                  {isId ? "Dokumentasi Resmi" : "Official Documentation"}
-                </span>
-                <ExternalLink className="h-3.5 w-3.5" />
-              </a>
+                {isId ? "Tutup" : "Close"}
+              </button>
             </div>
           </div>
         </div>

@@ -16,6 +16,9 @@ class ToolCategory(Base):
     )
     slug: Mapped[str] = mapped_column(String(120), unique=True)
     name: Mapped[str] = mapped_column(String(160))
+    name_id: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    description_en: Mapped[str | None] = mapped_column(Text, nullable=True)
+    description_id: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
 class ProfessionalTool(Base):
@@ -30,12 +33,16 @@ class ProfessionalTool(Base):
     category_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), nullable=True
     )
+    category_slug: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    publication_status: Mapped[str] = mapped_column(String(50), default="published")
+    verification_status: Mapped[str] = mapped_column(String(50), default="verified")
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     official_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     documentation_url: Mapped[str | None] = mapped_column(Text, nullable=True)
-    license_model: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    license_model: Mapped[str | None] = mapped_column(String(200), nullable=True)
     supported_platforms: Mapped[list] = mapped_column(JSONB, default=list)
     supported_engines: Mapped[list] = mapped_column(JSONB, default=list)
+    details: Mapped[dict] = mapped_column(JSONB, default=dict)
     last_verified_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

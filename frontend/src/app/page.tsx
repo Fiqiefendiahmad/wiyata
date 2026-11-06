@@ -156,7 +156,15 @@ export default function Home() {
           />
         )}
 
-        {activeTab === "tools" && <ToolsCatalog language={language} />}
+        {activeTab === "tools" && (
+          <ToolsCatalog
+            language={language}
+            onNavigateToKnowledge={(slug) => {
+              setSelectedKnowledgeSlug(slug);
+              setActiveTab("knowledge");
+            }}
+          />
+        )}
       </div>
     </div>
   );
