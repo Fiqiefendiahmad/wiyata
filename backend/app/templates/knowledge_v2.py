@@ -636,6 +636,96 @@ CROSS_COMPARISONS = [
                 "diagnostics": "PRAGMA integrity_check, Litestream replication status daemon"
             }
         }
+    },
+    {
+        "topic": "Storage Subsystems & On-Disk Block Organization",
+        "topic_id": "Subsistem Penyimpanan & Format Blok Disk",
+        "dimension": "Storage Architecture",
+        "summary": "Physical disk page structures, block allocation units, and index-organized vs heap storage across 6 database engines.",
+        "summary_id": "Struktur halaman disk fisik, unit alokasi blok, dan perbandingan penyimpanan heap vs index-organized di 6 mesin database.",
+        "engines": {
+            "postgres": {
+                "name": "PostgreSQL 17",
+                "shared_pool": "Heap-organized tables with 8KB pages; tuples contain 23-byte header (xmin, xmax, ctid) with line pointers; Free Space Map (FSM) & Visibility Map (VM)",
+                "private_memory": "HOT (Heap-Only Tuples) optimization avoids secondary index updates for intra-page tuple modifications",
+                "diagnostics": "SELECT * FROM page_header(get_raw_page('mytable', 0));, pg_freespacemap, pg_visibility"
+            },
+            "mysql": {
+                "name": "MariaDB 11.3 / MySQL 8.4",
+                "shared_pool": "Clustered index (B+Tree) on Primary Key with 16KB pages; secondary indexes store PK value; Doublewrite Buffer (DWB) prevents torn pages",
+                "private_memory": "Row header stores DB_TRX_ID (6 bytes) and DB_ROLL_PTR (7 bytes) pointing to rollback segments in Undo tablespace",
+                "diagnostics": "SHOW TABLE STATUS LIKE 'mytable';, information_schema.innodb_tablespaces"
+            },
+            "oracle": {
+                "name": "Oracle 23ai",
+                "shared_pool": "Data blocks (default 8KB, up to 32KB); Extents (contiguous blocks) grouped into Segments; tablespaces span multiple datafiles with AUTOEXTEND",
+                "private_memory": "Row directory in block header points to row pieces; PCTFREE parameter reserves space for row expansion",
+                "diagnostics": "SELECT tablespace_name, bytes/1024/1024 as MB_used FROM dba_data_files;"
+            },
+            "mssql": {
+                "name": "SQL Server 2022",
+                "shared_pool": "8KB data pages grouped into 64KB Extents (8 contiguous pages); GAM/SGAM/PFS allocation tracking maps; Clustered index dictates physical leaf order",
+                "private_memory": "Heap tables store unindexed rows with Forwarded Records on page splits; Clustered indexes avoid forwarding overhead",
+                "diagnostics": "SELECT * FROM sys.dm_db_index_physical_stats(DB_ID(), NULL, NULL, NULL, 'DETAILED');"
+            },
+            "db2": {
+                "name": "IBM Db2 11.5",
+                "shared_pool": "Tablespaces assigned to matching bufferpools (4K, 8K, 16K, 32K page sizes); Automatic Storage dynamically balances extents across disk containers",
+                "private_memory": "Extent map pages track allocation; append mode avoids insert bottlenecks on high-concurrency tables",
+                "diagnostics": "SELECT tbspace, pagesize, extent_size FROM syscat.tablespaces;"
+            },
+            "sqlite": {
+                "name": "SQLite 3.45",
+                "shared_pool": "Single file database partitioned into contiguous B-Tree pages (default 4KB, up to 64KB); leaf pages hold table records or index keys",
+                "private_memory": "Variable-length record payloads compressed into cell arrays within B-Tree interior and leaf nodes",
+                "diagnostics": "PRAGMA page_size;, PRAGMA page_count;, PRAGMA freelist_count;"
+            }
+        }
+    },
+    {
+        "topic": "Transaction Logging & Crash Recovery Mechanics",
+        "topic_id": "Logging Transaksi & Mekanisme Pemulihan Crash",
+        "dimension": "Reliability & Durability",
+        "summary": "Write-Ahead Log structures, checkpoint pacing, LSN tracking, and redo/undo recovery phases across 6 enterprise engines.",
+        "summary_id": "Struktur Write-Ahead Log, pacing checkpoint, tracking LSN, serta fase pemulihan redo/undo di 6 mesin enterprise.",
+        "engines": {
+            "postgres": {
+                "name": "PostgreSQL 17",
+                "shared_pool": "16MB WAL segment files in pg_wal/; 64-bit Log Sequence Number (LSN); checkpoint_completion_target spreads dirty page writes across time",
+                "private_memory": "Crash recovery executes redo pass from checkpoint REDO LSN, then rolls back active uncommitted transactions via visibility checks",
+                "diagnostics": "SELECT pg_current_wal_lsn(), pg_wal_lsn_diff(pg_current_wal_lsn(), '0/0');"
+            },
+            "mysql": {
+                "name": "MariaDB 11.3 / MySQL 8.4",
+                "shared_pool": "Circular ring buffer of fixed-size redo log files; Checkpoint Age = Current LSN - Checkpoint LSN; fuzzy checkpointing continuously flushes pages",
+                "private_memory": "Crash recovery applies redo logs to bring datafiles to consistent state, then scans undo tablespace to roll back uncommitted transactions",
+                "diagnostics": "SHOW ENGINE INNODB STATUS; (inspect LOG section: Log sequence number vs Last checkpoint at)"
+            },
+            "oracle": {
+                "name": "Oracle 23ai",
+                "shared_pool": "Circular Redo Log Buffer in SGA flushed by LGWR on commit; Online Redo Log groups; System Change Number (SCN) as logical commit clock",
+                "private_memory": "SMON background process performs crash recovery: roll-forward applies redo changes, roll-back reverses uncommitted transactions using Undo",
+                "diagnostics": "SELECT group#, sequence#, bytes/1024/1024 as MB, status FROM v$log;"
+            },
+            "mssql": {
+                "name": "SQL Server 2022",
+                "shared_pool": "Transaction log (.ldf) partitioned into Virtual Log Files (VLFs); truncated on checkpoint (Simple) or log backup (Full)",
+                "private_memory": "ARIES recovery algorithm: Analysis phase (identifies dirty pages), Redo phase (rolls forward), Undo phase (rolls back uncommitted transactions)",
+                "diagnostics": "DBCC SQLPERF(LOGSPACE);, SELECT * FROM sys.dm_db_log_info(DB_ID());"
+            },
+            "db2": {
+                "name": "IBM Db2 11.5",
+                "shared_pool": "Active transaction logs in logpath; circular or archival logging; logbufsz buffer flushed by db2loggw EDU",
+                "private_memory": "Crash recovery scans log records from minbuf LSN; rolls back in-flight units of work (UOW)",
+                "diagnostics": "db2pd -db SAMPLE -logs; (inspect CurrentLog, LSO, and Archival status)"
+            },
+            "sqlite": {
+                "name": "SQLite 3.45",
+                "shared_pool": "WAL mode appends modified pages to -wal file; -shm shared memory index maps frames; periodic checkpointing moves pages to main .db",
+                "private_memory": "Crash recovery on connection startup detects uncheckpointed WAL frames and reads valid frames via -shm index",
+                "diagnostics": "PRAGMA wal_checkpoint(PASSIVE);, PRAGMA journal_mode;"
+            }
+        }
     }
 ]
 

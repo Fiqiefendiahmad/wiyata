@@ -330,26 +330,193 @@ B-Tree menjaga data tetap terurut dan memungkinkan pencarian, akses berurutan, p
         "category_slug": "internals",
         "engine": "SQLite",
         "en": {
-            "title": "SQLite Write-Ahead Logging (WAL) Mode Explained",
-            "summary": "How WAL mode unlocks concurrent readers alongside a writer in SQLite environments.",
-            "body": """### The Default Journal vs. WAL
-In classic rollback journal mode, writing locks the whole database from readers.
-In **WAL mode** (`PRAGMA journal_mode=WAL;`):
-- Readers never block writers.
-- Writers never block readers.
-- Commits are appended to a `-wal` file and periodically checkpointed back to the main database file.
-- Significantly faster in most concurrency workloads.""",
+            "title": "SQLite Architecture: VDBE, Pager Subsystem, and Write-Ahead Logging (WAL) Internals",
+            "summary": "Deep architectural dive into SQLite 3.45: parser to VDBE bytecode, B-Tree pager subsystem, rollback journal vs WAL mode, and shared memory (-shm) checkpointing.",
+            "body": """## SQLite Internal Modular Architecture
+
+SQLite is an in-process embedded database engine without external server processes. Execution flows through a layered pipeline from SQL text down to the operating system filesystem abstraction layer.
+
+```
++---------------------------------------------------------------------------------+
+|                           SQLITE ARCHITECTURAL STACK                            |
+|                                                                                 |
+|  +------------------------- CORE COMPILER PIPELINE --------------------------+  |
+|  | Tokenizer & Lemon Parser ---> Code Generator (Bytecode Assembler)         |  |
+|  +---------------------------------------------------------------------------+  |
+|                                     |
+|                                     v
+|  +-------------------- VIRTUAL MACHINE ENGINE (VDBE) ------------------------+  |
+|  | Executes compiled bytecode opcodes (e.g. OpenRead, SeekGE, Column, Result)|  |
+|  +---------------------------------------------------------------------------+  |
+|                                     |
+|                                     v
+|  +--------------------- B-TREE & PAGER SUBSYSTEM ----------------------------+  |
+|  | B-Tree Layer: Manages table & index B-Trees (B-tree pages & cell payloads)|  |
+|  | Pager Subsystem: Page caching, ACID transactions, lock state management   |  |
+|  +---------------------------------------------------------------------------+  |
+|                                     |
+|                                     v
+|  +---------------- OS VIRTUAL FILE SYSTEM (VFS) ABSTRACTION -----------------+  |
+|  | POSIX / Windows OS system calls: open, read, write, fcntl / LockFileEx    |  |
+|  +---------------------------------------------------------------------------+  |
++---------------------------------------------------------------------------------+
+                                      | Storage
+                                      v
+           +------------------------------------------------------+
+           | database.db  |  database.db-wal  |  database.db-shm  |
+           +------------------------------------------------------+
+```
+
+---
+
+## 1. The Pager Subsystem & Lock State Machine
+
+In traditional Rollback Journal mode, transactions obtain escalating locks via OS file-locking interfaces:
+1. `UNLOCKED`: No read or write locks held.
+2. `SHARED`: Multiple readers can read simultaneously. No writer can modify data.
+3. `RESERVED`: Single writer indicates intent to write in the future. Readers continue reading.
+4. `PENDING`: Writer prepares to commit; no new `SHARED` locks are permitted. Existing readers finish.
+5. `EXCLUSIVE`: Writer holds exclusive lock. Zero readers permitted. Pages written to disk.
+
+---
+
+## 2. Rollback Journal vs Write-Ahead Logging (WAL)
+
+| Operational Dimension | Rollback Journal Mode (`PRAGMA journal_mode=DELETE`) | Write-Ahead Log Mode (`PRAGMA journal_mode=WAL`) |
+| :--- | :--- | :--- |
+| **Concurrency Model** | Single Writer **OR** Multiple Readers. Writer blocks readers. | Single Writer **AND** Concurrent Readers. Readers never block writers. |
+| **Write Strategy** | Overwrites original pages in main database file after copying old pages to journal. | Appends new pages sequentially to separate `-wal` file. |
+| **Commit Performance** | Two disk sync operations (`fsync` journal, then `fsync` db file). | Single sequential disk append; fsync deferred to checkpoint. |
+| **File Footprint** | `db` + temporary `db-journal` file deleted after commit. | `db` + `db-wal` (log) + `db-shm` (shared memory index). |
+
+---
+
+## 3. The Shared Memory Index (`-shm`) & Checkpointing
+
+In WAL mode, readers need to know whether the latest version of an 8KB page is in the main database file or inside the `-wal` file.
+- SQLite uses a **Shared Memory file (`-shm`)** to index all frames currently stored in the WAL.
+- Readers examine the `-shm` index with zero disk I/O to locate the latest frame matching their transaction snapshot.
+
+### Checkpointing Algorithms
+Checkpointing transfers modified frames from the `-wal` file back into the primary database file:
+- `PASSIVE`: Checkpoints as many frames as possible without blocking readers or writers.
+- `FULL`: Waits for active readers to finish their current snapshot, checkpoints all frames, and resets the WAL.
+- `RESTART`: Similar to `FULL`, but blocks new readers until the WAL is completely reset to frame 1.
+- `TRUNCATE`: Executes `RESTART` and truncates the `-wal` file on disk to zero bytes.
+
+```sql
+PRAGMA wal_checkpoint(PASSIVE);
+```
+
+---
+
+## 4. Production Tuning Blueprint
+
+```sql
+-- Enforce Write-Ahead Logging
+PRAGMA journal_mode = WAL;
+
+-- Safe durability with highest write throughput
+PRAGMA synchronous = NORMAL;
+
+-- Allocate 64MB memory page cache (negative value = KiB)
+PRAGMA cache_size = -64000;
+
+-- Wait up to 5000ms if file is locked before throwing SQLITE_BUSY
+PRAGMA busy_timeout = 5000;
+
+-- Enable memory-mapped I/O up to 256MB
+PRAGMA mmap_size = 268435456;
+```"""
         },
         "id": {
-            "title": "Penjelasan Mode Write-Ahead Logging (WAL) pada SQLite",
-            "summary": "Bagaimana mode WAL membuka kemampuan pembacaan bersamaan (concurrent readers) tanpa terblokir penulis pada SQLite.",
-            "body": """### Perbedaan Rollback Journal vs. Mode WAL
-Pada mode rollback journal standar, operasi penulisan akan mengunci seluruh database dari proses pembacaan.
-Pada **mode WAL** (`PRAGMA journal_mode=WAL;`):
-- Pembaca (readers) tidak pernah memblokir penulis (writers).
-- Penulis (writers) tidak pernah memblokir pembaca (readers).
-- Operasi commit ditulis ke file `-wal` tambahan dan secara berkala dikonsolidasikan (checkpointing) ke file database utama.
-- Meningkatkan performa transaksi berkali-kali lipat pada beban kerja konkuren.""",
+            "title": "Arsitektur SQLite: VDBE, Subsistem Pager, dan Mekanisme Internal Write-Ahead Logging (WAL)",
+            "summary": "Analisis mendalam SQLite 3.45: alur parser ke bytecode VDBE, subsistem B-Tree pager, rollback journal vs mode WAL, dan checkpointing memori terbagi (-shm).",
+            "body": """## Arsitektur Modular Internal SQLite
+
+SQLite adalah database embedded in-process tanpa proses server terpisah. Eksekusi kueri mengalir melalui pipa berlapis mulai dari parser SQL hingga lapisan abstraksi filesystem sistem operasi (OS VFS).
+
+```
++---------------------------------------------------------------------------------+
+|                           STACK ARSITEKTUR SQLITE                               |
+|                                                                                 |
+|  +------------------------- PIPELINE KOMPILER CORE --------------------------+  |
+|  | Tokenizer & Lemon Parser ---> Code Generator (Bytecode Assembler)         |  |
+|  +---------------------------------------------------------------------------+  |
+|                                     |
+|                                     v
+|  +-------------------- VIRTUAL MACHINE ENGINE (VDBE) ------------------------+  |
+|  | Mengeksekusi bytecode opcode (misal: OpenRead, SeekGE, Column, Result)    |  |
+|  +---------------------------------------------------------------------------+  |
+|                                     |
+|                                     v
+|  +--------------------- SUBSYSTEM B-TREE & PAGER ----------------------------+  |
+|  | Lapisan B-Tree: Mengelola struktur B-tree tabel dan index                 |  |
+|  | Subsistem Pager: Cache halaman, transaksi ACID, state lock file           |  |
+|  +---------------------------------------------------------------------------+  |
+|                                     |
+|                                     v
+|  +---------------- OS VIRTUAL FILE SYSTEM (VFS) ABSTRACTION -----------------+  |
+|  | Panggilan kernel OS: open, read, write, fcntl / LockFileEx                |  |
+|  +---------------------------------------------------------------------------+  |
++---------------------------------------------------------------------------------+
+                                      | File Fisik
+                                      v
+           +------------------------------------------------------+
+           | database.db  |  database.db-wal  |  database.db-shm  |
+           +------------------------------------------------------+
+```
+
+---
+
+## 1. Rollback Journal vs Write-Ahead Logging (WAL)
+
+| Dimensi Operasional | Mode Rollback Journal (`DELETE`) | Mode Write-Ahead Log (`WAL`) |
+| :--- | :--- | :--- |
+| **Model Konkurensi** | Penulis memblokir pembaca. | Pembaca dan penulis berjalan bersamaan tanpa saling blokir. |
+| **Strategi Tulis** | Menimpa halaman di file database utama setelah menyalin data lama ke journal. | Menulis halaman mutasi baru secara sekuensial ke file `-wal`. |
+| **Performa Commit** | Memerlukan dua kali sinkronisasi disk (`fsync` file journal lalu file database). | Cukup satu kali append sekuensial; `fsync` utama ditunda hingga checkpoint. |
+| **File di Disk** | `db` + file sementara `db-journal`. | `db` + `db-wal` (log) + `db-shm` (indeks memori terbagi). |
+
+---
+
+## 2. Indeks Shared Memory (`-shm`) & Checkpointing
+
+Pada mode WAL, pembaca perlu mengetahui apakah versi terbaru suatu halaman berada di file database utama atau di file `-wal`:
+- SQLite menggunakan file **Shared Memory (`-shm`)** untuk memetakan indeks frame WAL di RAM.
+- Pembaca memeriksa file `-shm` secara langsung di memori tanpa I/O disk untuk menentukan snapshot transaksi yang tepat.
+
+### Metode Checkpointing
+Checkpointing memindahkan frame dari file `-wal` kembali ke file database utama:
+- `PASSIVE`: Menulis sebanyak mungkin frame tanpa memblokir pembaca lain.
+- `FULL`: Menunggu pembaca aktif selesai, lalu memindahkan seluruh frame.
+- `RESTART`: Memblokir pembaca baru hingga pemindahan frame selesai total.
+- `TRUNCATE`: Melakukan `RESTART` lalu memotong ukuran file `-wal` menjadi 0 byte.
+
+```sql
+PRAGMA wal_checkpoint(PASSIVE);
+```
+
+---
+
+## 3. Konfigurasi Optimal Produksi
+
+```sql
+-- Mengaktifkan mode Write-Ahead Logging
+PRAGMA journal_mode = WAL;
+
+-- Keamanan data tinggi dengan performa tulis optimal
+PRAGMA synchronous = NORMAL;
+
+-- Alokasi memori cache 64MB (nilai negatif = KiB)
+PRAGMA cache_size = -64000;
+
+-- Waktu tunggu 5000ms jika database sedang terkunci
+PRAGMA busy_timeout = 5000;
+
+-- Mengaktifkan memory-mapped I/O hingga 256MB
+PRAGMA mmap_size = 268435456;
+```""",
         },
     },
     {
@@ -380,72 +547,338 @@ Pada **mode WAL** (`PRAGMA journal_mode=WAL;`):
         "category_slug": "architecture",
         "engine": "PostgreSQL",
         "en": {
-            "title": "PostgreSQL 17 Architecture & Internals: MVCC, VACUUM, and WAL",
-            "summary": "Mastering PostgreSQL 17 multi-version concurrency control, autovacuum memory tuning, shared buffers, and streaming replication.",
-            "body": """### PostgreSQL 17 Core Architecture
-PostgreSQL uses a process-based client-server architecture (`postmaster` forks a dedicated backend process per client connection).
+            "title": "PostgreSQL 17 Architecture & Internals: Process Model, Shared Memory, MVCC, and Streaming Replication",
+            "summary": "Deep architectural analysis of PostgreSQL 17 client backends, clock-sweep buffer eviction, tuple headers, HOT optimization, autovacuum cost delays, WAL checkpoints, and replication slots.",
+            "body": """## PostgreSQL 17 Architectural Model
 
-### 1. Multi-Version Concurrency Control (MVCC)
-In PostgreSQL, an `UPDATE` does not overwrite the row in place; it inserts a new tuple with updated `xmin`/`xmax` system columns while marking the older tuple dead.
-- `xmin`: Transaction ID that created the tuple.
-- `xmax`: Transaction ID that deleted/superseded the tuple (0 if active).
-- **Benefit**: Readers never block writers, and writers never block readers.
+PostgreSQL employs a multi-process architecture rooted in a shared-memory IPC design. Each client session is handled by a dedicated backend process forked by the master coordinator process (`postmaster`).
 
-### 2. The Role of VACUUM and Autovacuum
-Because dead tuples accumulate (table bloat), `VACUUM` reclaims dead space and updates the Free Space Map (FSM) and Visibility Map (VM).
-Key PostgreSQL 17 tuning:
+```
++---------------------------------------------------------------------------------+
+|                               POSTGRESQL INSTANCE                               |
+|                                                                                 |
+|  +--------------------------- SHARED MEMORY (RAM) ---------------------------+  |
+|  |                                                                           |  |
+|  |  +--------------------+  +--------------------+  +---------------------+  |  |
+|  |  |   shared_buffers   |  |    wal_buffers     |  | Lock & Proc Array   |  |  |
+|  |  |   (Clock Sweep)    |  |    (WAL Cache)     |  | (Shared & HW Locks) |  |  |
+|  |  +--------------------+  +--------------------+  +---------------------+  |  |
+|  +---------------------------------------------------------------------------+  |
+|         ^                     ^                      ^                          |
+|         |                     |                      |                          |
+|  +------+------+       +------+------+        +------+------+                   |
+|  | Backend #1  |       | Backend #2  |        | Backend #N  |                   |
+|  | (work_mem)  |       | (work_mem)  |        | (work_mem)  |                   |
+|  +-------------+       +-------------+        +-------------+                   |
+|         ^                     ^                      ^                          |
+|  +----------------- BACKGROUND SYSTEM PROCESSES -----------------------------+  |
+|  | checkpointer  |  bgwriter  |  walwriter  |  autovacuum  |  archiver       |  |
+|  +---------------------------------------------------------------------------+  |
++---------------------------------------------------------------------------------+
+                                      | Disk I/O
+                                      v
+                +-------------------------------------------+
+                |  base/ (Tables/Indexes)  |  pg_wal/ (WAL) |
+                +-------------------------------------------+
+```
+
+---
+
+## 1. Process Topology & Execution Hierarchy
+
+| Process Name | Process Role | Primary Operational Trigger |
+| :--- | :--- | :--- |
+| `postmaster` | Primary daemon listener; forks dedicated backend per TCP connection. | System startup / socket connection. |
+| `backend` | Dedicated per-client execution thread executing SQL parser, planner, and executor. | Client query submission. |
+| `checkpointer` | Flushes all dirty shared buffers to storage; updates control file with LSN checkpoint. | `checkpoint_timeout` or `max_wal_size`. |
+| `bgwriter` | Proactively writes batches of dirty buffers to disk using a clean-ahead algorithm. | Continuous background loop (`bgwriter_delay`). |
+| `walwriter` | Periodically writes and fsyncs WAL buffers to disk to minimize transaction commit delay. | Commit time or `wal_writer_delay`. |
+| `autovacuum launcher` | Coordinates background workers to reclaim dead tuples and freeze transaction IDs. | Table dead tuple scale factor threshold. |
+
+---
+
+## 2. Memory Architecture & OS Interaction
+
+### Memory Division
+1. **Shared Memory Areas** (Allocated once at server startup):
+   - `shared_buffers`: Central page cache. Recommended sizing is **25% of total system RAM** (up to 40% on dedicated database hosts). Page eviction uses a generalized clock-sweep algorithm tracking usage counters from 0 to 5.
+   - `wal_buffers`: Memory staging buffer for unwritten WAL records (auto-tuned to 3% of `shared_buffers`, capped at 16MB).
+2. **Local Backend Memory** (Allocated dynamically per query plan node):
+   - `work_mem`: Memory used for individual sort operations (`ORDER BY`, `DISTINCT`) and hash tables (`Hash Join`, `Hash Aggregate`).
+   - Sizing Formula to prevent Linux Out-Of-Memory (OOM) Killer crashes:
+
+```
+Safe work_mem = (Total Server RAM * 0.25) / (max_connections * Expected_Sort_Nodes_Per_Query)
+```
+
+> [!WARNING]
+> A complex analytical query with 4 hash joins and 2 sorts can allocate `6 * work_mem` simultaneously within a single session. Setting `work_mem` too high with 200+ concurrent connections risks host kernel OOM termination of the primary `postmaster`.
+
+---
+
+## 3. Storage Subsystem & 8KB Page Layout
+
+PostgreSQL manages data in fixed **8192-byte (8 KB)** pages on disk:
+
+```
++-------------------------------------------------------------------+
+| Page Header (24 bytes): pd_lsn, pd_checksum, pd_lower, pd_upper   |
++-------------------------------------------------------------------+
+| Line Pointers (ItemIdData, 4 bytes each) ---> grows downward      |
+| [ Item 1 ] [ Item 2 ] [ Item 3 ] ...                              |
++-------------------------------------------------------------------+
+|                      FREE SPACE GAP                               |
++-------------------------------------------------------------------+
+| <--- Tuples grow upward from bottom of page                       |
+| [ Tuple 3 ] [ Tuple 2 ] [ Tuple 1 ]                               |
++-------------------------------------------------------------------+
+| Special Space (Index-specific trailing metadata, e.g. B-Tree)    |
++-------------------------------------------------------------------+
+```
+
+### Tuple Header Structure (HeapTupleHeader)
+Every row version contains a 23-byte header:
+- `t_xmin`: 32-bit Transaction ID of the creating transaction.
+- `t_xmax`: 32-bit Transaction ID of the deleting or updating transaction (0 if active).
+- `t_cid`: Command identifier within the creating transaction.
+- `t_infomask`: Bit flags defining commit/abort visibility (`HEAP_XMIN_COMMITTED`, `HEAP_XMIN_INVALID`, `HEAP_XMAX_COMMITTED`).
+- `t_ctid`: Physical tuple ID `(block_number, offset)` pointing to itself, or to the newer tuple version if updated.
+
+### HOT (Heap-Only Tuple) Optimization
+When an `UPDATE` does not modify indexed columns and the updated tuple fits inside the existing 8KB heap page:
+1. PostgreSQL writes the new tuple to the same page without adding new entries to secondary indexes.
+2. The old tuple's `t_ctid` points directly to the new tuple within the page.
+3. Index searches traverse the existing line pointer and follow the HOT chain in memory, eliminating secondary index write amplification.
+
+---
+
+## 4. MVCC, Visibility & Autovacuum
+
+PostgreSQL uses multi-version concurrency control without in-place updates. An `UPDATE` performs a physical `INSERT` of a new row version while marking the older version dead.
+
+### The Visibility Map (VM) and Free Space Map (FSM)
+- **Visibility Map**: Tracks which 8KB pages contain only tuples visible to all current and future transactions. Allows the planner to execute **Index-Only Scans** without visiting heap pages.
+- **Free Space Map**: Tracks available byte capacity across pages to accelerate target page selection during inserts.
+
+### Autovacuum Cost-Based Throttling
+To prevent vacuum operations from saturating storage I/O during business hours:
+
 ```ini
 # postgresql.conf
 autovacuum = on
 autovacuum_max_workers = 4
 autovacuum_vacuum_cost_limit = 2000
+autovacuum_vacuum_cost_delay = 2ms
 autovacuum_vacuum_scale_factor = 0.05
-maintenance_work_mem = 512MB
+autovacuum_freeze_max_age = 200000000
 ```
 
-### 3. Memory Hierarchy: Shared Buffers & Work Mem
-- `shared_buffers`: Dedicated buffer cache (typically set to 25% of total server RAM).
-- `work_mem`: Memory allocated per sort/hash operation per query. Set carefully to prevent OOM.
-- `effective_cache_size`: Informs the planner how much filesystem cache is available (typically 50-75% of RAM).
+---
 
-### 4. Streaming Replication & WAL
-Transactions append changes sequentially to Write-Ahead Log (WAL) files in `pg_wal/`.
-- Synchronous or asynchronous standby nodes stream WAL records via `walsender` and `walreceiver`.
-- Use `pg_stat_replication` to monitor replication lag in bytes and time.""",
+## 5. Write-Ahead Logging (WAL) & Checkpoints
+
+All relational mutations are logged sequentially to 16MB WAL segment files in `pg_wal/` before corresponding dirty pages are written to disk.
+
+### Checkpoint Mechanism
+A checkpoint forces all dirty shared buffers up to a specific Log Sequence Number (LSN) to disk. Pacing parameters prevent I/O spikes:
+- `checkpoint_completion_target = 0.9`: Spreads dirty page writes across 90% of `checkpoint_timeout`.
+- `max_wal_size = 16GB`: Maximum WAL volume before an immediate checkpoint is triggered.
+
+---
+
+## 6. Physical Streaming Replication
+
+Replication operates at the physical WAL byte level. The primary node's `walsender` transmits WAL records over TCP to the standby node's `walreceiver`, which replays them into local storage.
+
+### Replication Slots
+Physical replication slots (`pg_replication_slots`) guarantee that the primary node retains WAL segments on disk until the standby confirms reception, preventing standby desynchronization.
+
+---
+
+## 7. Production Diagnostic Telemetry
+
+### Buffer Cache Hit Ratio Query
+```sql
+SELECT
+  sum(heap_blks_read) as heap_read,
+  sum(heap_blks_hit)  as heap_hit,
+  ROUND((sum(heap_blks_hit)::numeric / NULLIF(sum(heap_blks_hit) + sum(heap_blks_read), 0)) * 100, 2) as hit_ratio
+FROM pg_statio_user_tables;
+```
+
+### Table Bloat & Dead Tuple Monitoring
+```sql
+SELECT
+  relname,
+  n_live_tup,
+  n_dead_tup,
+  ROUND(n_dead_tup::numeric / NULLIF(n_live_tup + n_dead_tup, 0) * 100, 2) AS dead_tuple_pct,
+  last_vacuum,
+  last_autovacuum
+FROM pg_stat_user_tables
+ORDER BY n_dead_tup DESC
+LIMIT 10;
+```"""
         },
         "id": {
-            "title": "Arsitektur & Internal PostgreSQL 17: MVCC, VACUUM, dan WAL",
-            "summary": "Memahami kontrol konkurensi MVCC pada PostgreSQL 17, optimasi autovacuum, shared buffers, dan replikasi streaming.",
-            "body": """### Arsitektur Inti PostgreSQL 17
-PostgreSQL menggunakan model proses berbasis client-server (proses `postmaster` melakukan `fork` untuk membuat proses backend per koneksi client).
+            "title": "Arsitektur & Internal PostgreSQL 17: Model Proses, Shared Memory, MVCC, dan Replikasi Streaming",
+            "summary": "Analisis arsitektur mendalam PostgreSQL 17: proses backend, eviksi clock-sweep shared buffers, struktur header tuple, optimasi HOT, autovacuum cost delay, WAL checkpoint, dan replikasi streaming.",
+            "body": """## Model Arsitektur PostgreSQL 17
 
-### 1. Multi-Version Concurrency Control (MVCC)
-Pada PostgreSQL, perintah `UPDATE` tidak menimpa data lama di disk, melainkan menyisipkan baris (tuple) baru dengan mencatat ID transaksi pada `xmin`/`xmax`, sementara baris lama ditandai sebagai dead tuple.
-- `xmin`: ID transaksi pembuat baris.
-- `xmax`: ID transaksi yang menghapus/memperbarui baris.
-- **Keuntungan**: Operasi baca tidak pernah mengunci operasi tulis, dan sebaliknya.
+PostgreSQL menerapkan arsitektur multi-proses berbasis shared-memory IPC. Setiap sesi client dikelola oleh proses backend mandiri yang di-fork oleh proses koordinator utama (`postmaster`).
 
-### 2. Peran VACUUM dan Autovacuum
-Dead tuple yang menumpuk menyebabkan bloat (pembengkakan ukuran tabel). `VACUUM` membebaskan ruang kosong untuk dipakai kembali dan memperbarui Free Space Map (FSM).
-Konfigurasi penting pada PostgreSQL 17:
+```
++---------------------------------------------------------------------------------+
+|                               INSTANSI POSTGRESQL                               |
+|                                                                                 |
+|  +--------------------------- SHARED MEMORY (RAM) ---------------------------+  |
+|  |                                                                           |  |
+|  |  +--------------------+  +--------------------+  +---------------------+  |  |
+|  |  |   shared_buffers   |  |    wal_buffers     |  | Lock & Proc Array   |  |  |
+|  |  |   (Clock Sweep)    |  |    (Cache WAL)     |  | (Shared & HW Locks) |  |  |
+|  |  +--------------------+  +--------------------+  +---------------------+  |  |
+|  +---------------------------------------------------------------------------+  |
+|         ^                     ^                      ^                          |
+|         |                     |                      |                          |
+|  +------+------+       +------+------+        +------+------+                   |
+|  | Backend #1  |       | Backend #2  |        | Backend #N  |                   |
+|  | (work_mem)  |       | (work_mem)  |        | (work_mem)  |                   |
+|  +-------------+       +-------------+        +-------------+                   |
+|         ^                     ^                      ^                          |
+|  +----------------- PROSES LATAR BELAKANG SISTEM ----------------------------+  |
+|  | checkpointer  |  bgwriter  |  walwriter  |  autovacuum  |  archiver       |  |
+|  +---------------------------------------------------------------------------+  |
++---------------------------------------------------------------------------------+
+                                      | Disk I/O
+                                      v
+                +-------------------------------------------+
+                |  base/ (Tabel/Index)     |  pg_wal/ (WAL) |
+                +-------------------------------------------+
+```
+
+---
+
+## 1. Topologi Proses & Hirarki Eksekusi
+
+| Nama Proses | Peran Operasional | Pemicu Eksekusi Utama |
+| :--- | :--- | :--- |
+| `postmaster` | Daemon listener utama; melakukan fork proses backend untuk tiap koneksi client. | Startup sistem / koneksi socket baru. |
+| `backend` | Proses per-koneksi client yang mengeksekusi parser, optimizer/planner, dan executor. | Pengiriman kueri dari client. |
+| `checkpointer` | Menulis seluruh shared buffer kotor ke disk dan memperbarui file kontrol dengan LSN. | Batas `checkpoint_timeout` atau `max_wal_size`. |
+| `bgwriter` | Menulis sebagian buffer kotor ke disk secara asinkron agar buffer bersih selalu siap. | Loop latar belakang kontinu (`bgwriter_delay`). |
+| `walwriter` | Melakukan flush periodik buffer WAL ke disk untuk mempercepat waktu commit. | Waktu commit atau `wal_writer_delay`. |
+| `autovacuum launcher` | Mengatur worker untuk membersihkan dead tuple dan mencegah wraparound ID transaksi. | Ambang batas skala dead tuple tabel. |
+
+---
+
+## 2. Arsitektur Memori & Interaksi Kernel OS
+
+### Pembagian Memori
+1. **Shared Memory** (Dialokasikan saat database dijalankan):
+   - `shared_buffers`: Cache data utama. Rekomendasi alokasi adalah **25% dari total RAM server** (maksimal 40% pada dedicated database host). Algoritma eviksi menggunakan *clock-sweep* dengan pencacah penggunaan 0 hingga 5.
+   - `wal_buffers`: Buffer staging untuk data WAL yang belum ditulis ke disk (default 3% dari `shared_buffers`, maksimal 16MB).
+2. **Local Backend Memory** (Dialokasikan per-node dalam query plan):
+   - `work_mem`: Memori untuk operasi sorting (`ORDER BY`, `DISTINCT`) dan hash tables (`Hash Join`, `Hash Aggregate`).
+   - Rumus keamanan agar terhindar dari Linux OOM Killer:
+
+```
+Batas Aman work_mem = (Total RAM Server * 0.25) / (max_connections * Rata2_Node_Sort_Per_Kueri)
+```
+
+> [!WARNING]
+> Kueri analitik kompleks dengan 4 hash join dan 2 sort dapat mengalokasikan `6 * work_mem` secara bersamaan dalam 1 sesi. Jika `work_mem` disetel terlalu tinggi pada traffic 200+ koneksi, kernel host dapat mengeksekusi OOM killer yang mematikan `postmaster`.
+
+---
+
+## 3. Format Penyimpanan & Struktur Halaman 8KB
+
+PostgreSQL mengelola data dalam halaman (page) berukuran **8192 byte (8 KB)**:
+
+```
++-------------------------------------------------------------------+
+| Page Header (24 byte): pd_lsn, pd_checksum, pd_lower, pd_upper    |
++-------------------------------------------------------------------+
+| Line Pointers (ItemIdData, 4 byte per baris) ---> tumbuh ke bawah  |
+| [ Item 1 ] [ Item 2 ] [ Item 3 ] ...                              |
++-------------------------------------------------------------------+
+|                       RUANG KOSONG (FREE SPACE)                   |
++-------------------------------------------------------------------+
+| <--- Baris Tuple tumbuh ke atas dari dasar halaman               |
+| [ Tuple 3 ] [ Tuple 2 ] [ Tuple 1 ]                               |
++-------------------------------------------------------------------+
+| Special Space (Metadata khusus index, misal B-Tree)               |
++-------------------------------------------------------------------+
+```
+
+### Struktur Header Tuple
+Tiap versi baris memiliki header berukuran 23 byte:
+- `t_xmin`: ID transaksi pembuat baris.
+- `t_xmax`: ID transaksi yang menghapus atau menimpa baris (0 jika masih aktif).
+- `t_cid`: Command ID dalam transaksi pembuat.
+- `t_infomask`: Bit flag status commit (`HEAP_XMIN_COMMITTED`, `HEAP_XMIN_INVALID`, `HEAP_XMAX_COMMITTED`).
+- `t_ctid`: Pointer fisik `(nomor_blok, offset)` yang mengarah ke versi baris baru jika baris telah diperbarui.
+
+### Optimasi HOT (Heap-Only Tuple)
+Jika perintah `UPDATE` tidak mengubah kolom yang memiliki index dan baris baru muat di halaman 8KB yang sama:
+1. PostgreSQL menulis tuple baru di halaman yang sama tanpa memperbarui pointer pada index sekunder.
+2. `t_ctid` tuple lama langsung mengarah ke tuple baru di halaman tersebut.
+3. Kueri pencarian index langsung melintasi rantai HOT di memori tanpa memicu pembengkakan index.
+
+---
+
+## 4. MVCC, Dead Tuples & Autovacuum
+
+PostgreSQL menggunakan prinsip non-overwriting. Setiap perintah `UPDATE` melakukan `INSERT` baris baru dan menandai baris lama sebagai dead tuple.
+
+### Peran Visibility Map (VM) dan Free Space Map (FSM)
+- **Visibility Map**: Mencatat halaman 8KB yang hanya berisi tuple yang telah terlihat oleh semua transaksi. Memungkinkan planner menjalankan **Index-Only Scan** tanpa membaca disk tabel.
+- **Free Space Map**: Mencatat kapasitas ruang kosong pada tiap halaman agar operasi insert baru berjalan cepat.
+
+### Konfigurasi Autovacuum Berbasis Beban
 ```ini
 # postgresql.conf
 autovacuum = on
 autovacuum_max_workers = 4
 autovacuum_vacuum_cost_limit = 2000
+autovacuum_vacuum_cost_delay = 2ms
 autovacuum_vacuum_scale_factor = 0.05
-maintenance_work_mem = 512MB
+autovacuum_freeze_max_age = 200000000
 ```
 
-### 3. Hirarki Memori: Shared Buffers & Work Mem
-- `shared_buffers`: Alokasi cache tabel di RAM (umumnya disetel pada 25% total RAM server).
-- `work_mem`: Memori per operasi sorting/hashing per kueri.
-- `effective_cache_size`: Estimasi cache filesystem untuk optimizer (50-75% total RAM).
+---
 
-### 4. Streaming Replication & WAL
-Setiap mutasi data dicatat berurutan pada file Write-Ahead Log (WAL) di direktori `pg_wal/`.
-- Server standby mereplikasi WAL secara real-time via proses `walsender` dan `walreceiver`.
-- Pantau keterlambatan data melalui view `pg_stat_replication`.""",
+## 5. Write-Ahead Logging (WAL) & Checkpoint
+
+Setiap mutasi dicatat berurutan pada file segmen WAL 16MB di `pg_wal/` sebelum halaman kotor ditulis ke disk.
+- `checkpoint_completion_target = 0.9`: Menyebarkan penulisan halaman kotor sepanjang 90% durasi checkpoint timeout untuk mencegah lonjakan I/O disk.
+- `max_wal_size = 16GB`: Volume WAL maksimal sebelum memicu checkpoint segera.
+
+---
+
+## 6. Kueri Diagnostik Telemetri Produksi
+
+### Rasio Cache Hit Buffer
+```sql
+SELECT
+  sum(heap_blks_read) as heap_read,
+  sum(heap_blks_hit)  as heap_hit,
+  ROUND((sum(heap_blks_hit)::numeric / NULLIF(sum(heap_blks_hit) + sum(heap_blks_read), 0)) * 100, 2) as hit_ratio
+FROM pg_statio_user_tables;
+```
+
+### Deteksi Dead Tuple & Bloat Tabel
+```sql
+SELECT
+  relname,
+  n_live_tup,
+  n_dead_tup,
+  ROUND(n_dead_tup::numeric / NULLIF(n_live_tup + n_dead_tup, 0) * 100, 2) AS dead_tuple_pct,
+  last_vacuum,
+  last_autovacuum
+FROM pg_stat_user_tables
+ORDER BY n_dead_tup DESC
+LIMIT 10;
+```""",
         },
     },
     {
@@ -453,54 +886,246 @@ Setiap mutasi data dicatat berurutan pada file Write-Ahead Log (WAL) di direktor
         "category_slug": "architecture",
         "engine": "MySQL / MariaDB",
         "en": {
-            "title": "MySQL & MariaDB 11 Deep Dive: InnoDB Engine, Buffer Pool & GTID Replication",
-            "summary": "Anatomy of the InnoDB storage engine, doublewrite buffers, redo logs, and production GTID replication topologies.",
-            "body": """### The InnoDB Storage Engine
-InnoDB is the ACID-compliant default storage engine for MySQL and MariaDB, organizing tables in clustered B+tree indexes ordered by Primary Key.
+            "title": "MySQL 8.4 / 11 InnoDB Architecture: Buffer Pool Internals, Redo/Undo Logs, and GTID Replication",
+            "summary": "Architectural breakdown of the InnoDB storage engine: 3/8 LRU midpoint insertion, Change Buffer, Doublewrite Buffer, Redo log checkpoint age, and semi-synchronous GTID replication.",
+            "body": """## MySQL / MariaDB InnoDB Architectural Model
 
-### 1. The InnoDB Buffer Pool
-The single most critical memory structure in MySQL. Caches data pages, index pages, undo pages, and change buffers.
-```ini
-# my.cnf
-innodb_buffer_pool_size = 8G      # 60-75% of dedicated server RAM
-innodb_buffer_pool_instances = 8  # Reduces thread concurrency contention
-innodb_log_file_size = 2G         # Redo log capacity
-innodb_flush_log_at_trx_commit = 1 # 1 = Full ACID compliance
+InnoDB is an ACID-compliant transaction-safe storage engine built around a clustered index architecture (index-organized tables) and write-ahead logging.
+
+```
++---------------------------------------------------------------------------------+
+|                                INNODB STORAGE ENGINE                            |
+|                                                                                 |
+|  +--------------------------- INNODB BUFFER POOL ----------------------------+  |
+|  |                                                                           |  |
+|  |  +-------------------------- LRU LIST ---------------------------------+  |  |
+|  |  | Young Sublist (Head 5/8 or ~63%) | Old Sublist (Tail 3/8 or ~37%)   |  |  |
+|  |  | [ Hot Cached 16KB Pages ]        | [ Midpoint Insertion Window ]    |  |  |
+|  |  +---------------------------------------------------------------------+  |  |
+|  |                                                                           |  |
+|  |  +--------------------+  +--------------------+  +---------------------+  |  |
+|  |  |   Change Buffer    |  | Adaptive Hash (AHI)|  | Redo Log Buffer     |  |  |
+|  |  +--------------------+  +--------------------+  +---------------------+  |  |
+|  +---------------------------------------------------------------------------+  |
+|         ^                     ^                      ^                          |
+|  +------+------+       +------+------+        +------+------+                   |
+|  | Page Cleaner|       | Purge Thread|        | Master Thread|                   |
+|  +-------------+       +-------------+        +-------------+                   |
++---------------------------------------------------------------------------------+
+                                      | Flush Pipeline
+                                      v
+         +---------------------------------------------------------------+
+         | Doublewrite Buffer (DWB) | ibdata1 / Undo Logs | .ibd Files   |
+         +---------------------------------------------------------------+
 ```
 
-### 2. Durability Mechanisms: Redo Log & Doublewrite Buffer
-- **Redo Log (`ib_logfile`)**: Sequential circular log recording physical page changes before memory pages flush.
-- **Doublewrite Buffer**: Prevents page corruption from torn writes by writing pages to a contiguous disk buffer before writing to `.ibd` tablespace files.
+---
 
-### 3. Global Transaction Identifier (GTID) Replication
-GTID assigns a unique 128-bit UUID and sequence number to every committed transaction (`source_id:transaction_id`).
-- Eliminates tracking binlog file coordinates (`mysql-bin.000123:456`).
-- Enables automated topology failovers via tools like Orchestrator and ProxySQL.""",
+## 1. Process & Threading Subsystem
+
+| Thread Name | Responsibility | Critical Configuration |
+| :--- | :--- | :--- |
+| `master thread` | Coordinates dirty page flushing, background merges, and statistics updates. | Internal engine loop (1s / 10s intervals). |
+| `page_cleaners` | Flushes dirty pages from buffer pool instances to disk asynchronously. | `innodb_page_cleaners` (matches pool instances). |
+| `purge_threads` | Reclaims undo log slots and physically purges deleted records (`delete-marked` rows). | `innodb_purge_threads = 4`. |
+| `io_read_threads` | Reads 16KB pages from `.ibd` datafiles into buffer pool on cache miss. | `innodb_read_io_threads = 8`. |
+| `io_write_threads` | Writes pages to Doublewrite buffer and datafiles during flush operations. | `innodb_write_io_threads = 8`. |
+
+---
+
+## 2. Buffer Pool Internals: The 3/8 Midpoint Insertion Rule
+
+InnoDB divides the LRU list into two sections:
+- **Young Sublist** (Head, ~63%): Stores hot pages accessed repeatedly.
+- **Old Sublist** (Tail, ~37%): Stores cold pages and recently read blocks.
+
+### The Scan-Resistance Mechanism
+When a query initiates a full table scan, it reads thousands of cold 16KB pages from disk. In naive LRU caches, this flushes all hot transactional data out of memory.
+
+InnoDB prevents this via `innodb_old_blocks_time`:
+1. Newly read pages enter at the **midpoint** (head of Old sublist), not at the very top of the LRU.
+2. A page in the Old sublist is only promoted to the Young sublist if accessed again **after** `innodb_old_blocks_time` milliseconds (default: `1000ms`).
+3. Single-pass table scans read pages within a few milliseconds, leaving them in the Old sublist where they age out and are evicted without polluting hot cache pages.
+
+---
+
+## 3. Storage Protection: Doublewrite Buffer & Change Buffer
+
+### Doublewrite Buffer (DWB)
+File systems typically write data in 4KB blocks, whereas InnoDB uses **16KB pages**. If the server loses power during a disk write, only part of the 16KB page may be written (a **torn page**). Redo logs cannot recover a torn page because redo entries apply delta changes rather than full images.
+
+**Mitigation**:
+- InnoDB first writes dirty pages sequentially into the contiguous Doublewrite Buffer on disk.
+- Only after the DWB write is synced does InnoDB write the page to its final location in the `.ibd` file.
+- On crash recovery, if a page in `.ibd` is corrupted or torn, InnoDB restores the pristine page image from the Doublewrite Buffer.
+
+### Change Buffer
+When an `INSERT` or `UPDATE` modifies a secondary index whose page is not in the Buffer Pool, reading that page from disk would incur expensive random I/O.
+- InnoDB buffers the secondary index mutation in the **Change Buffer** in memory.
+- When the page is eventually read into cache by another query, buffered changes are merged automatically.
+
+---
+
+## 4. Transaction Logging: Redo Log & Undo Tablespaces
+
+### Redo Log Ring Buffer & Checkpoint Age
+The redo log is organized as a fixed-size circular ring buffer.
+- `Current LSN`: Byte offset of the latest logged transaction mutation.
+- `Checkpoint LSN`: Byte offset up to which dirty pages have been flushed to disk.
+- `Checkpoint Age = Current LSN - Checkpoint LSN`.
+- If Checkpoint Age reaches 75% of total redo capacity, InnoDB triggers aggressive synchronous flushing, causing query latency spikes.
+
+### Undo Tablespaces and Rollback Segments
+- Every row contains hidden system columns: `DB_TRX_ID` (6 bytes, transaction ID) and `DB_ROLL_PTR` (7 bytes, pointer to undo log record).
+- Undo records provide rollback capability and supply older row versions for concurrent read transactions (Consistent Non-Locking Reads).
+
+---
+
+## 5. GTID & High Availability Replication
+
+Global Transaction Identifiers (`GTID`) assign a unique identity to every committed transaction across all replica nodes:
+`GTID = source_id:transaction_id` (e.g., `3E11FA47-71CA-11E1-9E33-C80AA9429562:23`).
+
+### Semi-Synchronous Replication (`AFTER_SYNC`)
+- Master writes transaction to binary log and sends it to replicas.
+- Master waits for at least one replica to write the transaction to its local **relay log** before committing to InnoDB locally.
+- Guarantees zero data loss (RPO = 0) even if the master host suffers sudden hardware failure.
+
+---
+
+## 6. Production Tuning Blueprint & Diagnostics
+
+```ini
+# my.cnf
+innodb_buffer_pool_size = 32G
+innodb_buffer_pool_instances = 8
+innodb_old_blocks_time = 1000
+innodb_log_file_size = 4G
+innodb_flush_log_at_trx_commit = 1
+innodb_flush_method = O_DIRECT
+innodb_doublewrite = 1
+```
+
+### Buffer Pool Hit Ratio Telemetry
+```sql
+SELECT
+  variable_name,
+  variable_value
+FROM performance_schema.global_status
+WHERE variable_name IN (
+  'Innodb_buffer_pool_read_requests',
+  'Innodb_buffer_pool_reads'
+);
+-- Hit Ratio = 1 - (Innodb_buffer_pool_reads / Innodb_buffer_pool_read_requests)
+```"""
         },
         "id": {
-            "title": "Panduan Mendalam MySQL & MariaDB 11: Mesin InnoDB, Buffer Pool & Replikasi GTID",
-            "summary": "Anatomi mesin penyimpanan InnoDB, doublewrite buffer, redo log, dan konfigurasi replikasi berbasis GTID.",
-            "body": """### Mesin Penyimpanan InnoDB
-InnoDB adalah mesin penyimpanan default berbasis ACID untuk MySQL dan MariaDB. Semua tabel disimpan dengan clustered B+tree berurutan berdasarkan Primary Key.
+            "title": "Arsitektur InnoDB MySQL 8.4 / 11: Struktur Internal Buffer Pool, Redo/Undo Log, dan Replikasi GTID",
+            "summary": "Bedah arsitektur mesin penyimpanan InnoDB: partisi LRU midpoint 3/8, Change Buffer, Doublewrite Buffer, checkpoint age redo log, dan replikasi semi-sinkron berbasis GTID.",
+            "body": """## Model Arsitektur InnoDB MySQL / MariaDB
 
-### 1. InnoDB Buffer Pool
-Struktur memori paling vital di MySQL. Berfungsi meng-cache halaman data, indeks, undo log, dan change buffer di RAM.
-```ini
-# my.cnf
-innodb_buffer_pool_size = 8G      # 60-75% dari total RAM server khusus database
-innodb_buffer_pool_instances = 8  # Membagi buffer pool untuk mencegah thread contention
-innodb_log_file_size = 2G         # Kapasitas Redo Log
-innodb_flush_log_at_trx_commit = 1 # 1 = Jaminan penuh ACID Durability
+InnoDB adalah mesin penyimpanan transaksional ACID yang berbasis pada arsitektur clustered index (index-organized table) dan write-ahead logging.
+
+```
++---------------------------------------------------------------------------------+
+|                               MESIN STORAGE INNODB                              |
+|                                                                                 |
+|  +--------------------------- INNODB BUFFER POOL ----------------------------+  |
+|  |                                                                           |  |
+|  |  +-------------------------- LIST LRU ---------------------------------+  |  |
+|  |  | Young Sublist (Head 5/8 or ~63%) | Old Sublist (Tail 3/8 or ~37%)   |  |  |
+|  |  | [ Halaman Cache 16KB Aktif ]     | [ Window Midpoint Insertion ]    |  |  |
+|  |  +---------------------------------------------------------------------+  |  |
+|  |                                                                           |  |
+|  |  +--------------------+  +--------------------+  +---------------------+  |  |
+|  |  |   Change Buffer    |  | Adaptive Hash (AHI)|  | Redo Log Buffer     |  |  |
+|  |  +--------------------+  +--------------------+  +---------------------+  |  |
+|  +---------------------------------------------------------------------------+  |
+|         ^                     ^                      ^                          |
+|  +------+------+       +------+------+        +------+------+                   |
+|  | Page Cleaner|       | Purge Thread|        | Master Thread|                   |
+|  +-------------+       +-------------+        +-------------+                   |
++---------------------------------------------------------------------------------+
+                                      | Flush Pipeline
+                                      v
+         +---------------------------------------------------------------+
+         | Doublewrite Buffer (DWB) | ibdata1 / Undo Logs | File .ibd    |
+         +---------------------------------------------------------------+
 ```
 
-### 2. Menjaga Integritas Data: Redo Log & Doublewrite Buffer
-- **Redo Log**: Mencatat perubahan fisik halaman disk secara sekuensial sebelum data di-flush ke disk.
-- **Doublewrite Buffer**: Mencegah kerusakan halaman data akibat torn write (listrik mati saat menulis halaman 16KB).
+---
 
-### 3. Replikasi Modern Berbasis GTID
-GTID (Global Transaction Identifier) memberikan pengenal unik pada setiap transaksi (`UUID:sequence_number`).
-- Menghapus kerumitan pelacakan koordinat file binlog manual (`file:position`).
-- Mempermudah failover klaster otomatis menggunakan tools seperti Orchestrator dan ProxySQL.""",
+## 1. Subsistem Thread & Proses
+
+| Nama Thread | Tanggung Jawab Operasional | Parameter Konfigurasi |
+| :--- | :--- | :--- |
+| `master thread` | Mengatur penulisan halaman kotor, merge change buffer, dan sinkronisasi metadata. | Loop interval internal (1 detik / 10 detik). |
+| `page_cleaners` | Melakukan flush halaman kotor dari tiap instansi buffer pool ke disk secara asinkron. | `innodb_page_cleaners`. |
+| `purge_threads` | Membersihkan slot undo log dan menghapus baris yang ditandai terhapus (`delete-marked`). | `innodb_purge_threads = 4`. |
+| `io_read_threads` | Membaca halaman 16KB dari file `.ibd` ke memori saat terjadi cache miss. | `innodb_read_io_threads = 8`. |
+| `io_write_threads` | Menulis halaman ke Doublewrite Buffer dan file datafile secara berkelanjutan. | `innodb_write_io_threads = 8`. |
+
+---
+
+## 2. Internal Buffer Pool: Aturan Midpoint Insertion 3/8
+
+InnoDB membagi daftar LRU menjadi dua bagian:
+- **Young Sublist** (Head, ~63%): Menyimpan halaman aktif yang sering diakses.
+- **Old Sublist** (Tail, ~37%): Menyimpan halaman baru dibaca atau halaman dingin.
+
+### Mekanisme Pencegahan Polusi Cache (Scan-Resistance)
+Saat kueri melakukan scan tabel penuh, ribuan halaman dingin dibaca ke memori. Pada algoritma LRU biasa, hal ini akan membuang semua data transaksi penting dari RAM.
+
+InnoDB mencegah masalah ini menggunakan `innodb_old_blocks_time`:
+1. Halaman baru yang dibaca dari disk masuk di **titik tengah (midpoint)**, yaitu di posisi teratas Old Sublist.
+2. Halaman di Old Sublist hanya dipromosikan ke Young Sublist jika diakses kembali **setelah** melewati durasi `innodb_old_blocks_time` milidetik (default: `1000ms`).
+3. Kueri scan membaca halaman dalam hitungan milidetik saja, sehingga halaman tersebut tertahan di Old sublist lalu terbuang tanpa merusak cache transaksi utama.
+
+---
+
+## 3. Doublewrite Buffer (DWB) & Change Buffer
+
+### Doublewrite Buffer (DWB)
+Sistem operasi menulis data ke disk dalam blok 4KB, sedangkan InnoDB menggunakan **halaman 16KB**. Jika server mati mendadak saat menulis 16KB, hanya sebagian blok yang tersimpan di disk (kondisi **torn page**). File redo log tidak dapat memulihkan torn page karena redo log mencatat perubahan delta, bukan salinan utuh halaman data.
+
+**Solusi**:
+- InnoDB menulis halaman kotor terlebih dahulu secara sekuensial ke Doublewrite Buffer di disk.
+- Setelah DWB tersimpan aman, barulah halaman ditulis ke file `.ibd` aslinya.
+- Jika terjadi crash dan file `.ibd` mengalami kerusakan torn page, InnoDB memulihkan halaman dari Doublewrite Buffer.
+
+---
+
+## 4. Redo Log & Undo Tablespace
+
+### Redo Log Ring Buffer & Checkpoint Age
+- Redo log beroperasi sebagai circular ring buffer berukuran tetap.
+- `Checkpoint Age = Current LSN - Checkpoint LSN`.
+- Jika Checkpoint Age mendekati 75% dari kapasitas total file redo, InnoDB dipaksa melakukan sinkronisasi I/O agresif yang dapat membekukan latensi kueri.
+
+---
+
+## 5. Replikasi GTID Semi-Sinkron (`AFTER_SYNC`)
+
+Pada mode semi-sinkron `AFTER_SYNC`:
+1. Master menulis transaksi ke binary log dan mengirimkannya ke replica.
+2. Master menunggu setidaknya satu replica mencatat transaksi ke **relay log** sebelum mengizinkan commit lokal di engine InnoDB.
+3. Menjamin zero data loss (RPO = 0) meskipun server master mendadak terbakar atau mati total.
+
+---
+
+## 6. Kueri Telemetri & Diagnostik
+
+```sql
+SELECT
+  variable_name,
+  variable_value
+FROM performance_schema.global_status
+WHERE variable_name IN (
+  'Innodb_buffer_pool_read_requests',
+  'Innodb_buffer_pool_reads'
+);
+-- Hit Ratio = 1 - (Innodb_buffer_pool_reads / Innodb_buffer_pool_read_requests)
+```""",
         },
     },
     {
@@ -508,42 +1133,218 @@ GTID (Global Transaction Identifier) memberikan pengenal unik pada setiap transa
         "category_slug": "architecture",
         "engine": "Oracle",
         "en": {
-            "title": "Oracle 23ai Architecture: Multitenant CDB/PDB, SGA/PGA & AWR Telemetry",
-            "summary": "Exploring Oracle 23ai multitenant architecture, System Global Area memory allocation, and Automatic Workload Repository (AWR) diagnostics.",
-            "body": """### Oracle 23ai Multitenant Architecture
-Oracle Database 23ai enforces the Container Database (CDB) and Pluggable Database (PDB) paradigm:
-- **CDB$ROOT**: Stores Oracle-supplied metadata and common administrative users.
-- **PDBs**: Self-contained, portable tenant databases holding user schemas and data.
+            "title": "Oracle Database 23ai Architecture: Multitenant CDB/PDB, SGA/PGA Hierarchy, and Consistent Read Mechanics",
+            "summary": "Comprehensive architecture of Oracle 23ai: Container & Pluggable databases, SGA components (Shared Pool, Buffer Cache), PGA work areas, SCN mechanics, and AWR wait event diagnostics.",
+            "body": """## Oracle Database 23ai Multitenant Architecture
 
-### 1. Memory Structure: SGA vs. PGA
-- **SGA (System Global Area)**: Shared memory region allocated at instance startup.
-  - *Database Buffer Cache*: Caches blocks read from datafiles.
-  - *Shared Pool*: Caches parsed SQL execution plans (Library Cache) and data dictionary metadata (Row Cache).
-  - *Redo Log Buffer*: Circular buffer recording database mutations.
-- **PGA (Program Global Area)**: Dedicated private memory per server process (used for sorting, hashing, and cursor state).
+Oracle 23ai enforces a container architecture where multiple isolated Pluggable Databases (PDBs) share a single physical instance (processes and shared memory) coordinated by the Root Container (`CDB$ROOT`).
 
-### 2. Telemetry & Diagnostics: AWR and ASH
-- **AWR (Automatic Workload Repository)**: Captures snapshots every 60 minutes, recording top SQL by elapsed time, wait events, and I/O profiles.
-- **ASH (Active Session History)**: Samples active sessions once every second in memory, enabling micro-level bottleneck triage.""",
+```
++---------------------------------------------------------------------------------+
+|                         ORACLE INSTANCE (SGA + PROCESSES)                       |
+|                                                                                 |
+|  +------------------------- SYSTEM GLOBAL AREA (SGA) ------------------------+  |
+|  | Database Buffer Cache | Shared Pool (Library Cache + Data Dict)           |  |
+|  | Redo Log Buffer       | Large Pool (RMAN / Parallel Query)                |  |
+|  +---------------------------------------------------------------------------+  |
+|         ^                     ^                      ^                          |
+|  +------+------+       +------+------+        +------+------+                   |
+|  |    DBWn     |       |    LGWR     |        |    CKPT     |                   |
+|  +-------------+       +-------------+        +-------------+                   |
++---------------------------------------------------------------------------------+
+                                      | Storage Layers
+                                      v
++---------------------------------------------------------------------------------+
+|                               CONTAINER DATABASE (CDB)                          |
+|                                                                                 |
+|  +------------------+     +------------------+     +-------------------------+  |
+|  |     CDB$ROOT     |     |     PDB$SEED     |     | PDB1 (ERP) / PDB2 (CRM) |  |
+|  | System Metadata  |     | Golden Template  |     | User Tablespaces & Data |  |
+|  +------------------+     +------------------+     +-------------------------+  |
++---------------------------------------------------------------------------------+
+```
+
+---
+
+## 1. Multitenant Hierarchy: CDB vs PDB
+
+| Container Entity | Purpose | Storage Boundary |
+| :--- | :--- | :--- |
+| `CDB$ROOT` | Manages instance metadata, common background processes, common users (`c##admin`), and shared control files. | System & Sysaux tablespaces for CDB. |
+| `PDB$SEED` | Read-only seed template used to instantiate new pluggable databases in seconds. | Dedicated system datafiles. |
+| `PDB` | Fully functional, self-contained database holding user application tablespaces, schemas, and local users. | Isolated user datafiles (`app_data01.dbf`). |
+
+---
+
+## 2. System Global Area (SGA) Structure
+
+1. **Database Buffer Cache**: Caches blocks read from datafiles.
+   - **Default Pool**: Standard block caching using modified LRU.
+   - **KEEP Pool**: Dedicated memory for small, frequently queried reference tables to prevent them from being aged out.
+   - **RECYCLE Pool**: Dedicated pool for large batch tables to prevent sequential scans from displacing OLTP cache blocks.
+2. **Shared Pool**:
+   - **Library Cache**: Stores parsed SQL statements, execution plans, and PL/SQL packages.
+   - **Data Dictionary Cache**: Stores metadata about tables, columns, constraints, and security privileges.
+3. **Redo Log Buffer**: Circular memory buffer recording row changes. Flushed to disk immediately by `LGWR` on transaction commit.
+4. **Large Pool**: Sized to isolate large memory allocations such as RMAN backup buffers, parallel query execution message buffers, and shared server sessions.
+
+---
+
+## 3. Program Global Area (PGA) & Memory Sizing
+
+The PGA is non-shared memory allocated to dedicated server processes servicing client connections.
+- **SQL Work Areas**: `Sort Area` (ORDER BY), `Hash Area` (hash joins), and `Bitmap Merge Area`.
+- Automatic memory control is governed by `PGA_AGGREGATE_TARGET` and enforced strictly by `PGA_AGGREGATE_LIMIT` to prevent host memory starvation.
+
+---
+
+## 4. Core Background Processes & SCN Mechanics
+
+- **`DBWn` (Database Writer)**: Writes dirty blocks from the buffer cache to datafiles using asynchronous batched I/O.
+- **`LGWR` (Log Writer)**: Flushes the Redo Log Buffer to active online redo log files on transaction commit.
+- **`CKPT` (Checkpoint)**: Signals `DBWn` to write dirty blocks and updates datafile headers and control files with the current SCN.
+- **`SMON` (System Monitor)**: Performs instance recovery on startup (roll-forward from redo logs, roll-back from undo).
+- **`PMON` (Process Monitor)**: Cleans up failed client connections and releases locks.
+
+### System Change Number (SCN)
+The SCN is a monotonically increasing 64-bit integer that serves as Oracle's logical commit clock, establishing absolute chronological order for all transactions.
+
+---
+
+## 5. Consistent Read (CR) Blocks & Undo Internals
+
+Oracle enforces read consistency without reader locks:
+1. When a query begins at SCN `10500`, it must observe data strictly as it existed at SCN `10500`.
+2. If another transaction modifies and commits a row at SCN `10520`, the physical block in the buffer cache now contains the newer version.
+3. When the reader arrives at that block, it detects an SCN greater than `10500`.
+4. The server process fetches historical before-images from the **Undo Tablespace** and reconstructs a temporary **Consistent Read (CR)** clone of the block in RAM.
+5. If the required undo segments have been overwritten due to insufficient undo retention, Oracle terminates the query with:
+   `ORA-01555: snapshot too old: rollback segment too small`.
+
+---
+
+## 6. Production Diagnostic Scripts
+
+### Buffer Cache Advisory Analysis
+```sql
+SELECT
+  size_for_estimate,
+  size_factor,
+  estd_physical_read_factor,
+  estd_physical_reads
+FROM v$db_cache_advice
+WHERE name = 'DEFAULT';
+```
+
+### Active Session Lock & Blocking Telemetry
+```sql
+SELECT
+  s1.username || '@' || s1.machine AS blocker,
+  s1.sid AS blocker_sid,
+  s2.username || '@' || s2.machine AS waiter,
+  s2.sid AS waiter_sid,
+  s2.seconds_in_wait
+FROM v$lock l1
+JOIN v$session s1 ON s1.sid = l1.sid
+JOIN v$lock l2   ON l2.id1 = l1.id1 AND l2.id2 = l1.id2
+JOIN v$session s2 ON s2.sid = l2.sid
+WHERE l1.block = 1 AND l2.request > 0;
+```"""
         },
         "id": {
-            "title": "Arsitektur Oracle 23ai: Multitenant CDB/PDB, Memori SGA/PGA & Telemetri AWR",
-            "summary": "Memahami arsitektur multitenant Oracle 23ai, alokasi memori SGA/PGA, serta diagnostik Automatic Workload Repository (AWR).",
-            "body": """### Arsitektur Multitenant Oracle 23ai
-Oracle Database 23ai menggunakan paradigma Container Database (CDB) dan Pluggable Database (PDB):
-- **CDB$ROOT**: Menyimpan metadata internal sistem Oracle dan user administratif bersama.
-- **PDB**: Database mandiri dan portabel yang menampung skema dan data aplikasi pengguna.
+            "title": "Arsitektur Oracle Database 23ai: Multitenant CDB/PDB, Hirarki SGA/PGA, dan Mekanisme Consistent Read",
+            "summary": "Arsitektur mendalam Oracle 23ai: database Container dan Pluggable, komponen SGA (Shared Pool, Buffer Cache), area kerja PGA, mekanisme SCN, dan diagnostik wait event AWR.",
+            "body": """## Model Arsitektur Multitenant Oracle 23ai
 
-### 1. Struktur Memori: SGA vs. PGA
-- **SGA (System Global Area)**: Memori bersama yang dialokasikan saat instance Oracle dinyalakan.
-  - *Database Buffer Cache*: Menyimpan blok data tabel dan indeks.
-  - *Shared Pool*: Menyimpan rencana eksekusi SQL (Library Cache) dan kamus data skema.
-  - *Redo Log Buffer*: Buffer sirkular penampung mutasi data sebelum ditulis ke disk.
-- **PGA (Program Global Area)**: Memori privat per proses koneksi pengguna (digunakan untuk sort dan hash join).
+Oracle 23ai mewajibkan arsitektur container di mana beberapa Pluggable Database (PDB) terisolasi berbagi satu instansi fisik (proses dan shared memory) yang dikoordinasikan oleh Root Container (`CDB$ROOT`).
 
-### 2. Diagnostik & Analisis Performa: AWR dan ASH
-- **AWR (Automatic Workload Repository)**: Mengambil snapshot metrik setiap 60 menit untuk menganalisis SQL terberat, konsumsi I/O, dan wait event.
-- **ASH (Active Session History)**: Merekam aktivitas sesi aktif setiap 1 detik di memori untuk diagnosis insiden performa secara real-time.""",
+```
++---------------------------------------------------------------------------------+
+|                         INSTANSI ORACLE (SGA + PROSES)                          |
+|                                                                                 |
+|  +------------------------- SYSTEM GLOBAL AREA (SGA) ------------------------+  |
+|  | Database Buffer Cache | Shared Pool (Library Cache + Data Dict)           |  |
+|  | Redo Log Buffer       | Large Pool (RMAN / Kueri Paralel)                 |  |
+|  +---------------------------------------------------------------------------+  |
+|         ^                     ^                      ^                          |
+|  +------+------+       +------+------+        +------+------+                   |
+|  |    DBWn     |       |    LGWR     |        |    CKPT     |                   |
+|  +-------------+       +-------------+        +-------------+                   |
++---------------------------------------------------------------------------------+
+                                      | Lapisan Penyimpanan
+                                      v
++---------------------------------------------------------------------------------+
+|                               CONTAINER DATABASE (CDB)                          |
+|                                                                                 |
+|  +------------------+     +------------------+     +-------------------------+  |
+|  |     CDB$ROOT     |     |     PDB$SEED     |     | PDB1 (ERP) / PDB2 (CRM) |  |
+|  | Metadata Sistem  |     | Template Master  |     | Tablespace Data Client  |  |
+|  +------------------+     +------------------+     +-------------------------+  |
++---------------------------------------------------------------------------------+
+```
+
+---
+
+## 1. Hirarki Multitenant: CDB vs PDB
+
+| Entitas Container | Fungsi Operasional | Batas Datafile Fisik |
+| :--- | :--- | :--- |
+| `CDB$ROOT` | Mengelola metadata instansi, proses latar belakang bersama, user global (`c##admin`), dan file kontrol. | Tablespace System & Sysaux milik CDB. |
+| `PDB$SEED` | Template read-only untuk membuat database PDB baru dalam hitungan detik. | Datafile sistem tersendiri. |
+| `PDB` | Database mandiri untuk aplikasi, memiliki tablespace data dan skema lokal sendiri. | Datafile aplikasi terisolasi (`app_data01.dbf`). |
+
+---
+
+## 2. Struktur System Global Area (SGA)
+
+1. **Database Buffer Cache**: Menyimpan blok data yang dibaca dari disk.
+   - **Default Pool**: Cache blok standar berbasis modifikasi LRU.
+   - **KEEP Pool**: Memori khusus untuk tabel referensi kecil agar tidak pernah terdepak dari RAM.
+   - **RECYCLE Pool**: Memori khusus kueri batch besar agar scan tidak merusak cache transaksi OLTP.
+2. **Shared Pool**:
+   - **Library Cache**: Menyimpan kueri SQL terurai (parsed SQL), execution plan, dan paket PL/SQL.
+   - **Data Dictionary Cache**: Menyimpan metadata definisi tabel, kolom, constraint, dan hak akses.
+3. **Redo Log Buffer**: Buffer sirkular untuk mencatat perubahan baris data, ditulis ke disk oleh `LGWR` saat commit.
+4. **Large Pool**: Mengisolasi alokasi memori masif seperti buffer backup RMAN dan shared server.
+
+---
+
+## 3. Program Global Area (PGA)
+
+PGA adalah memori privat yang dialokasikan khusus untuk tiap proses koneksi client.
+- **SQL Work Areas**: Digunakan untuk sorting (`Sort Area`), penggabungan data (`Hash Area`), dan operasi bitmap.
+- Dikelola otomatis melalui parameter `PGA_AGGREGATE_TARGET` dan dibatasi ketat oleh `PGA_AGGREGATE_LIMIT`.
+
+---
+
+## 4. Mekanisme Consistent Read (CR) & Undo
+
+Oracle menjamin pembacaan data konsisten tanpa mengunci baris data (readers never block writers):
+1. Ketika kueri mulai berjalan pada SCN `10500`, kueri wajib membaca data persis pada kondisi SCN `10500`.
+2. Jika transaksi lain mengubah dan melakukan commit baris data pada SCN `10520`, blok fisik di buffer cache telah berubah ke versi baru.
+3. Saat kueri membaca blok tersebut, sistem mendeteksi bahwa SCN blok lebih besar dari `10500`.
+4. Proses server secara otomatis membaca catatan before-image dari **Undo Tablespace** dan merekonstruksi klon blok sementara (**Consistent Read / CR Block**) di memori RAM.
+5. Jika segmen undo telah tertimpa data lain karena kueri berjalan terlalu lama, Oracle melempar galat:
+   `ORA-01555: snapshot too old: rollback segment too small`.
+
+---
+
+## 5. Skrip Diagnostik Produksi
+
+### Deteksi Sesi yang Terblokir (Lock Contention)
+```sql
+SELECT
+  s1.username || '@' || s1.machine AS blocker,
+  s1.sid AS blocker_sid,
+  s2.username || '@' || s2.machine AS waiter,
+  s2.sid AS waiter_sid,
+  s2.seconds_in_wait
+FROM v$lock l1
+JOIN v$session s1 ON s1.sid = l1.sid
+JOIN v$lock l2   ON l2.id1 = l1.id1 AND l2.id2 = l1.id2
+JOIN v$session s2 ON s2.sid = l2.sid
+WHERE l1.block = 1 AND l2.request > 0;
+```""",
         },
     },
     {
@@ -551,38 +1352,209 @@ Oracle Database 23ai menggunakan paradigma Container Database (CDB) dan Pluggabl
         "category_slug": "architecture",
         "engine": "SQL Server",
         "en": {
-            "title": "SQL Server 2022 Architecture: Storage Engine, Query Store & Extended Events",
-            "summary": "Deep dive into Microsoft SQL Server 2022 extents, clustered index storage, Query Store plan forcing, and Extended Events telemetry.",
-            "body": """### Storage Engine Organization
-SQL Server stores database data in 8 KB pages grouped into 64 KB extents (8 contiguous pages).
-- **Clustered Index**: The leaf level of the index *is* the actual table data itself, physically sorted by cluster key.
-- **Non-Clustered Index**: Separate B-tree structure holding key columns and a row locator (pointer to clustered key).
+            "title": "SQL Server 2022 Architecture: SQLOS Scheduling, 8KB Page Internals, and Query Store",
+            "summary": "Technical guide to SQL Server 2022 internals: cooperative SQLOS scheduling, extents, GAM/SGAM/PFS maps, VLF transaction log lifecycle, and Query Store plan forcing.",
+            "body": """## SQL Server 2022 Operating System (SQLOS) Engine
 
-### 1. Query Store: The Database Flight Recorder
-Query Store continuously captures history of queries, execution plans, and runtime statistics:
-- Automatically detects plan regressions where a query suddenly consumes 10x more CPU.
-- Allows DBAs to force good execution plans with a single command without altering application code.
+Microsoft SQL Server runs on top of **SQLOS**, a specialized user-mode abstraction layer that manages thread scheduling, memory allocation, network I/O, and synchronization latches independently of the underlying Windows/Linux kernel.
 
-### 2. Telemetry: Extended Events (XEvents) vs. SQL Profiler
-- **SQL Profiler**: Deprecated; heavy client overhead that can degrade production throughput.
-- **Extended Events**: High-performance, lightweight event-handling engine built directly into the SQL Server kernel with minimal CPU impact (< 1%).""",
+```
++---------------------------------------------------------------------------------+
+|                       SQL SERVER OPERATING SYSTEM (SQLOS)                       |
+|                                                                                 |
+|  +---------------- NUMA NODE 0 -----------------+  +--- NUMA NODE 1 --------+   |
+|  |  +-----------------+   +------------------+  |  | Schedulers 2 & 3       |   |
+|  |  | Scheduler 0     |   | Scheduler 1      |  |  | (Cooperative Yield)    |   |
+|  |  | Worker Threads  |   | Worker Threads   |  |  +------------------------+   |
+|  |  +-----------------+   +------------------+  |                               |
+|  +----------------------------------------------+                               |
+|                                                                                 |
+|  +--------------------------- BUFFER POOL (RAM) -----------------------------+  |
+|  | 8KB Data Pages | 8KB Index Pages | Free Page List | Dirty Page List       |  |
+|  +---------------------------------------------------------------------------+  |
++---------------------------------------------------------------------------------+
+                                      | Storage Engine
+                                      v
+         +---------------------------------------------------------------+
+         | Data Files (.mdf/.ndf) Extents (64KB) | Log File (.ldf) VLFs  |
+         +---------------------------------------------------------------+
+```
+
+---
+
+## 1. SQLOS Cooperative Non-Preemptive Scheduling
+
+Unlike standard OS preemptive schedulers, SQLOS uses **cooperative scheduling**:
+- **Schedulers**: SQL Server instantiates exactly one scheduler per logical CPU core.
+- **Worker Threads**: Assigned to schedulers; each thread processes tasks without being forcibly interrupted by the OS kernel.
+- **Yielding**: A worker thread voluntarily yields the CPU (`SOS_SCHEDULER_YIELD`) during I/O waits, lock waits, or after executing a quantum of bytecode.
+- **Thread States**:
+  - `RUNNING`: Actively executing CPU instructions on the scheduler.
+  - `SUSPENDED`: Waiting on a resource (lock, disk page read, network socket).
+  - `RUNNABLE`: Resource acquired; sitting in queue waiting for CPU access.
+
+---
+
+## 2. Storage Engine: 8KB Pages & Extents
+
+Data files (`.mdf` and `.ndf`) are partitioned into contiguous **8192-byte (8 KB)** pages:
+- **Extents**: 8 contiguous 8KB pages form a **64 KB Extent**.
+  - **Uniform Extents**: Dedicated exclusively to a single database object.
+  - **Mixed Extents**: Shared by up to 8 small objects (SQL Server 2016+ defaults to uniform extents via trace flag 1118 behavior).
+
+### Page Allocation Space Tracking Maps
+- **GAM (Global Allocation Map)**: Tracks which extents are allocated (bit 1 = free, bit 0 = allocated).
+- **SGAM (Shared Global Allocation Map)**: Tracks mixed extents with free pages.
+- **PFS (Page Free Space)**: Byte flags recording allocation status and approximate free space (0%, 1-50%, 51-80%, 81-99%, 100%) for each page.
+
+---
+
+## 3. Transaction Log (.ldf) & Virtual Log File (VLF) Lifecycle
+
+The transaction log writes records sequentially using Write-Ahead Logging (WAL). Internally, the log is partitioned into **Virtual Log Files (VLFs)**.
+
+### VLF Fragmentation Hazards
+- If autogrowth is configured with tiny increments (e.g., 10MB), SQL Server creates thousands of microscopic VLFs.
+- **Impact**: Excessive VLFs (>1,000) severely degrade database startup time, disaster recovery roll-forward, and replication throughput.
+- **Remediation**: Pre-size the log file in large chunks (e.g., 8GB or 16GB) to produce clean, well-proportioned VLFs.
+
+---
+
+## 4. Query Store: Plan Regression Protection
+
+Query Store acts as a flight data recorder inside the database engine, capturing query execution plans, runtime performance metrics, and wait statistics.
+
+### The Three Sub-Stores
+1. **Plan Store**: Persists compiled execution plan XML graphs.
+2. **Runtime Stats Store**: Records execution durations, CPU consumption, logical reads, and memory grants.
+3. **Wait Stats Store**: Records wait types categorized per query plan.
+
+### Plan Forcing Procedure
+When parameter sniffing causes execution plan regression:
+```sql
+-- Force proven execution plan ID 42 for Query ID 10
+EXEC sp_query_store_force_plan @query_id = 10, @plan_id = 42;
+```
+
+---
+
+## 5. Production Diagnostic DMV Telemetry
+
+### Scheduler Health & Runnable Queue
+```sql
+SELECT
+  scheduler_id,
+  cpu_id,
+  status,
+  is_online,
+  current_tasks_count,
+  runnable_tasks_count,
+  work_queue_count,
+  pending_disk_io_count
+FROM sys.dm_os_schedulers
+WHERE scheduler_id < 255;
+```
+
+### Top Wait Types by Cumulative Duration
+```sql
+SELECT TOP 10
+  wait_type,
+  waiting_tasks_count,
+  wait_time_ms,
+  max_wait_time_ms,
+  signal_wait_time_ms
+FROM sys.dm_os_wait_stats
+WHERE wait_type NOT LIKE '%SLEEP%'
+ORDER BY wait_time_ms DESC;
+```"""
         },
         "id": {
-            "title": "Arsitektur SQL Server 2022: Mesin Penyimpanan, Query Store & Extended Events",
-            "summary": "Memahami organisasi halaman 8KB, indeks clustered, Query Store untuk stabilisasi rencana kueri, dan telemetri Extended Events.",
-            "body": """### Organisasi Mesin Penyimpanan SQL Server
-SQL Server menyimpan data dalam halaman (page) berukuran 8 KB yang dikelompokkan ke dalam extent 64 KB (8 halaman berurutan).
-- **Clustered Index**: Daun (leaf level) dari pohon indeks merupakan data baris fisik tabel itu sendiri yang terurut berdasarkan cluster key.
-- **Non-Clustered Index**: Struktur B-tree terpisah yang menampung kolom kunci dan pointer ke clustered key.
+            "title": "Arsitektur SQL Server 2022: Penjadwalan SQLOS, Struktur Halaman 8KB, dan Query Store",
+            "summary": "Panduan teknis internal SQL Server 2022: penjadwalan kooperatif SQLOS, extents, alokasi halaman GAM/SGAM/PFS, siklus log transaksi VLF, dan pemaksaan rencana Query Store.",
+            "body": """## Mesin SQL Server Operating System (SQLOS)
 
-### 1. Query Store: Flight Recorder Database
-Query Store merekam riwayat eksekusi kueri, rencana eksekusi (execution plan), dan statistik latensi:
-- Mendeteksi regresi performa kueri secara otomatis.
-- Mengizinkan DBA memaksa (force) execution plan yang efisien tanpa mengubah kode aplikasi.
+Microsoft SQL Server berjalan di atas **SQLOS**, lapisan abstraksi user-mode khusus yang mengelola penjadwalan thread, alokasi memori, I/O jaringan, dan sinkronisasi latch secara mandiri dari kernel Windows/Linux.
 
-### 2. Telemetri: Extended Events (XEvents) Menggantikan SQL Profiler
-- **SQL Profiler**: Bersifat usang (deprecated) dan membebani server secara signifikan.
-- **Extended Events**: Sistem pelacakan event terintegrasi langsung pada kernel SQL Server dengan overhead sangat rendah (< 1% CPU).""",
+```
++---------------------------------------------------------------------------------+
+|                       SQL SERVER OPERATING SYSTEM (SQLOS)                       |
+|                                                                                 |
+|  +---------------- NUMA NODE 0 -----------------+  +--- NUMA NODE 1 --------+   |
+|  |  +-----------------+   +------------------+  |  | Schedulers 2 & 3       |   |
+|  |  | Scheduler 0     |   | Scheduler 1      |  |  | (Cooperative Yield)    |   |
+|  |  | Worker Threads  |   | Worker Threads   |  |  +------------------------+   |
+|  |  +-----------------+   +------------------+  |                               |
+|  +----------------------------------------------+                               |
+|                                                                                 |
+|  +--------------------------- BUFFER POOL (RAM) -----------------------------+  |
+|  | Halaman Data 8KB | Halaman Index 8KB | Free Page List | Dirty Page List   |  |
+|  +---------------------------------------------------------------------------+  |
++---------------------------------------------------------------------------------+
+                                      | Mesin Penyimpanan
+                                      v
+         +---------------------------------------------------------------+
+         | Data Files (.mdf/.ndf) Extents (64KB) | Log File (.ldf) VLFs  |
+         +---------------------------------------------------------------+
+```
+
+---
+
+## 1. Penjadwalan Kooperatif Non-Preemptive SQLOS
+
+Berbeda dari scheduler sistem operasi umum, SQLOS menggunakan **penjadwalan kooperatif**:
+- **Schedulers**: Satu scheduler dibuat untuk setiap inti CPU logis.
+- **Worker Threads**: Thread mengeksekusi tugas tanpa diinterupsi paksa oleh kernel OS.
+- **Yielding**: Worker thread secara sukarela menyerahkan giliran CPU (`SOS_SCHEDULER_YIELD`) saat menunggu I/O atau lock.
+
+---
+
+## 2. Struktur Penyimpanan: Halaman 8KB & Extents
+
+File data (`.mdf` dan `.ndf`) dibagi menjadi halaman-halaman berukuran **8192 byte (8 KB)**:
+- **Extents**: 8 halaman 8KB berurutan membentuk satu **64 KB Extent**.
+- **Peta Alokasi Ruang**:
+  - `GAM (Global Allocation Map)`: Mencatat alokasi extent secara keseluruhan.
+  - `SGAM (Shared Global Allocation Map)`: Melacak mixed extent yang masih memiliki halaman kosong.
+  - `PFS (Page Free Space)`: Menandai perkiraan sisa ruang kosong pada tiap halaman 8KB.
+
+---
+
+## 3. Log Transaksi (.ldf) & Virtual Log Files (VLF)
+
+Log transaksi ditulis secara sekuensial dan dibagi menjadi beberapa **Virtual Log Files (VLF)**.
+- Pertumbuhan otomatis (autogrowth) berukuran terlalu kecil (misal 10MB) akan menciptakan ribuan VLF mikro (**VLF Fragmentation**).
+- Dampak: Memperlambat startup database, memperlambat pemulihan bencana (disaster recovery), dan membebani throughput replikasi.
+- Solusi: Sediakan ukuran log file langsung dalam ukuran besar (misal 8GB atau 16GB).
+
+---
+
+## 4. Query Store & Pemaksaan Rencana Eksekusi (Plan Forcing)
+
+Query Store merekam riwayat eksekusi kueri, grafik execution plan, dan metrik runtime.
+Saat terjadi regresi performa akibat *parameter sniffing*:
+
+```sql
+-- Paksa optimizer menggunakan Plan ID 42 untuk Query ID 10
+EXEC sp_query_store_force_plan @query_id = 10, @plan_id = 42;
+```
+
+---
+
+## 5. Skrip Telemetri DMV Produksi
+
+```sql
+SELECT
+  scheduler_id,
+  cpu_id,
+  status,
+  is_online,
+  current_tasks_count,
+  runnable_tasks_count,
+  work_queue_count,
+  pending_disk_io_count
+FROM sys.dm_os_schedulers
+WHERE scheduler_id < 255;
+```""",
         },
     },
     {
@@ -590,42 +1562,181 @@ Query Store merekam riwayat eksekusi kueri, rencana eksekusi (execution plan), d
         "category_slug": "architecture",
         "engine": "IBM Db2",
         "en": {
-            "title": "IBM Db2 11.5 Architecture: HADR Replication, Tablespaces & Workload Manager",
-            "summary": "Enterprise deep dive into IBM Db2 11.5: High Availability Disaster Recovery (HADR), SMS/DMS tablespace management, and Workload Manager (WLM) prioritization.",
-            "body": """### Core Storage Architecture: Tablespaces & Bufferpools
-IBM Db2 structures relational persistence across decoupled logical layers:
-- **Bufferpools**: Dedicated memory regions caching 4KB, 8KB, 16KB, or 32KB pages from disk.
-- **SMS (System-Managed Space)**: Operating system directories where files expand automatically (often used for temp tables).
-- **DMS (Database-Managed Space) & Automatic Storage**: Raw containers or dynamic filesystem paths allocated directly by Db2 with pre-allocated extents for high OLTP throughput.
+            "title": "IBM Db2 11.5 Architecture: Engine Dispatchable Units, Tablespace Management, and HADR Replication",
+            "summary": "In-depth architecture of IBM Db2 11.5: EDUs threading model, bufferpools, automatic storage tablespaces, Currently Committed semantics, and HADR takeover states.",
+            "body": """## IBM Db2 11.5 Process & Engine Dispatchable Units (EDUs)
 
-### 1. High Availability Disaster Recovery (HADR)
-HADR provides real-time transaction replication between Primary and Standby databases:
-- **Sync Modes**: `SYNC` (zero data loss), `NEARSYNC` (low latency), `ASYNC` (network friendly), and `SUPERASYNC` (WAN tolerance without impacting Primary write throughput).
-- **Read on Standby (RoS)**: Offloads read-only analytics queries to Standby nodes while the Primary processes high-concurrency writes.
+IBM Db2 operates on a multi-threaded process model centered on the primary database engine process (`db2sysc`). Inside `db2sysc`, concurrency is handled by specialized lightweight threads termed **Engine Dispatchable Units (EDUs)**.
 
-### 2. Workload Manager (WLM) & Resource Governance
-Db2 Workload Manager allows DBAs to enforce service level agreements (SLAs):
-- Categorizes database requests into service classes (e.g., Fast OLTP vs. Heavy Analytical Reporting).
-- Restricts runaway queries from monopolizing CPU cores or memory bufferpools using thresholds and execution timeouts.""",
+```
++---------------------------------------------------------------------------------+
+|                       DB2 ENGINE PROCESS INSTANCE (db2sysc)                     |
+|                                                                                 |
+|  +--------------------------- DATABASE BUFFERPOOLS --------------------------+  |
+|  | IBMDEFAULTBP (4KB/8KB) | Dedicated Bufferpools (16KB/32KB) | Package Cache|  |
+|  +---------------------------------------------------------------------------+  |
+|         ^                     ^                      ^                          |
+|  +------+------+       +------+------+        +------+------+                   |
+|  |  db2agent   |       |  db2pfchr   |        |  db2pclnr   |                   |
+|  | (Coordinator|       | (Prefetcher)|        | (Page Clean)|                   |
+|  +-------------+       +-------------+        +-------------+                   |
+|         ^                     ^                      ^                          |
+|  +------+------+       +------+------+        +------+------+                   |
+|  |  db2loggw   |       |  db2hadr    |        |  db2dlock   |                   |
+|  | (Log Writer)|       | (Repl Engine|        | (Deadlock)  |                   |
+|  +-------------+       +-------------+        +-------------+                   |
++---------------------------------------------------------------------------------+
+                                      | Storage Subsystems
+                                      v
+         +---------------------------------------------------------------+
+         | Automatic Storage Tablespaces (.DAT) | Active Transaction Logs|
+         +---------------------------------------------------------------+
+```
+
+---
+
+## 1. Engine Dispatchable Units (EDUs) Topology
+
+| EDU Thread | Operational Role | Sizing / Parameter Influence |
+| :--- | :--- | :--- |
+| `db2agent` | Coordinating agent dedicated to processing requests for an individual client connection. | Governed by `max_coordagents`. |
+| `db2pfchr` | Asynchronous prefetchers reading extents ahead of execution for sequential index/table scans. | Governed by `num_ioservers`. |
+| `db2pclnr` | Asynchronous page cleaners writing dirty bufferpool pages to disk before buffers run out. | Governed by `num_iocleaners` and `chngpgs_thresh`. |
+| `db2loggw` | Log writer flushing active log buffers to disk on transaction commit. | Flushes `logbufsz` memory. |
+| `db2hadr` | High Availability Disaster Recovery thread shipping logs across TCP sockets. | Managed by `HADR_LOCAL_HOST`/`PORT`. |
+| `db2dlock` | Deadlock detection thread scanning the lock table at intervals specified by `dlchkfreq`. | Configured via `dlchkfreq` (ms). |
+
+---
+
+## 2. Storage Architecture: Bufferpools & Tablespaces
+
+Db2 tablespaces are allocated with explicit page sizes matching dedicated bufferpools:
+- Supported page sizes: **4 KB, 8 KB, 16 KB, and 32 KB**.
+- Tablespaces can only be assigned to a bufferpool with an identical page size.
+- **Automatic Storage**: Db2 dynamically allocates containers across storage paths, striping extents across disks automatically.
+- **Asynchronous Cleaning Threshold (`chngpgs_thresh`)**: Specifies the percentage of dirty pages in a bufferpool (default: 60%) that triggers `db2pclnr` to start flushing pages to prevent query stalling.
+
+---
+
+## 3. High Availability Disaster Recovery (HADR)
+
+HADR ships transaction logs from the Primary database to a Standby database. Db2 provides four distinct synchronization modes:
+
+| HADR Mode | Write Acknowledged Point | RPO Guarantee | Performance Impact |
+| :--- | :--- | :--- | :--- |
+| `SYNC` | Acknowledged after written to disk on both Primary and Standby. | Zero (RPO = 0) | High network latency sensitivity. |
+| `NEARSYNC` | Acknowledged when received in Standby main memory buffer. | Near Zero | Minimal latency impact; safe from disk failure. |
+| `ASYNC` | Acknowledged when sent over Primary network socket. | Minimal (flight lag) | Very low latency impact. |
+| `SUPERASYNC`| Primary never waits for Standby acknowledgments. | Potential lag | Zero latency impact on Primary transactions. |
+
+---
+
+## 4. Concurrency & Currently Committed Semantics
+
+To eliminate concurrency lock waits between readers and writers:
+- `CUR_COMMIT = ON`: When a transaction updates a row, concurrent `SELECT` queries do not wait for the exclusive row lock to be released.
+- Instead, readers access the **currently committed version** of the data recorded in the log buffers, completely eliminating lock timeouts (`SQL0911N reason code 68`).
+
+---
+
+## 5. Production Diagnostics via db2pd & MON_GET
+
+### Bufferpool Hit Ratio Telemetry
+```sql
+SELECT
+  bp_name,
+  (1.0 - (FLOAT(pool_data_p_reads + pool_index_p_reads) /
+   NULLIF(FLOAT(pool_data_l_reads + pool_index_l_reads), 0))) * 100 AS hit_ratio
+FROM TABLE(MON_GET_BUFFERPOOL(NULL, -2)) AS t;
+```
+
+### HADR Replication State Verification
+```bash
+db2pd -db SAMPLE -hadr
+```"""
         },
         "id": {
-            "title": "Arsitektur IBM Db2 11.5: Replikasi HADR, Tablespace & Workload Manager (WLM)",
-            "summary": "Panduan arsitektur enterprise IBM Db2 11.5: Replikasi High Availability Disaster Recovery (HADR), alokasi tablespace SMS/DMS, dan Workload Manager (WLM).",
-            "body": """### Arsitektur Penyimpanan IBM Db2: Tablespace & Bufferpool
-IBM Db2 memisahkan penyimpanan data dalam lapisan logis yang terstruktur:
-- **Bufferpool**: Alokasi RAM khusus yang men-cache halaman berukuran 4KB, 8KB, 16KB, atau 32KB dari disk.
-- **SMS (System-Managed Space)**: Direktori filesystem sistem operasi yang ukurannya bertambah dinamis.
-- **DMS (Database-Managed Space) & Automatic Storage**: Kontainer penyimpanan terkelola dengan alokasi extent berurutan untuk memaksimalkan throughput transaksi tinggi (OLTP).
+            "title": "Arsitektur IBM Db2 11.5: Engine Dispatchable Units (EDUs), Manajemen Tablespace, dan Replikasi HADR",
+            "summary": "Arsitektur mendalam IBM Db2 11.5: model thread EDUs, bufferpool, tablespace automatic storage, semantik Currently Committed, dan status failover HADR.",
+            "body": """## Model Arsitektur Engine Dispatchable Units (EDUs) IBM Db2
 
-### 1. High Availability Disaster Recovery (HADR)
-HADR mereplikasi log transaksi secara real-time dari database Primary ke Standby:
-- **Mode Sinkronisasi**: `SYNC` (jaminan zero data loss), `NEARSYNC` (latensi rendah), `ASYNC`, dan `SUPERASYNC` (tahan latensi WAN).
-- **Read on Standby (RoS)**: Mengalihkan kueri pelaporan analitik ke server Standby sehingga server Primary tetap optimal memproses transaksi tulis.
+IBM Db2 beroperasi menggunakan arsitektur multi-threaded berbasis proses utama `db2sysc`. Di dalam proses tersebut, konkurensi ditangani oleh unit thread ringan bernama **Engine Dispatchable Units (EDUs)**.
 
-### 2. Workload Manager (WLM) & Regulasi Resource
-Db2 Workload Manager mengelompokkan kueri ke dalam kelas layanan (Service Class):
-- Memisahkan prioritas kueri OLTP kasir/perbankan dengan pelaporan analitik bulanan.
-- Mencegah kueri berat yang tidak efisien menghabiskan kapasitas CPU atau RAM melalui ambang batas (thresholds) otomatis.""",
+```
++---------------------------------------------------------------------------------+
+|                       INSTANSI PROSES ENGINE DB2 (db2sysc)                      |
+|                                                                                 |
+|  +--------------------------- BUFFERPOOL DATABASE ---------------------------+  |
+|  | IBMDEFAULTBP (4KB/8KB) | Bufferpool Khusus (16KB/32KB) | Package Cache    |  |
+|  +---------------------------------------------------------------------------+  |
+|         ^                     ^                      ^                          |
+|  +------+------+       +------+------+        +------+------+                   |
+|  |  db2agent   |       |  db2pfchr   |        |  db2pclnr   |                   |
+|  | (Koordinator|       | (Prefetcher)|        | (Page Clean)|                   |
+|  +-------------+       +-------------+        +-------------+                   |
+|         ^                     ^                      ^                          |
+|  +------+------+       +------+------+        +------+------+                   |
+|  |  db2loggw   |       |  db2hadr    |        |  db2dlock   |                   |
+|  | (Log Writer)|       | (Mesin HADR)|        | (Deadlock)  |                   |
+|  +-------------+       +-------------+        +-------------+                   |
++---------------------------------------------------------------------------------+
+                                      | Lapisan Penyimpanan
+                                      v
+         +---------------------------------------------------------------+
+         | Tablespace Automatic Storage (.DAT)  | File Log Aktif         |
+         +---------------------------------------------------------------+
+```
+
+---
+
+## 1. Topologi Engine Dispatchable Units (EDUs)
+
+| Nama Thread EDU | Peran Operasional | Pengaturan Terkait |
+| :--- | :--- | :--- |
+| `db2agent` | Agen koordinator yang melayani kueri untuk satu koneksi client tertentu. | Dibatasi oleh `max_coordagents`. |
+| `db2pfchr` | Prefetcher asinkron yang membaca extent mendahului kueri saat table scan. | Dikelola via `num_ioservers`. |
+| `db2pclnr` | Page cleaner yang menulis halaman kotor bufferpool ke disk sebelum memori penuh. | Dikelola via `num_iocleaners`. |
+| `db2loggw` | Log writer yang melakukan flush buffer log transaksi ke disk saat commit. | Mengosongkan memori `logbufsz`. |
+| `db2hadr` | Thread replikasi HADR yang mengirimkan log ke standby melalui socket TCP. | Dikonfigurasi via parameter HADR. |
+
+---
+
+## 2. Struktur Penyimpanan: Bufferpool & Tablespace
+
+Tablespace pada Db2 memiliki ukuran halaman eksplisit yang harus cocok dengan bufferpool terkait:
+- Pilihan ukuran halaman: **4 KB, 8 KB, 16 KB, dan 32 KB**.
+- **Automatic Storage**: Db2 secara dinamis mendistribusikan container ke path storage yang tersedia.
+- **`chngpgs_thresh` (Ambang Batas Halaman Kotor)**: Menentukan persentase halaman kotor di bufferpool (default: 60%) yang memicu `db2pclnr` menulis data ke disk untuk mencegah kelangkaan buffer.
+
+---
+
+## 3. High Availability Disaster Recovery (HADR)
+
+Db2 menyediakan empat mode sinkronisasi log replikasi:
+- **`SYNC`**: Transaksi dinyatakan selesai setelah tersimpan di disk Primary dan Standby (RPO = 0).
+- **`NEARSYNC`**: Transaksi selesai setelah diterima di RAM memori Standby (kompromi terbaik RPO & kecepatan).
+- **`ASYNC`**: Transaksi selesai begitu paket terkirim lewat socket Primary.
+- **`SUPERASYNC`**: Primary tidak pernah menunggu konfirmasi Standby (throughput maksimal).
+
+---
+
+## 4. Semantik Currently Committed (`CUR_COMMIT = ON`)
+
+Untuk menghindari transaksi pembacaan terhenti akibat menunggu lock:
+- Pembaca (`SELECT`) tidak perlu menunggu transaksi tulis melepaskan lock baris.
+- Pembaca langsung mengakses **versi data terakhir yang telah di-commit** dari buffer log transaksi, meniadakan error timeout lock (`SQL0911N reason code 68`).
+
+---
+
+## 5. Telemetri Diagnostik Produksi
+
+```sql
+SELECT
+  bp_name,
+  (1.0 - (FLOAT(pool_data_p_reads + pool_index_p_reads) /
+   NULLIF(FLOAT(pool_data_l_reads + pool_index_l_reads), 0))) * 100 AS hit_ratio
+FROM TABLE(MON_GET_BUFFERPOOL(NULL, -2)) AS t;
+```""",
         },
     },
     {
@@ -1503,7 +2614,8 @@ async def seed() -> None:
                     KnowledgeArticle.language == "en",
                 )
             )
-            if not en_res.scalar_one_or_none():
+            en_art = en_res.scalar_one_or_none()
+            if not en_art:
                 session.add(
                     KnowledgeArticle(
                         id=uuid.uuid4(),
@@ -1521,6 +2633,14 @@ async def seed() -> None:
                     )
                 )
                 print(f"Added EN article: {item['slug']}")
+            else:
+                en_art.title = item["en"]["title"]
+                en_art.summary = item["en"]["summary"]
+                en_art.body_markdown = item["en"]["body"]
+                en_art.engine = item["engine"]
+                en_art.category_id = k_cat_cache[cat_slug]
+                en_art.last_reviewed_at = datetime.now(timezone.utc)
+                print(f"Updated EN article: {item['slug']}")
 
             # Indonesian Article
             id_res = await session.execute(
@@ -1529,7 +2649,8 @@ async def seed() -> None:
                     KnowledgeArticle.language == "id",
                 )
             )
-            if not id_res.scalar_one_or_none():
+            id_art = id_res.scalar_one_or_none()
+            if not id_art:
                 session.add(
                     KnowledgeArticle(
                         id=uuid.uuid4(),
@@ -1547,6 +2668,14 @@ async def seed() -> None:
                     )
                 )
                 print(f"Added ID article: {item['slug']}")
+            else:
+                id_art.title = item["id"]["title"]
+                id_art.summary = item["id"]["summary"]
+                id_art.body_markdown = item["id"]["body"]
+                id_art.engine = item["engine"]
+                id_art.category_id = k_cat_cache[cat_slug]
+                id_art.last_reviewed_at = datetime.now(timezone.utc)
+                print(f"Updated ID article: {item['slug']}")
 
         await session.commit()
         print("Database seeding completed successfully!")

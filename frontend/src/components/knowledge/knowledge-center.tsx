@@ -22,6 +22,7 @@ import { VisualDatabaseAcademy } from "./visual-player";
 import { GlossaryExplorer } from "./glossary-explorer";
 import { CrossComparisonMatrix } from "./cross-comparison-matrix";
 import { DbaHandbookIncidents } from "./dba-handbook-incidents";
+import { ArticleMarkdown } from "./article-markdown";
 
 interface ArticleItem {
   id?: string;
@@ -821,53 +822,8 @@ export function KnowledgeCenter({ language, onOpenLab }: KnowledgeCenterProps) {
                   </div>
 
                   {/* Markdown Body */}
-                  <div className="prose prose-invert prose-slate max-w-none text-xs sm:text-sm leading-relaxed space-y-4">
-                    {articleBodyToRender.split("\n\n").map((block, idx) => {
-                      if (block.startsWith("### ")) {
-                        return (
-                          <h3
-                            key={idx}
-                            className="text-base font-bold text-white border-b border-slate-800/80 pb-1.5 mt-6 mb-2 flex items-center gap-2"
-                          >
-                            <Layers className="h-4 w-4 text-[#F2B84B]" />
-                            <span>{block.replace("### ", "")}</span>
-                          </h3>
-                        );
-                      } else if (block.startsWith("```")) {
-                        const cleaned = block.replace(/```[a-z]*\n?/g, "").trim();
-                        return (
-                          <pre
-                            key={idx}
-                            className="rounded-xl border border-slate-800 bg-[#071329] p-3.5 font-mono text-xs overflow-x-auto text-emerald-300"
-                          >
-                            <code>{cleaned}</code>
-                          </pre>
-                        );
-                      } else if (block.startsWith("- ")) {
-                        const items = block.split("\n- ").map((item) => item.replace(/^- /, ""));
-                        return (
-                          <ul key={idx} className="list-disc pl-5 space-y-1 text-slate-300 text-xs sm:text-sm">
-                            {items.map((item, i) => (
-                              <li key={i}>{item}</li>
-                            ))}
-                          </ul>
-                        );
-                      } else if (/^\d+\.\s/.test(block)) {
-                        const items = block.split(/\n\d+\.\s/).map((item) => item.replace(/^\d+\.\s/, ""));
-                        return (
-                          <ol key={idx} className="list-decimal pl-5 space-y-1 text-slate-300 text-xs sm:text-sm">
-                            {items.map((item, i) => (
-                              <li key={i}>{item}</li>
-                            ))}
-                          </ol>
-                        );
-                      }
-                      return (
-                        <p key={idx} className="text-slate-300 leading-relaxed text-xs sm:text-sm">
-                          {block}
-                        </p>
-                      );
-                    })}
+                  <div className="my-4">
+                    <ArticleMarkdown content={articleBodyToRender} />
                   </div>
 
                   {/* Quick Action Footer */}
