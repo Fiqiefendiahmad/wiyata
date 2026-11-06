@@ -92,7 +92,7 @@ export function Header({
                   SQL LAB
                 </span>
               </div>
-              <p className="hidden md:block text-[9px] text-slate-400">
+              <p className="text-[9px] sm:text-[10px] text-slate-400 leading-tight truncate max-w-[145px] xs:max-w-none">
                 {isId ? "Pusat Pembelajaran Database" : "Database Learning Center"}
               </p>
             </div>
@@ -195,6 +195,29 @@ export function Header({
       {/* Mobile Drawer Navigation Menu */}
       {mobileMenuOpen && (
         <div className="lg:hidden fixed inset-x-0 top-14 z-50 border-b border-slate-800 bg-[#071A3A]/98 p-3 shadow-2xl backdrop-blur-lg">
+          <div className="flex items-center gap-2.5 mb-3 pb-2.5 border-b border-slate-800/80 px-1">
+            <div className="relative h-7 w-7 overflow-hidden rounded shadow shrink-0 border border-[#F2B84B]/40 bg-[#10264A]">
+              <Image
+                src="/wiyata-app-icon.png"
+                alt="WIYATA"
+                width={28}
+                height={28}
+                className="h-full w-full object-cover"
+              />
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-extrabold text-white tracking-wider">WIYATA</span>
+                <span className="rounded bg-[#F2B84B]/20 px-1 py-0.2 text-[8px] font-bold text-[#F2B84B] border border-[#F2B84B]/30">
+                  SQL LAB
+                </span>
+              </div>
+              <p className="text-[10px] text-slate-400 leading-tight">
+                {isId ? "Pusat Pembelajaran Database" : "Database Learning Center"}
+              </p>
+            </div>
+          </div>
+
           <nav className="flex flex-col gap-1.5 mb-3">
             {navItems.map((item) => {
               const Icon = item.icon;
