@@ -100,7 +100,9 @@ export function LearningChallenges({
   const [solutionSql, setSolutionSql] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [result, setResult] = useState<VerificationResult | null>(null);
-  const [activeEngine, setActiveEngine] = useState<"sqlite" | "postgres" | "mysql">("sqlite");
+  const [activeEngine, setActiveEngine] = useState<
+    "sqlite" | "postgres" | "mysql" | "oracle"
+  >("sqlite");
 
   // Filtering & Search
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -590,6 +592,16 @@ export function LearningChallenges({
                       }`}
                     >
                       MySQL 11
+                    </button>
+                    <button
+                      onClick={() => setActiveEngine("oracle")}
+                      className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+                        activeEngine === "oracle"
+                          ? "bg-[#F2B84B] text-[#071A3A] shadow-xs"
+                          : "text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      Oracle 23ai
                     </button>
                   </div>
                 </div>

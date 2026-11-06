@@ -126,8 +126,26 @@ async def test_multi_engine_sandboxes() -> None:
         assert exec_my.json()["success"] is True
         assert exec_my.json()["rows"][0][0] == 6
 
+        # 4. Oracle sandbox (Transpiled / Emulated)
+        sb_ora = await client.post("/api/v1/sandboxes", json={"engine": "oracle", "template_slug": "banking"})
+        assert sb_ora.status_code == 201
+        ora_id = sb_ora.json()["id"]
+
+        exec_ora = await client.post(
+            f"/api/v1/sandboxes/{ora_id}/execute",
+            json={"query": "SELECT COUNT(*) FROM accounts WHERE ROWNUM <= 5;", "read_only": True},
+        )
+        assert exec_ora.status_code == 200
+        assert exec_ora.json()["success"] is True
+        assert exec_ora.json()["rows"][0][0] == 6
+
+        schema_ora = await client.get(f"/api/v1/sandboxes/{ora_id}/schema")
+        assert schema_ora.status_code == 200
+        assert any(t["name"] == "ACCOUNTS" for t in schema_ora.json())
+
         # Clean up
         await client.delete(f"/api/v1/sandboxes/{lite_id}")
         await client.delete(f"/api/v1/sandboxes/{pg_id}")
         await client.delete(f"/api/v1/sandboxes/{my_id}")
+        await client.delete(f"/api/v1/sandboxes/{ora_id}")
 

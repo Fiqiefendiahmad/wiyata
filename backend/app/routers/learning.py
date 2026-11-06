@@ -9,6 +9,7 @@ import psycopg
 import pymysql
 
 from app.adapters.sqlite import SQLiteAdapter
+from app.adapters.oracle import OracleAdapter
 from app.config import settings
 from app.templates.datasets import TEMPLATES
 import sqlglot
@@ -555,6 +556,25 @@ async def submit_exercise(slug: str, body: ChallengeSubmitRequest) -> ChallengeS
             ref_columns, ref_rows, user_cols, user_rows, elapsed_ms, err_msg = _execute_mysql(
                 dataset_slug, challenge["solution_sql"], body.query
             )
+        elif engine == "oracle":
+            conn = sqlite3.connect(":memory:")
+            conn.row_factory = sqlite3.Row
+            seed_sql = TEMPLATES.get(dataset_slug, TEMPLATES["ecommerce"])["sql"]
+            conn.executescript(seed_sql)
+            cur_ref = conn.execute(challenge["solution_sql"])
+            ref_columns = [d[0] for d in cur_ref.description]
+            ref_rows = [list(r) for r in cur_ref.fetchall()]
+
+            adapter = OracleAdapter()
+            adapter._conn = conn
+            start_time = time.perf_counter()
+            user_res = adapter.execute(body.query, max_rows=100, read_only=True)
+            elapsed_ms = round((time.perf_counter() - start_time) * 1000, 2)
+            conn.close()
+            if not user_res.get("success"):
+                ref_columns, ref_rows, user_cols, user_rows, elapsed_ms, err_msg = ref_columns, ref_rows, [], [], elapsed_ms, user_res.get("error")
+            else:
+                ref_columns, ref_rows, user_cols, user_rows, elapsed_ms, err_msg = ref_columns, ref_rows, user_res.get("columns", []), user_res.get("rows", []), elapsed_ms, None
         else:
             ref_columns, ref_rows, user_cols, user_rows, elapsed_ms, err_msg = _execute_sqlite(
                 dataset_slug, challenge["solution_sql"], body.query
