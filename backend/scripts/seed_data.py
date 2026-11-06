@@ -315,6 +315,275 @@ Pada **mode WAL** (`PRAGMA journal_mode=WAL;`):
 4. **Serializable**: Tingkat terketat; menjamin urutan eksekusi setara dengan eksekusi satu-per-satu tanpa anomali.""",
         },
     },
+    {
+        "slug": "postgresql-17-architecture-internals",
+        "category_slug": "architecture",
+        "engine": "PostgreSQL",
+        "en": {
+            "title": "PostgreSQL 17 Architecture & Internals: MVCC, VACUUM, and WAL",
+            "summary": "Mastering PostgreSQL 17 multi-version concurrency control, autovacuum memory tuning, shared buffers, and streaming replication.",
+            "body": """### PostgreSQL 17 Core Architecture
+PostgreSQL uses a process-based client-server architecture (`postmaster` forks a dedicated backend process per client connection).
+
+### 1. Multi-Version Concurrency Control (MVCC)
+In PostgreSQL, an `UPDATE` does not overwrite the row in place; it inserts a new tuple with updated `xmin`/`xmax` system columns while marking the older tuple dead.
+- `xmin`: Transaction ID that created the tuple.
+- `xmax`: Transaction ID that deleted/superseded the tuple (0 if active).
+- **Benefit**: Readers never block writers, and writers never block readers.
+
+### 2. The Role of VACUUM and Autovacuum
+Because dead tuples accumulate (table bloat), `VACUUM` reclaims dead space and updates the Free Space Map (FSM) and Visibility Map (VM).
+Key PostgreSQL 17 tuning:
+```ini
+# postgresql.conf
+autovacuum = on
+autovacuum_max_workers = 4
+autovacuum_vacuum_cost_limit = 2000
+autovacuum_vacuum_scale_factor = 0.05
+maintenance_work_mem = 512MB
+```
+
+### 3. Memory Hierarchy: Shared Buffers & Work Mem
+- `shared_buffers`: Dedicated buffer cache (typically set to 25% of total server RAM).
+- `work_mem`: Memory allocated per sort/hash operation per query. Set carefully to prevent OOM.
+- `effective_cache_size`: Informs the planner how much filesystem cache is available (typically 50-75% of RAM).
+
+### 4. Streaming Replication & WAL
+Transactions append changes sequentially to Write-Ahead Log (WAL) files in `pg_wal/`.
+- Synchronous or asynchronous standby nodes stream WAL records via `walsender` and `walreceiver`.
+- Use `pg_stat_replication` to monitor replication lag in bytes and time.""",
+        },
+        "id": {
+            "title": "Arsitektur & Internal PostgreSQL 17: MVCC, VACUUM, dan WAL",
+            "summary": "Memahami kontrol konkurensi MVCC pada PostgreSQL 17, optimasi autovacuum, shared buffers, dan replikasi streaming.",
+            "body": """### Arsitektur Inti PostgreSQL 17
+PostgreSQL menggunakan model proses berbasis client-server (proses `postmaster` melakukan `fork` untuk membuat proses backend per koneksi client).
+
+### 1. Multi-Version Concurrency Control (MVCC)
+Pada PostgreSQL, perintah `UPDATE` tidak menimpa data lama di disk, melainkan menyisipkan baris (tuple) baru dengan mencatat ID transaksi pada `xmin`/`xmax`, sementara baris lama ditandai sebagai dead tuple.
+- `xmin`: ID transaksi pembuat baris.
+- `xmax`: ID transaksi yang menghapus/memperbarui baris.
+- **Keuntungan**: Operasi baca tidak pernah mengunci operasi tulis, dan sebaliknya.
+
+### 2. Peran VACUUM dan Autovacuum
+Dead tuple yang menumpuk menyebabkan bloat (pembengkakan ukuran tabel). `VACUUM` membebaskan ruang kosong untuk dipakai kembali dan memperbarui Free Space Map (FSM).
+Konfigurasi penting pada PostgreSQL 17:
+```ini
+# postgresql.conf
+autovacuum = on
+autovacuum_max_workers = 4
+autovacuum_vacuum_cost_limit = 2000
+autovacuum_vacuum_scale_factor = 0.05
+maintenance_work_mem = 512MB
+```
+
+### 3. Hirarki Memori: Shared Buffers & Work Mem
+- `shared_buffers`: Alokasi cache tabel di RAM (umumnya disetel pada 25% total RAM server).
+- `work_mem`: Memori per operasi sorting/hashing per kueri.
+- `effective_cache_size`: Estimasi cache filesystem untuk optimizer (50-75% total RAM).
+
+### 4. Streaming Replication & WAL
+Setiap mutasi data dicatat berurutan pada file Write-Ahead Log (WAL) di direktori `pg_wal/`.
+- Server standby mereplikasi WAL secara real-time via proses `walsender` dan `walreceiver`.
+- Pantau keterlambatan data melalui view `pg_stat_replication`.""",
+        },
+    },
+    {
+        "slug": "mysql-11-innodb-replication-guide",
+        "category_slug": "architecture",
+        "engine": "MySQL / MariaDB",
+        "en": {
+            "title": "MySQL & MariaDB 11 Deep Dive: InnoDB Engine, Buffer Pool & GTID Replication",
+            "summary": "Anatomy of the InnoDB storage engine, doublewrite buffers, redo logs, and production GTID replication topologies.",
+            "body": """### The InnoDB Storage Engine
+InnoDB is the ACID-compliant default storage engine for MySQL and MariaDB, organizing tables in clustered B+tree indexes ordered by Primary Key.
+
+### 1. The InnoDB Buffer Pool
+The single most critical memory structure in MySQL. Caches data pages, index pages, undo pages, and change buffers.
+```ini
+# my.cnf
+innodb_buffer_pool_size = 8G      # 60-75% of dedicated server RAM
+innodb_buffer_pool_instances = 8  # Reduces thread concurrency contention
+innodb_log_file_size = 2G         # Redo log capacity
+innodb_flush_log_at_trx_commit = 1 # 1 = Full ACID compliance
+```
+
+### 2. Durability Mechanisms: Redo Log & Doublewrite Buffer
+- **Redo Log (`ib_logfile`)**: Sequential circular log recording physical page changes before memory pages flush.
+- **Doublewrite Buffer**: Prevents page corruption from torn writes by writing pages to a contiguous disk buffer before writing to `.ibd` tablespace files.
+
+### 3. Global Transaction Identifier (GTID) Replication
+GTID assigns a unique 128-bit UUID and sequence number to every committed transaction (`source_id:transaction_id`).
+- Eliminates tracking binlog file coordinates (`mysql-bin.000123:456`).
+- Enables automated topology failovers via tools like Orchestrator and ProxySQL.""",
+        },
+        "id": {
+            "title": "Panduan Mendalam MySQL & MariaDB 11: Mesin InnoDB, Buffer Pool & Replikasi GTID",
+            "summary": "Anatomi mesin penyimpanan InnoDB, doublewrite buffer, redo log, dan konfigurasi replikasi berbasis GTID.",
+            "body": """### Mesin Penyimpanan InnoDB
+InnoDB adalah mesin penyimpanan default berbasis ACID untuk MySQL dan MariaDB. Semua tabel disimpan dengan clustered B+tree berurutan berdasarkan Primary Key.
+
+### 1. InnoDB Buffer Pool
+Struktur memori paling vital di MySQL. Berfungsi meng-cache halaman data, indeks, undo log, dan change buffer di RAM.
+```ini
+# my.cnf
+innodb_buffer_pool_size = 8G      # 60-75% dari total RAM server khusus database
+innodb_buffer_pool_instances = 8  # Membagi buffer pool untuk mencegah thread contention
+innodb_log_file_size = 2G         # Kapasitas Redo Log
+innodb_flush_log_at_trx_commit = 1 # 1 = Jaminan penuh ACID Durability
+```
+
+### 2. Menjaga Integritas Data: Redo Log & Doublewrite Buffer
+- **Redo Log**: Mencatat perubahan fisik halaman disk secara sekuensial sebelum data di-flush ke disk.
+- **Doublewrite Buffer**: Mencegah kerusakan halaman data akibat torn write (listrik mati saat menulis halaman 16KB).
+
+### 3. Replikasi Modern Berbasis GTID
+GTID (Global Transaction Identifier) memberikan pengenal unik pada setiap transaksi (`UUID:sequence_number`).
+- Menghapus kerumitan pelacakan koordinat file binlog manual (`file:position`).
+- Mempermudah failover klaster otomatis menggunakan tools seperti Orchestrator dan ProxySQL.""",
+        },
+    },
+    {
+        "slug": "oracle-23ai-enterprise-architecture",
+        "category_slug": "architecture",
+        "engine": "Oracle",
+        "en": {
+            "title": "Oracle 23ai Architecture: Multitenant CDB/PDB, SGA/PGA & AWR Telemetry",
+            "summary": "Exploring Oracle 23ai multitenant architecture, System Global Area memory allocation, and Automatic Workload Repository (AWR) diagnostics.",
+            "body": """### Oracle 23ai Multitenant Architecture
+Oracle Database 23ai enforces the Container Database (CDB) and Pluggable Database (PDB) paradigm:
+- **CDB$ROOT**: Stores Oracle-supplied metadata and common administrative users.
+- **PDBs**: Self-contained, portable tenant databases holding user schemas and data.
+
+### 1. Memory Structure: SGA vs. PGA
+- **SGA (System Global Area)**: Shared memory region allocated at instance startup.
+  - *Database Buffer Cache*: Caches blocks read from datafiles.
+  - *Shared Pool*: Caches parsed SQL execution plans (Library Cache) and data dictionary metadata (Row Cache).
+  - *Redo Log Buffer*: Circular buffer recording database mutations.
+- **PGA (Program Global Area)**: Dedicated private memory per server process (used for sorting, hashing, and cursor state).
+
+### 2. Telemetry & Diagnostics: AWR and ASH
+- **AWR (Automatic Workload Repository)**: Captures snapshots every 60 minutes, recording top SQL by elapsed time, wait events, and I/O profiles.
+- **ASH (Active Session History)**: Samples active sessions once every second in memory, enabling micro-level bottleneck triage.""",
+        },
+        "id": {
+            "title": "Arsitektur Oracle 23ai: Multitenant CDB/PDB, Memori SGA/PGA & Telemetri AWR",
+            "summary": "Memahami arsitektur multitenant Oracle 23ai, alokasi memori SGA/PGA, serta diagnostik Automatic Workload Repository (AWR).",
+            "body": """### Arsitektur Multitenant Oracle 23ai
+Oracle Database 23ai menggunakan paradigma Container Database (CDB) dan Pluggable Database (PDB):
+- **CDB$ROOT**: Menyimpan metadata internal sistem Oracle dan user administratif bersama.
+- **PDB**: Database mandiri dan portabel yang menampung skema dan data aplikasi pengguna.
+
+### 1. Struktur Memori: SGA vs. PGA
+- **SGA (System Global Area)**: Memori bersama yang dialokasikan saat instance Oracle dinyalakan.
+  - *Database Buffer Cache*: Menyimpan blok data tabel dan indeks.
+  - *Shared Pool*: Menyimpan rencana eksekusi SQL (Library Cache) dan kamus data skema.
+  - *Redo Log Buffer*: Buffer sirkular penampung mutasi data sebelum ditulis ke disk.
+- **PGA (Program Global Area)**: Memori privat per proses koneksi pengguna (digunakan untuk sort dan hash join).
+
+### 2. Diagnostik & Analisis Performa: AWR dan ASH
+- **AWR (Automatic Workload Repository)**: Mengambil snapshot metrik setiap 60 menit untuk menganalisis SQL terberat, konsumsi I/O, dan wait event.
+- **ASH (Active Session History)**: Merekam aktivitas sesi aktif setiap 1 detik di memori untuk diagnosis insiden performa secara real-time.""",
+        },
+    },
+    {
+        "slug": "sql-server-2022-internals-query-store",
+        "category_slug": "architecture",
+        "engine": "SQL Server",
+        "en": {
+            "title": "SQL Server 2022 Architecture: Storage Engine, Query Store & Extended Events",
+            "summary": "Deep dive into Microsoft SQL Server 2022 extents, clustered index storage, Query Store plan forcing, and Extended Events telemetry.",
+            "body": """### Storage Engine Organization
+SQL Server stores database data in 8 KB pages grouped into 64 KB extents (8 contiguous pages).
+- **Clustered Index**: The leaf level of the index *is* the actual table data itself, physically sorted by cluster key.
+- **Non-Clustered Index**: Separate B-tree structure holding key columns and a row locator (pointer to clustered key).
+
+### 1. Query Store: The Database Flight Recorder
+Query Store continuously captures history of queries, execution plans, and runtime statistics:
+- Automatically detects plan regressions where a query suddenly consumes 10x more CPU.
+- Allows DBAs to force good execution plans with a single command without altering application code.
+
+### 2. Telemetry: Extended Events (XEvents) vs. SQL Profiler
+- **SQL Profiler**: Deprecated; heavy client overhead that can degrade production throughput.
+- **Extended Events**: High-performance, lightweight event-handling engine built directly into the SQL Server kernel with minimal CPU impact (< 1%).""",
+        },
+        "id": {
+            "title": "Arsitektur SQL Server 2022: Mesin Penyimpanan, Query Store & Extended Events",
+            "summary": "Memahami organisasi halaman 8KB, indeks clustered, Query Store untuk stabilisasi rencana kueri, dan telemetri Extended Events.",
+            "body": """### Organisasi Mesin Penyimpanan SQL Server
+SQL Server menyimpan data dalam halaman (page) berukuran 8 KB yang dikelompokkan ke dalam extent 64 KB (8 halaman berurutan).
+- **Clustered Index**: Daun (leaf level) dari pohon indeks merupakan data baris fisik tabel itu sendiri yang terurut berdasarkan cluster key.
+- **Non-Clustered Index**: Struktur B-tree terpisah yang menampung kolom kunci dan pointer ke clustered key.
+
+### 1. Query Store: Flight Recorder Database
+Query Store merekam riwayat eksekusi kueri, rencana eksekusi (execution plan), dan statistik latensi:
+- Mendeteksi regresi performa kueri secara otomatis.
+- Mengizinkan DBA memaksa (force) execution plan yang efisien tanpa mengubah kode aplikasi.
+
+### 2. Telemetri: Extended Events (XEvents) Menggantikan SQL Profiler
+- **SQL Profiler**: Bersifat usang (deprecated) dan membebani server secara signifikan.
+- **Extended Events**: Sistem pelacakan event terintegrasi langsung pada kernel SQL Server dengan overhead sangat rendah (< 1% CPU).""",
+        },
+    },
+    {
+        "slug": "database-monitoring-golden-signals",
+        "category_slug": "performance",
+        "engine": "Universal",
+        "en": {
+            "title": "Database Observability Guide: The 4 Golden Signals, Exporters & PMM Runbooks",
+            "summary": "Actionable monitoring architecture for production databases: Latency, Traffic, Errors, and Saturation with PromQL and Grafana.",
+            "body": """### The 4 Golden Signals for Database Observability
+Google's Site Reliability Engineering framework applied to relational databases:
+
+### 1. Latency
+Time taken to service read and write queries.
+- **Target**: p95 < 20ms, p99 < 50ms.
+- **Metric**: `rate(pg_stat_statements_total_time_ms[5m]) / rate(pg_stat_statements_calls[5m])`.
+
+### 2. Traffic (Throughput)
+Volume of transactions demanded by clients.
+- **Metric**: Transactions per Second (TPS), Queries per Second (QPS).
+- **PromQL**: `rate(pg_stat_database_xact_commit[1m]) + rate(pg_stat_database_xact_rollback[1m])`.
+
+### 3. Errors
+Failure rate of database operations.
+- **Metric**: Transaction abort rate, Deadlock counts, Connection authorization rejections.
+- **PromQL**: `increase(mysql_global_status_innodb_deadlocks[1h])`.
+
+### 4. Saturation
+Fraction of database resource capacity utilized.
+- **Buffer Pool / Shared Buffer Hit Ratio**: Must stay > 99%.
+- **Active Connections**: Alert when `active_connections / max_connections > 0.85`.
+- **Replication Lag**: Alert when standby replication lag exceeds 30 seconds.""",
+        },
+        "id": {
+            "title": "Panduan Observabilitas Database: 4 Golden Signals, Exporter & Runbook PMM",
+            "summary": "Arsitektur monitoring database produksi: Latency, Traffic, Errors, dan Saturation menggunakan PromQL dan dashboard Grafana.",
+            "body": """### 4 Golden Signals untuk Observabilitas Database
+Penerapan standar Google SRE untuk memantau kesehatan database relasional:
+
+### 1. Latensi (Latency)
+Waktu yang dibutuhkan untuk mengeksekusi kueri baca dan tulis.
+- **Target**: p95 < 20ms, p99 < 50ms.
+- **Metrik**: Rata-rata waktu eksekusi kueri melalui `pg_stat_statements` atau InnoDB Query Analytics (QAN).
+
+### 2. Trafik (Throughput)
+Beban transaksi yang diproses database dari aplikasi.
+- **Metrik**: Transactions per Second (TPS) dan Queries per Second (QPS).
+- **PromQL**: `rate(pg_stat_database_xact_commit[1m]) + rate(pg_stat_database_xact_rollback[1m])`.
+
+### 3. Kesalahan (Errors)
+Tingkat kegagalan operasi database.
+- **Metrik**: Rollback paksa, frekuensi deadlock per jam, dan penolakan koneksi akibat penuh.
+- **PromQL**: `increase(mysql_global_status_innodb_deadlocks[1h])`.
+
+### 4. Saturasi (Saturation)
+Persentase pemanfaatan kapasitas sumber daya database.
+- **Buffer Cache Hit Ratio**: Harus bertahan di atas 99%.
+- **Utilisasi Koneksi**: Berikan peringatan jika `koneksi aktif / max_connections > 85%`.
+- **Replication Lag**: Berikan alert jika keterlambatan replikasi melebihi 30 detik.""",
+        },
+    },
 ]
 
 

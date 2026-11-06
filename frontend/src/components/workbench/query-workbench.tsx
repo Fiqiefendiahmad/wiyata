@@ -796,6 +796,7 @@ export function QueryWorkbench({
                 <option value="mysql">MySQL</option>
                 <option value="duckdb">DuckDB</option>
                 <option value="oracle">Oracle</option>
+                <option value="tsql">SQL Server (T-SQL)</option>
               </select>
               <button
                 onClick={handleTranspile}

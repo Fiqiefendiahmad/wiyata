@@ -8,13 +8,14 @@ import {
   BookOpen,
   Wrench,
   GraduationCap,
+  Briefcase,
   Menu,
   X,
 } from "lucide-react";
 
 interface HeaderProps {
-  activeTab: "workbench" | "challenges" | "knowledge" | "tools";
-  setActiveTab: (tab: "workbench" | "challenges" | "knowledge" | "tools") => void;
+  activeTab: "workbench" | "challenges" | "roles" | "knowledge" | "tools";
+  setActiveTab: (tab: "workbench" | "challenges" | "roles" | "knowledge" | "tools") => void;
   language: "en" | "id";
   setLanguage: (lang: "en" | "id") => void;
   sandboxStatus: string;
@@ -46,6 +47,11 @@ export function Header({
       icon: GraduationCap,
     },
     {
+      id: "roles" as const,
+      label: isId ? "Jalur Profesi" : "Career Roles",
+      icon: Briefcase,
+    },
+    {
       id: "knowledge" as const,
       label: isId ? "Pusat Pengetahuan" : "Knowledge Center",
       icon: BookOpen,
@@ -58,7 +64,7 @@ export function Header({
   ];
 
   const handleTabClick = (
-    tab: "workbench" | "challenges" | "knowledge" | "tools"
+    tab: "workbench" | "challenges" | "roles" | "knowledge" | "tools"
   ) => {
     setActiveTab(tab);
     setMobileMenuOpen(false);

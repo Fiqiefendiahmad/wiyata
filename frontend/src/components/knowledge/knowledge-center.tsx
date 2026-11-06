@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   BookOpen,
   Search,
@@ -8,74 +8,292 @@ import {
   Tag,
   Database,
   ArrowLeft,
+  Server,
+  Layers,
+  Activity,
+  CheckCircle,
 } from "lucide-react";
+import { api } from "@/lib/api";
 
-interface Article {
+interface ArticleItem {
+  id?: string;
   slug: string;
   title: string;
-  titleId: string;
-  category: string;
+  titleId?: string;
+  category?: string;
   engine: string;
   summary: string;
-  summaryId: string;
-  readTime: string;
-  body: string;
-  bodyId: string;
+  summaryId?: string;
+  readTime?: string;
+  body_markdown?: string;
+  body?: string;
+  bodyId?: string;
 }
 
-const ARTICLES: Article[] = [
+const FALLBACK_ARTICLES: ArticleItem[] = [
   {
-    slug: "understanding-acid-properties",
-    title: "Understanding ACID Properties in Modern Relational Databases",
-    titleId: "Memahami Prinsip ACID pada Database Relasional Modern",
+    slug: "postgresql-17-architecture-internals",
+    title: "PostgreSQL 17 Architecture & Internals: MVCC, VACUUM, and WAL",
+    titleId: "Arsitektur & Internal PostgreSQL 17: MVCC, VACUUM, dan WAL",
     category: "Architecture",
-    engine: "Universal",
-    readTime: "5 min read",
+    engine: "PostgreSQL",
+    readTime: "8 min read",
     summary:
-      "A deep dive into Atomicity, Consistency, Isolation, and Durability and why they matter in production workloads.",
+      "Mastering PostgreSQL 17 multi-version concurrency control, autovacuum memory tuning, shared buffers, and streaming replication.",
     summaryId:
-      "Penjelasan mendalam mengenai Atomicity, Consistency, Isolation, dan Durability dalam beban kerja produksi.",
-    body: `### What is ACID?
-ACID represents the four key guarantees of reliable database transactions:
-- **Atomicity**: An operation succeeds entirely or is rolled back completely. Never partial.
-- **Consistency**: Data transitions strictly from one valid state to another according to constraints and triggers.
-- **Isolation**: Concurrent transactions do not interfere or observe partial, uncommitted states.
-- **Durability**: Once committed, changes survive unexpected crashes or power failures.
+      "Memahami kontrol konkurensi MVCC pada PostgreSQL 17, optimasi autovacuum, shared buffers, dan replikasi streaming.",
+    body: `### PostgreSQL 17 Core Architecture
+PostgreSQL uses a process-based client-server architecture (\`postmaster\` forks a dedicated backend process per client connection).
 
-### SQLite Implementation
-SQLite guarantees ACID through its Write-Ahead Log (WAL) or Rollback Journal mechanisms.`,
-    bodyId: `### Apa itu ACID?
-ACID adalah empat pilar jaminan keandalan transaksi database relasional:
-- **Atomicity (Keutuhan)**: Transaksi sukses seluruhnya atau dibatalkan total. Tidak ada status setengah jalan.
-- **Consistency (Konsistensi)**: Data hanya berpindah dari satu status valid ke status valid lainnya sesuai aturan/integritas.
-- **Isolation (Isolasi)**: Transaksi bersamaan tidak saling mengganggu atau melihat data yang belum di-commit.
-- **Durability (Ketahanan)**: Sekali transaksi di-commit, data dijamin bertahan walau sistem crash.`,
+### 1. Multi-Version Concurrency Control (MVCC)
+In PostgreSQL, an \`UPDATE\` does not overwrite the row in place; it inserts a new tuple with updated \`xmin\`/\`xmax\` system columns while marking the older tuple dead.
+- \`xmin\`: Transaction ID that created the tuple.
+- \`xmax\`: Transaction ID that deleted/superseded the tuple (0 if active).
+- **Benefit**: Readers never block writers, and writers never block readers.
+
+### 2. The Role of VACUUM and Autovacuum
+Because dead tuples accumulate (table bloat), \`VACUUM\` reclaims dead space and updates the Free Space Map (FSM) and Visibility Map (VM).
+Key PostgreSQL 17 tuning:
+\`\`\`ini
+# postgresql.conf
+autovacuum = on
+autovacuum_max_workers = 4
+autovacuum_vacuum_cost_limit = 2000
+autovacuum_vacuum_scale_factor = 0.05
+maintenance_work_mem = 512MB
+\`\`\`
+
+### 3. Memory Hierarchy: Shared Buffers & Work Mem
+- \`shared_buffers\`: Dedicated buffer cache (typically set to 25% of total server RAM).
+- \`work_mem\`: Memory allocated per sort/hash operation per query. Set carefully to prevent OOM.
+- \`effective_cache_size\`: Informs the planner how much filesystem cache is available (typically 50-75% of RAM).
+
+### 4. Streaming Replication & WAL
+Transactions append changes sequentially to Write-Ahead Log (WAL) files in \`pg_wal/\`.
+- Synchronous or asynchronous standby nodes stream WAL records via \`walsender\` and \`walreceiver\`.
+- Use \`pg_stat_replication\` to monitor replication lag in bytes and time.`,
+    bodyId: `### Arsitektur Inti PostgreSQL 17
+PostgreSQL menggunakan model proses berbasis client-server (proses \`postmaster\` melakukan \`fork\` untuk membuat proses backend per koneksi client).
+
+### 1. Multi-Version Concurrency Control (MVCC)
+Pada PostgreSQL, perintah \`UPDATE\` tidak menimpa data lama di disk, melainkan menyisipkan baris (tuple) baru dengan mencatat ID transaksi pada \`xmin\`/\`xmax\`, sementara baris lama ditandai sebagai dead tuple.
+- \`xmin\`: ID transaksi pembuat baris.
+- \`xmax\`: ID transaksi yang menghapus/memperbarui baris.
+- **Keuntungan**: Operasi baca tidak pernah mengunci operasi tulis, dan sebaliknya.
+
+### 2. Peran VACUUM dan Autovacuum
+Dead tuple yang menumpuk menyebabkan bloat (pembengkakan ukuran tabel). \`VACUUM\` membebaskan ruang kosong untuk dipakai kembali dan memperbarui Free Space Map (FSM).
+Konfigurasi penting pada PostgreSQL 17:
+\`\`\`ini
+# postgresql.conf
+autovacuum = on
+autovacuum_max_workers = 4
+autovacuum_vacuum_cost_limit = 2000
+autovacuum_vacuum_scale_factor = 0.05
+maintenance_work_mem = 512MB
+\`\`\`
+
+### 3. Hirarki Memori: Shared Buffers & Work Mem
+- \`shared_buffers\`: Alokasi cache tabel di RAM (umumnya disetel pada 25% total RAM server).
+- \`work_mem\`: Memori per operasi sorting/hashing per kueri.
+- \`effective_cache_size\`: Estimasi cache filesystem untuk optimizer (50-75% total RAM).
+
+### 4. Streaming Replication & WAL
+Setiap mutasi data dicatat berurutan pada file Write-Ahead Log (WAL) di direktori \`pg_wal/\`.
+- Server standby mereplikasi WAL secara real-time via proses \`walsender\` dan \`walreceiver\`.
+- Pantau keterlambatan data melalui view \`pg_stat_replication\`.`,
   },
   {
-    slug: "b-tree-indexes-deep-dive",
-    title: "B-Tree Indexes: How They Work and When to Use Them",
-    titleId: "B-Tree Index: Cara Kerja dan Kapan Harus Digunakan",
-    category: "Performance",
-    engine: "PostgreSQL & SQLite",
+    slug: "mysql-11-innodb-replication-guide",
+    title: "MySQL & MariaDB 11 Deep Dive: InnoDB Engine, Buffer Pool & GTID Replication",
+    titleId: "Panduan Mendalam MySQL & MariaDB 11: Mesin InnoDB, Buffer Pool & Replikasi GTID",
+    category: "Architecture",
+    engine: "MySQL / MariaDB",
     readTime: "7 min read",
     summary:
-      "Demystifying balanced trees, range queries, composite indexes, and index selectivity.",
+      "Anatomy of the InnoDB storage engine, doublewrite buffers, redo logs, and production GTID replication topologies.",
     summaryId:
-      "Memahami struktur balanced tree, pencarian rentang (range query), composite index, dan selektivitas index.",
-    body: `### The B-Tree Data Structure
-B-Trees keep data sorted and allow searches, sequential access, insertions, and deletions in logarithmic time: **O(log N)**.
+      "Anatomi mesin penyimpanan InnoDB, doublewrite buffer, redo log, dan konfigurasi replikasi berbasis GTID.",
+    body: `### The InnoDB Storage Engine
+InnoDB is the ACID-compliant default storage engine for MySQL and MariaDB, organizing tables in clustered B+tree indexes ordered by Primary Key.
 
-### Best Practices for Indexes:
-1. Index columns frequently used in \`WHERE\`, \`JOIN\`, and \`ORDER BY\` clauses.
-2. Put the most selective column first in composite indexes.
-3. Avoid over-indexing tables with high write volume.`,
-    bodyId: `### Struktur Data B-Tree
-B-Tree menjaga data tetap terurut dan memungkinkan pencarian, akses berurutan, penambahan, serta penghapusan data dalam kompleksitas waktu logaritmik: **O(log N)**.
+### 1. The InnoDB Buffer Pool
+The single most critical memory structure in MySQL. Caches data pages, index pages, undo pages, and change buffers.
+\`\`\`ini
+# my.cnf
+innodb_buffer_pool_size = 8G      # 60-75% of dedicated server RAM
+innodb_buffer_pool_instances = 8  # Reduces thread concurrency contention
+innodb_log_file_size = 2G         # Redo log capacity
+innodb_flush_log_at_trx_commit = 1 # 1 = Full ACID compliance
+\`\`\`
 
-### Praktik Terbaik Indeks:
-1. Berikan indeks pada kolom yang sering muncul di klausa \`WHERE\`, \`JOIN\`, dan \`ORDER BY\`.
-2. Letakkan kolom dengan selektivitas tertinggi di urutan pertama pada composite index.
-3. Hindari pembuatan indeks berlebih pada tabel yang intensif operasi penulisan (write-heavy).`,
+### 2. Durability Mechanisms: Redo Log & Doublewrite Buffer
+- **Redo Log (\`ib_logfile\`)**: Sequential circular log recording physical page changes before memory pages flush.
+- **Doublewrite Buffer**: Prevents page corruption from torn writes by writing pages to a contiguous disk buffer before writing to \`.ibd\` tablespace files.
+
+### 3. Global Transaction Identifier (GTID) Replication
+GTID assigns a unique 128-bit UUID and sequence number to every committed transaction (\`source_id:transaction_id\`).
+- Eliminates tracking binlog file coordinates (\`mysql-bin.000123:456\`).
+- Enables automated topology failovers via tools like Orchestrator and ProxySQL.`,
+    bodyId: `### Mesin Penyimpanan InnoDB
+InnoDB adalah mesin penyimpanan default berbasis ACID untuk MySQL dan MariaDB. Semua tabel disimpan dengan clustered B+tree berurutan berdasarkan Primary Key.
+
+### 1. InnoDB Buffer Pool
+Struktur memori paling vital di MySQL. Berfungsi meng-cache halaman data, indeks, undo log, dan change buffer di RAM.
+\`\`\`ini
+# my.cnf
+innodb_buffer_pool_size = 8G      # 60-75% dari total RAM server khusus database
+innodb_buffer_pool_instances = 8  # Membagi buffer pool untuk mencegah thread contention
+innodb_log_file_size = 2G         # Kapasitas Redo Log
+innodb_flush_log_at_trx_commit = 1 # 1 = Jaminan penuh ACID Durability
+\`\`\`
+
+### 2. Menjaga Integritas Data: Redo Log & Doublewrite Buffer
+- **Redo Log**: Mencatat perubahan fisik halaman disk secara sekuensial sebelum data di-flush ke disk.
+- **Doublewrite Buffer**: Mencegah kerusakan halaman data akibat torn write (listrik mati saat menulis halaman 16KB).
+
+### 3. Replikasi Modern Berbasis GTID
+GTID (Global Transaction Identifier) memberikan pengenal unik pada setiap transaksi (\`UUID:sequence_number\`).
+- Menghapus kerumitan pelacakan koordinat file binlog manual (\`file:position\`).
+- Mempermudah failover klaster otomatis menggunakan tools seperti Orchestrator dan ProxySQL.`,
+  },
+  {
+    slug: "oracle-23ai-enterprise-architecture",
+    title: "Oracle 23ai Architecture: Multitenant CDB/PDB, SGA/PGA & AWR Telemetry",
+    titleId: "Arsitektur Oracle 23ai: Multitenant CDB/PDB, Memori SGA/PGA & Telemetri AWR",
+    category: "Architecture",
+    engine: "Oracle",
+    readTime: "8 min read",
+    summary:
+      "Exploring Oracle 23ai multitenant architecture, System Global Area memory allocation, and Automatic Workload Repository (AWR) diagnostics.",
+    summaryId:
+      "Memahami arsitektur multitenant Oracle 23ai, alokasi memori SGA/PGA, serta diagnostik Automatic Workload Repository (AWR).",
+    body: `### Oracle 23ai Multitenant Architecture
+Oracle Database 23ai enforces the Container Database (CDB) and Pluggable Database (PDB) paradigm:
+- **CDB$ROOT**: Stores Oracle-supplied metadata and common administrative users.
+- **PDBs**: Self-contained, portable tenant databases holding user schemas and data.
+
+### 1. Memory Structure: SGA vs. PGA
+- **SGA (System Global Area)**: Shared memory region allocated at instance startup.
+  - *Database Buffer Cache*: Caches blocks read from datafiles.
+  - *Shared Pool*: Caches parsed SQL execution plans (Library Cache) and data dictionary metadata (Row Cache).
+  - *Redo Log Buffer*: Circular buffer recording database mutations.
+- **PGA (Program Global Area)**: Dedicated private memory per server process (used for sorting, hashing, and cursor state).
+
+### 2. Telemetry & Diagnostics: AWR and ASH
+- **AWR (Automatic Workload Repository)**: Captures snapshots every 60 minutes, recording top SQL by elapsed time, wait events, and I/O profiles.
+- **ASH (Active Session History)**: Samples active sessions once every second in memory, enabling micro-level bottleneck triage.`,
+    bodyId: `### Arsitektur Multitenant Oracle 23ai
+Oracle Database 23ai menggunakan paradigma Container Database (CDB) dan Pluggable Database (PDB):
+- **CDB$ROOT**: Menyimpan metadata internal sistem Oracle dan user administratif bersama.
+- **PDB**: Database mandiri dan portabel yang menampung skema dan data aplikasi pengguna.
+
+### 1. Struktur Memori: SGA vs. PGA
+- **SGA (System Global Area)**: Memori bersama yang dialokasikan saat instance Oracle dinyalakan.
+  - *Database Buffer Cache*: Menyimpan blok data tabel dan indeks.
+  - *Shared Pool*: Menyimpan rencana eksekusi SQL (Library Cache) dan kamus data skema.
+  - *Redo Log Buffer*: Buffer sirkular penampung mutasi data sebelum ditulis ke disk.
+- **PGA (Program Global Area)**: Memori privat per proses koneksi pengguna (digunakan untuk sort dan hash join).
+
+### 2. Diagnostik & Analisis Performa: AWR dan ASH
+- **AWR (Automatic Workload Repository)**: Mengambil snapshot metrik setiap 60 menit untuk menganalisis SQL terberat, konsumsi I/O, dan wait event.
+- **ASH (Active Session History)**: Merekam aktivitas sesi aktif setiap 1 detik di memori untuk diagnosis insiden performa secara real-time.`,
+  },
+  {
+    slug: "sql-server-2022-internals-query-store",
+    title: "SQL Server 2022 Architecture: Storage Engine, Query Store & Extended Events",
+    titleId: "Arsitektur SQL Server 2022: Mesin Penyimpanan, Query Store & Extended Events",
+    category: "Architecture",
+    engine: "SQL Server",
+    readTime: "7 min read",
+    summary:
+      "Deep dive into Microsoft SQL Server 2022 extents, clustered index storage, Query Store plan forcing, and Extended Events telemetry.",
+    summaryId:
+      "Memahami organisasi halaman 8KB, indeks clustered, Query Store untuk stabilisasi rencana kueri, dan telemetri Extended Events.",
+    body: `### Storage Engine Organization
+SQL Server stores database data in 8 KB pages grouped into 64 KB extents (8 contiguous pages).
+- **Clustered Index**: The leaf level of the index *is* the actual table data itself, physically sorted by cluster key.
+- **Non-Clustered Index**: Separate B-tree structure holding key columns and a row locator (pointer to clustered key).
+
+### 1. Query Store: The Database Flight Recorder
+Query Store continuously captures history of queries, execution plans, and runtime statistics:
+- Automatically detects plan regressions where a query suddenly consumes 10x more CPU.
+- Allows DBAs to force good execution plans with a single command without altering application code.
+
+### 2. Telemetry: Extended Events (XEvents) vs. SQL Profiler
+- **SQL Profiler**: Deprecated; heavy client overhead that can degrade production throughput.
+- **Extended Events**: High-performance, lightweight event-handling engine built directly into the SQL Server kernel with minimal CPU impact (< 1%).`,
+    bodyId: `### Organisasi Mesin Penyimpanan SQL Server
+SQL Server menyimpan data dalam halaman (page) berukuran 8 KB yang dikelompokkan ke dalam extent 64 KB (8 halaman berurutan).
+- **Clustered Index**: Daun (leaf level) dari pohon indeks merupakan data baris fisik tabel itu sendiri yang terurut berdasarkan cluster key.
+- **Non-Clustered Index**: Struktur B-tree terpisah yang menampung kolom kunci dan pointer ke clustered key.
+
+### 1. Query Store: Flight Recorder Database
+Query Store merekam riwayat eksekusi kueri, rencana eksekusi (execution plan), dan statistik latensi:
+- Mendeteksi regresi performa kueri secara otomatis.
+- Mengizinkan DBA memaksa (force) execution plan yang efisien tanpa mengubah kode aplikasi.
+
+### 2. Telemetri: Extended Events (XEvents) Menggantikan SQL Profiler
+- **SQL Profiler**: Bersifat usang (deprecated) dan membebani server secara signifikan.
+- **Extended Events**: Sistem pelacakan event terintegrasi langsung pada kernel SQL Server dengan overhead sangat rendah (< 1% CPU).`,
+  },
+  {
+    slug: "database-monitoring-golden-signals",
+    title: "Database Observability Guide: The 4 Golden Signals, Exporters & PMM Runbooks",
+    titleId: "Panduan Observabilitas Database: 4 Golden Signals, Exporter & Runbook PMM",
+    category: "Performance",
+    engine: "Universal",
+    readTime: "6 min read",
+    summary:
+      "Actionable monitoring architecture for production databases: Latency, Traffic, Errors, and Saturation with PromQL and Grafana.",
+    summaryId:
+      "Arsitektur monitoring database produksi: Latency, Traffic, Errors, dan Saturation menggunakan PromQL dan dashboard Grafana.",
+    body: `### The 4 Golden Signals for Database Observability
+Google's Site Reliability Engineering framework applied to relational databases:
+
+### 1. Latency
+Time taken to service read and write queries.
+- **Target**: p95 < 20ms, p99 < 50ms.
+- **Metric**: \`rate(pg_stat_statements_total_time_ms[5m]) / rate(pg_stat_statements_calls[5m])\`.
+
+### 2. Traffic (Throughput)
+Volume of transactions demanded by clients.
+- **Metric**: Transactions per Second (TPS), Queries per Second (QPS).
+- **PromQL**: \`rate(pg_stat_database_xact_commit[1m]) + rate(pg_stat_database_xact_rollback[1m])\`.
+
+### 3. Errors
+Failure rate of database operations.
+- **Metric**: Transaction abort rate, Deadlock counts, Connection authorization rejections.
+- **PromQL**: \`increase(mysql_global_status_innodb_deadlocks[1h])\`.
+
+### 4. Saturation
+Fraction of database resource capacity utilized.
+- **Buffer Pool / Shared Buffer Hit Ratio**: Must stay > 99%.
+- **Active Connections**: Alert when \`active_connections / max_connections > 0.85\`.
+- **Replication Lag**: Alert when standby replication lag exceeds 30 seconds.`,
+    bodyId: `### 4 Golden Signals untuk Observabilitas Database
+Penerapan standar Google SRE untuk memantau kesehatan database relasional:
+
+### 1. Latensi (Latency)
+Waktu yang dibutuhkan untuk mengeksekusi kueri baca dan tulis.
+- **Target**: p95 < 20ms, p99 < 50ms.
+- **Metrik**: Rata-rata waktu eksekusi kueri melalui \`pg_stat_statements\` atau InnoDB Query Analytics (QAN).
+
+### 2. Trafik (Throughput)
+Beban transaksi yang diproses database dari aplikasi.
+- **Metrik**: Transactions per Second (TPS) dan Queries per Second (QPS).
+- **PromQL**: \`rate(pg_stat_database_xact_commit[1m]) + rate(pg_stat_database_xact_rollback[1m])\`.
+
+### 3. Kesalahan (Errors)
+Tingkat kegagalan operasi database.
+- **Metrik**: Rollback paksa, frekuensi deadlock per jam, dan penolakan koneksi akibat penuh.
+- **PromQL**: \`increase(mysql_global_status_innodb_deadlocks[1h])\`.
+
+### 4. Saturasi (Saturation)
+Persentase pemanfaatan kapasitas sumber daya database.
+- **Buffer Cache Hit Ratio**: Harus bertahan di atas 99%.
+- **Utilisasi Koneksi**: Berikan peringatan jika \`koneksi aktif / max_connections > 85%\`.
+- **Replication Lag**: Berikan alert jika keterlambatan replikasi melebihi 30 detik.`,
   },
   {
     slug: "sqlite-wal-mode-explained",
@@ -102,26 +320,28 @@ Pada **mode WAL** (\`PRAGMA journal_mode=WAL;\`):
 - Operasi commit ditulis ke file \`-wal\` tambahan dan secara berkala dikonsolidasikan (checkpointing) ke file database utama.`,
   },
   {
-    slug: "database-isolation-levels",
-    title: "SQL Transaction Isolation Levels & Concurrency Phenomena",
-    titleId: "Tingkat Isolasi Transaksi SQL & Fenomena Konkurensi",
+    slug: "understanding-acid-properties",
+    title: "Understanding ACID Properties in Modern Relational Databases",
+    titleId: "Memahami Prinsip ACID pada Database Relasional Modern",
     category: "Architecture",
     engine: "Universal",
-    readTime: "6 min read",
+    readTime: "5 min read",
     summary:
-      "Understanding Dirty Reads, Non-repeatable Reads, and Phantom Reads across the 4 ANSI SQL isolation levels.",
+      "A deep dive into Atomicity, Consistency, Isolation, and Durability and why they matter in production workloads.",
     summaryId:
-      "Memahami fenomena Dirty Reads, Non-repeatable Reads, dan Phantom Reads pada 4 tingkatan isolasi standar ANSI SQL.",
-    body: `### The 4 ANSI SQL Isolation Levels
-1. **Read Uncommitted**: Lowest isolation. Transactions can read uncommitted rows (Dirty Reads possible).
-2. **Read Committed**: Guarantees transactions only read committed changes. Default level in PostgreSQL.
-3. **Repeatable Read**: Re-reading a row returns identical data. Guarantees consistent snapshot throughout transaction.
-4. **Serializable**: Strictest isolation level. Transactions behave as if executed in strict serial order without concurrency anomalies.`,
-    bodyId: `### 4 Tingkat Isolasi Standar ANSI SQL
-1. **Read Uncommitted**: Tingkat terendah. Transaksi dapat membaca baris data yang belum di-commit transaksi lain (memungkinkan fenomena Dirty Read).
-2. **Read Committed**: Menjamin transaksi hanya dapat membaca data yang sudah di-commit. Merupakan tingkat default pada PostgreSQL.
-3. **Repeatable Read**: Menjamin baris data yang dibaca ulang akan selalu menghasilkan nilai yang konsisten selama transaksi berjalan.
-4. **Serializable**: Tingkat isolasi tertinggi dan terketat. Seluruh transaksi dieksekusi seolah-olah berurutan satu per satu tanpa ada anomali konkurensi.`,
+      "Penjelasan mendalam mengenai Atomicity, Consistency, Isolation, dan Durability dalam beban kerja produksi.",
+    body: `### What is ACID?
+ACID represents the four key guarantees of reliable database transactions:
+- **Atomicity**: An operation succeeds entirely or is rolled back completely. Never partial states.
+- **Consistency**: Data transitions strictly from one valid state to another according to constraints and triggers.
+- **Isolation**: Concurrent transactions do not interfere or observe uncommitted intermediate mutations.
+- **Durability**: Once committed, changes survive unexpected crashes, hardware failures, or power loss.`,
+    bodyId: `### Apa itu ACID?
+ACID adalah empat pilar jaminan keandalan transaksi database relasional:
+- **Atomicity (Keutuhan)**: Transaksi sukses seluruhnya atau dibatalkan total. Tidak ada status setengah jalan.
+- **Consistency (Konsistensi)**: Data hanya berpindah dari satu status valid ke status valid lainnya sesuai aturan skema dan integritas.
+- **Isolation (Isolasi)**: Transaksi bersamaan tidak saling mengganggu atau melihat mutasi yang belum di-commit.
+- **Durability (Ketahanan)**: Sekali transaksi di-commit, data dijamin bertahan walau sistem atau server mati mendadak.`,
   },
 ];
 
@@ -130,31 +350,90 @@ interface KnowledgeCenterProps {
   onOpenLab: () => void;
 }
 
-const CATEGORY_LOCALES: Record<string, { en: string; id: string }> = {
-  Architecture: { en: "Architecture", id: "Arsitektur" },
-  Performance: { en: "Performance", id: "Performa" },
-  Internals: { en: "Internals", id: "Internal Mesin" },
-};
-
 export function KnowledgeCenter({ language, onOpenLab }: KnowledgeCenterProps) {
   const isId = language === "id";
+  const [articles, setArticles] = useState<ArticleItem[]>(FALLBACK_ARTICLES);
+  const [selectedArticle, setSelectedArticle] = useState<ArticleItem | null>(FALLBACK_ARTICLES[0]);
+  const [activeEngineFilter, setActiveEngineFilter] = useState<string>("ALL");
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedArticle, setSelectedArticle] = useState<Article | null>(
-    ARTICLES[0]
-  );
   const [mobileViewingArticle, setMobileViewingArticle] = useState(false);
+  const [fullArticleDetail, setFullArticleDetail] = useState<string | null>(null);
 
-  const filtered = ARTICLES.filter(
-    (a) =>
-      a.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      a.titleId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      a.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Fetch live articles from API
+  useEffect(() => {
+    api
+      .get(`/knowledge/articles?language=${language}`)
+      .then((res) => {
+        if (Array.isArray(res.data) && res.data.length > 0) {
+          const apiMapped: ArticleItem[] = res.data.map((a: any) => ({
+            id: a.id,
+            slug: a.slug,
+            title: a.title,
+            titleId: a.title,
+            category: "Database Architecture",
+            engine: a.engine || "Universal",
+            summary: a.summary || "",
+            summaryId: a.summary || "",
+            readTime: "6 min read",
+          }));
+          setArticles(apiMapped);
+          if (apiMapped.length > 0) setSelectedArticle(apiMapped[0]);
+        }
+      })
+      .catch((err) => console.error("Error loading articles from API:", err));
+  }, [language]);
 
-  const handleSelect = (art: Article) => {
+  // Fetch complete article body when selected
+  useEffect(() => {
+    if (!selectedArticle) return;
+    setFullArticleDetail(null);
+    api
+      .get(`/knowledge/articles/${selectedArticle.slug}?language=${language}`)
+      .then((res) => {
+        if (res.data?.body_markdown) {
+          setFullArticleDetail(res.data.body_markdown);
+        }
+      })
+      .catch(() => {
+        // Fallback to static body
+        const fb = FALLBACK_ARTICLES.find((f) => f.slug === selectedArticle.slug);
+        if (fb) {
+          setFullArticleDetail(isId ? fb.bodyId || fb.body || "" : fb.body || "");
+        }
+      });
+  }, [selectedArticle?.slug, language, isId]);
+
+  const filteredArticles = useMemo(() => {
+    return articles.filter((a) => {
+      if (activeEngineFilter !== "ALL") {
+        if (!a.engine.toLowerCase().includes(activeEngineFilter.toLowerCase())) {
+          return false;
+        }
+      }
+      if (searchTerm.trim()) {
+        const q = searchTerm.toLowerCase();
+        return (
+          a.title.toLowerCase().includes(q) ||
+          (a.summary && a.summary.toLowerCase().includes(q)) ||
+          a.engine.toLowerCase().includes(q)
+        );
+      }
+      return true;
+    });
+  }, [articles, activeEngineFilter, searchTerm]);
+
+  const handleSelect = (art: ArticleItem) => {
     setSelectedArticle(art);
     setMobileViewingArticle(true);
   };
+
+  const articleBodyToRender =
+    fullArticleDetail ||
+    (selectedArticle
+      ? isId
+        ? selectedArticle.bodyId || selectedArticle.body || selectedArticle.body_markdown || ""
+        : selectedArticle.body || selectedArticle.body_markdown || ""
+      : "");
 
   return (
     <div className="flex flex-col lg:flex-row h-auto lg:h-[calc(100dvh-3.5rem)] w-full overflow-hidden bg-[#071A3A] text-slate-200">
@@ -162,137 +441,197 @@ export function KnowledgeCenter({ language, onOpenLab }: KnowledgeCenterProps) {
       <aside
         className={`${
           mobileViewingArticle ? "hidden" : "flex"
-        } lg:flex w-full lg:w-80 flex-col border-b lg:border-b-0 lg:border-r border-slate-800 bg-[#071A3A]/95 overflow-hidden`}
+        } lg:flex w-full lg:w-84 xl:w-96 flex-col border-b lg:border-b-0 lg:border-r border-slate-800 bg-[#071A3A]/95 overflow-hidden`}
       >
-        <div className="p-3 border-b border-slate-800">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#F2B84B] mb-2">
-            <BookOpen className="h-3.5 w-3.5" />
-            <span>{isId ? "Pusat Panduan & Arsitektur" : "Knowledge & Architecture"}</span>
+        <div className="p-3.5 border-b border-slate-800 bg-[#10264A]/30">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#F2B84B] mb-1.5">
+            <BookOpen className="h-4 w-4" />
+            <span>{isId ? "Ensiklopedia Mesin Database" : "Database Engine Encyclopedia"}</span>
           </div>
-          <div className="relative">
-            <Search className="absolute left-2.5 top-3 h-3.5 w-3.5 text-slate-400" />
+
+          {/* Search Box */}
+          <div className="relative mb-2.5">
+            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
             <input
               type="text"
               placeholder={
-                isId ? "Cari artikel database..." : "Search database guides..."
+                isId ? "Cari panduan arsitektur..." : "Search engine architecture..."
               }
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded bg-slate-900 border border-slate-800 pl-8 pr-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-[#F2B84B] min-h-[40px]"
+              className="w-full rounded-lg bg-slate-900 border border-slate-700/80 pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#F2B84B]"
             />
+          </div>
+
+          {/* Engine Filter Chips */}
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar touch-scroll pb-1">
+            {[
+              { id: "ALL", label: isId ? "Semua" : "All" },
+              { id: "postgres", label: "Postgres" },
+              { id: "mysql", label: "MySQL" },
+              { id: "sqlite", label: "SQLite" },
+              { id: "oracle", label: "Oracle" },
+              { id: "sql server", label: "SQL Server" },
+            ].map((chip) => (
+              <button
+                key={chip.id}
+                onClick={() => setActiveEngineFilter(chip.id)}
+                className={`rounded-md px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap transition-colors ${
+                  activeEngineFilter === chip.id
+                    ? "bg-[#F2B84B] text-[#071A3A] font-bold"
+                    : "bg-slate-900/80 text-slate-400 hover:text-white border border-slate-800"
+                }`}
+              >
+                {chip.label}
+              </button>
+            ))}
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
-          {filtered.map((art) => (
-            <div
-              key={art.slug}
-              onClick={() => handleSelect(art)}
-              className={`p-3 rounded border cursor-pointer transition-all ${
-                selectedArticle?.slug === art.slug
-                  ? "border-[#F2B84B] bg-[#10264A] shadow-sm"
-                  : "border-slate-800/80 bg-slate-900/30 hover:border-slate-700 hover:bg-slate-800/40"
-              }`}
-            >
-              <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
-                <span className="font-semibold text-[#F2B84B] uppercase tracking-wider">
-                  {CATEGORY_LOCALES[art.category]
-                    ? isId
-                      ? CATEGORY_LOCALES[art.category].id
-                      : CATEGORY_LOCALES[art.category].en
-                    : art.category}
-                </span>
-                <span>{isId ? art.readTime.replace("min read", "menit baca") : art.readTime}</span>
-              </div>
-              <h3 className="text-xs font-bold text-slate-100 leading-snug">
-                {isId ? art.titleId : art.title}
-              </h3>
-              <p className="mt-1 text-[11px] text-slate-400 line-clamp-2">
-                {isId ? art.summaryId : art.summary}
-              </p>
+        {/* Article Cards List */}
+        <div className="flex-1 overflow-y-auto p-2 space-y-2">
+          {filteredArticles.length === 0 ? (
+            <div className="p-6 text-center text-xs text-slate-500">
+              {isId ? "Tidak ada artikel yang cocok." : "No articles found."}
             </div>
-          ))}
+          ) : (
+            filteredArticles.map((art) => {
+              const isSelected = selectedArticle?.slug === art.slug;
+              return (
+                <div
+                  key={art.slug}
+                  onClick={() => handleSelect(art)}
+                  className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                    isSelected
+                      ? "border-[#F2B84B] bg-[#10264A] shadow-md ring-1 ring-[#F2B84B]/20"
+                      : "border-slate-800/80 bg-slate-900/40 hover:border-slate-700 hover:bg-slate-800/40"
+                  }`}
+                >
+                  <div className="flex items-center justify-between text-[10px] mb-1">
+                    <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[#F2B84B] font-mono font-semibold">
+                      {art.engine}
+                    </span>
+                    <span className="text-slate-500">{art.readTime || "5 min read"}</span>
+                  </div>
+                  <h3 className="text-xs font-bold text-white leading-snug line-clamp-2">
+                    {art.title}
+                  </h3>
+                  <p className="mt-1 text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
+                    {art.summary}
+                  </p>
+                </div>
+              );
+            })
+          )}
         </div>
       </aside>
 
-      {/* Main Reading Pane */}
+      {/* Reader Pane */}
       <main
         className={`${
           mobileViewingArticle ? "flex" : "hidden"
-        } lg:flex flex-1 flex-col overflow-y-auto p-4 sm:p-8 max-w-4xl`}
+        } lg:flex flex-1 flex-col overflow-y-auto bg-[#071A3A]`}
       >
-        {/* Mobile Back Button */}
-        <div className="lg:hidden mb-4">
-          <button
-            onClick={() => setMobileViewingArticle(false)}
-            className="flex items-center gap-2 text-xs text-[#F2B84B] font-semibold py-2 px-3 rounded-lg bg-slate-900 border border-slate-800 min-h-[44px] active:bg-slate-800"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>
-              {isId ? "Kembali ke Daftar Panduan" : "Back to Guides List"}
-            </span>
-          </button>
-        </div>
-
         {selectedArticle ? (
-          <div>
-            <div className="flex items-center gap-2 text-xs text-[#F2B84B] font-semibold uppercase tracking-wider mb-2">
-              <Tag className="h-3.5 w-3.5" />
-              <span>
-                {CATEGORY_LOCALES[selectedArticle.category]
-                  ? isId
-                    ? CATEGORY_LOCALES[selectedArticle.category].id
-                    : CATEGORY_LOCALES[selectedArticle.category].en
-                  : selectedArticle.category}
-              </span>
-              <span>•</span>
-              <Database className="h-3.5 w-3.5" />
-              <span>
-                {isId && selectedArticle.engine === "Universal"
-                  ? "Universal (Semua DB)"
-                  : selectedArticle.engine}
-              </span>
-            </div>
+          <div className="mx-auto w-full max-w-4xl p-4 sm:p-8">
+            {/* Mobile Back Button */}
+            <button
+              onClick={() => setMobileViewingArticle(false)}
+              className="lg:hidden mb-4 flex items-center gap-1.5 text-xs text-[#F2B84B] font-semibold"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>{isId ? "Kembali ke Daftar Artikel" : "Back to Article List"}</span>
+            </button>
 
-            <h1 className="text-xl sm:text-3xl font-extrabold text-white tracking-tight mb-4">
-              {isId ? selectedArticle.titleId : selectedArticle.title}
-            </h1>
-
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed italic mb-6 border-l-2 border-[#F2B84B] pl-3 py-0.5">
-              {isId ? selectedArticle.summaryId : selectedArticle.summary}
-            </p>
-
-            <div className="prose prose-invert prose-sm max-w-none text-slate-300 whitespace-pre-wrap leading-relaxed font-sans text-xs sm:text-sm">
-              {isId ? selectedArticle.bodyId : selectedArticle.body}
-            </div>
-
-            <div className="mt-8 rounded-lg border border-[#F2B84B]/30 bg-[#10264A]/60 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <h4 className="text-xs font-bold text-[#F2B84B]">
-                  {isId
-                    ? "Praktikkan Teori Ini Langsung"
-                    : "Practice This Live in Sandbox"}
-                </h4>
-                <p className="text-[11px] text-slate-400 mt-0.5">
-                  {isId
-                    ? "Buka Query Studio untuk menguji query dan memverifikasi rencana eksekusi."
-                    : "Launch Query Studio to experiment with SQL queries and inspect live execution plans."}
-                </p>
+            {/* Article Header */}
+            <div className="border-b border-slate-800 pb-5 mb-6">
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                <span className="rounded-lg bg-[#F2B84B]/20 border border-[#F2B84B]/40 px-2.5 py-0.5 text-xs font-bold text-[#F2B84B]">
+                  {selectedArticle.engine}
+                </span>
+                <span className="text-xs text-slate-400">
+                  {selectedArticle.readTime || "6 min read"}
+                </span>
               </div>
+
+              <h1 className="text-xl sm:text-2xl font-bold text-white mb-3 leading-snug">
+                {selectedArticle.title}
+              </h1>
+
+              <p className="text-sm text-slate-300 leading-relaxed bg-[#10264A]/30 p-3 rounded-xl border border-slate-800">
+                {selectedArticle.summary}
+              </p>
+            </div>
+
+            {/* Markdown Body */}
+            <div className="prose prose-invert prose-slate max-w-none text-xs sm:text-sm leading-relaxed space-y-4">
+              {articleBodyToRender.split("\n\n").map((block, idx) => {
+                if (block.startsWith("### ")) {
+                  return (
+                    <h3
+                      key={idx}
+                      className="text-base font-bold text-white border-b border-slate-800/80 pb-1.5 mt-6 mb-2 flex items-center gap-2"
+                    >
+                      <Layers className="h-4 w-4 text-[#F2B84B]" />
+                      <span>{block.replace("### ", "")}</span>
+                    </h3>
+                  );
+                } else if (block.startsWith("```")) {
+                  const cleaned = block.replace(/```[a-z]*\n?/g, "").trim();
+                  return (
+                    <pre
+                      key={idx}
+                      className="rounded-xl border border-slate-800 bg-[#071329] p-3.5 font-mono text-xs overflow-x-auto text-emerald-300"
+                    >
+                      <code>{cleaned}</code>
+                    </pre>
+                  );
+                } else if (block.startsWith("- ")) {
+                  const items = block.split("\n- ").map((item) => item.replace(/^- /, ""));
+                  return (
+                    <ul key={idx} className="list-disc pl-5 space-y-1 text-slate-300 text-xs sm:text-sm">
+                      {items.map((item, i) => (
+                        <li key={i}>{item}</li>
+                      ))}
+                    </ul>
+                  );
+                } else if (/^\d+\.\s/.test(block)) {
+                  const items = block.split(/\n\d+\.\s/).map((item) => item.replace(/^\d+\.\s/, ""));
+                  return (
+                    <ol key={idx} className="list-decimal pl-5 space-y-1 text-slate-300 text-xs sm:text-sm">
+                      {items.map((item, i) => (
+                        <li key={i}>{item}</li>
+                      ))}
+                    </ol>
+                  );
+                }
+                return (
+                  <p key={idx} className="text-slate-300 leading-relaxed text-xs sm:text-sm">
+                    {block}
+                  </p>
+                );
+              })}
+            </div>
+
+            {/* Quick Action Footer */}
+            <div className="mt-8 border-t border-slate-800 pt-5 flex items-center justify-between flex-wrap gap-3">
+              <span className="text-xs text-slate-400">
+                {isId
+                  ? "Ingin menguji kueri pada mesin ini secara langsung?"
+                  : "Ready to test queries on this engine?"}
+              </span>
               <button
                 onClick={onOpenLab}
-                className="flex items-center justify-center gap-1.5 rounded bg-[#F2B84B] px-4 py-2 text-xs font-bold text-[#071A3A] hover:bg-[#F2B84B]/90 transition-colors min-h-[40px] shrink-0"
+                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#F2B84B] to-[#D99A32] px-4 py-2 text-xs font-bold text-[#071A3A] hover:opacity-95 shadow-md transition-all"
               >
-                <span>{isId ? "Buka Studio" : "Open Studio"}</span>
-                <ArrowRight className="h-3.5 w-3.5" />
+                <Database className="h-4 w-4" />
+                <span>{isId ? "Buka di Query Studio" : "Open in Query Studio"}</span>
               </button>
             </div>
           </div>
         ) : (
-          <div className="flex h-full items-center justify-center text-xs text-slate-500 py-10">
-            {isId
-              ? "Pilih artikel dari daftar"
-              : "Select an article from the list"}
+          <div className="p-8 text-center text-slate-500">
+            {isId ? "Pilih artikel dari daftar." : "Select an article from the list."}
           </div>
         )}
       </main>

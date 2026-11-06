@@ -362,6 +362,349 @@ ORDER BY cs.total_revenue DESC;""",
 ]
 
 
+PROFESSIONS = [
+    {
+        "id": "dba",
+        "title": "Database Administrator (DBA)",
+        "title_id": "Administrator Basis Data (DBA)",
+        "category": "Operations & Reliability",
+        "category_id": "Operasional & Keandalan",
+        "summary": "Architects, provisions, monitors, and safeguards enterprise database instances to ensure 24/7 uptime, high performance, and rapid disaster recovery.",
+        "summary_id": "Merancang, mengelola, memantau, dan menjaga cluster database perusahaan untuk memastikan uptime 24/7, performa maksimal, dan pemulihan bencana instan.",
+        "engines": ["PostgreSQL", "MySQL", "Oracle", "SQL Server"],
+        "recommended_tools": ["pmm", "pgbackrest", "xtrabackup", "prometheus", "dbeaver"],
+        "core_responsibilities": [
+            "Maintain database high availability (HA) and automated failover clusters (Patroni / Orchestrator)",
+            "Design and test backup strategies (Full, Differential, Point-In-Time Recovery / PITR)",
+            "Monitor server resource consumption (Buffer cache hit ratio, lock waits, replication lag)",
+            "Perform major version upgrades with zero or near-zero maintenance downtime",
+        ],
+        "core_responsibilities_id": [
+            "Memelihara klaster ketersediaan tinggi (HA) dan failover otomatis (Patroni / Orchestrator)",
+            "Merancang dan menguji strategi pencadangan (Full, Diferensial, PITR)",
+            "Memantau konsumsi sumber daya (Buffer cache hit ratio, lock wait, lag replikasi)",
+            "Melakukan upgrade versi mayor dengan zero-downtime atau downtime minimal",
+        ],
+        "skills_progression": {
+            "junior": [
+                "SQL DDL/DML syntax across multiple engines",
+                "Logical backup & restore (pg_dump, mysqldump)",
+                "User management & privilege grants (least privilege)",
+                "Basic configuration tuning (memory limits, connection pools)",
+            ],
+            "mid": [
+                "Physical hot backup configuration (pgBackRest, XtraBackup)",
+                "Active-passive & streaming replication topology setup",
+                "Slow query log analysis and index defragmentation",
+                "Connection pooler deployment (PgBouncer, ProxySQL)",
+            ],
+            "senior": [
+                "Multi-region active-active cluster architecture",
+                "Automated chaos engineering & disaster recovery drills",
+                "Advanced performance telemetry via eBPF and kernel tuning",
+                "Automated migration pipelines and database sharding",
+            ],
+        },
+        "key_metrics": [
+            "Replication Lag (seconds / bytes behind master)",
+            "Cache Hit Ratio (> 99% target)",
+            "Active Connection Utilization (< 80% pool capacity)",
+            "Lock Contention & Deadlock Frequency",
+        ],
+        "runbooks": [
+            {
+                "name": "Replication Lag Emergency Remediation",
+                "name_id": "Penanganan Darurat Lag Replikasi",
+                "steps": [
+                    "Inspect replica I/O thread and SQL thread status",
+                    "Identify blocking long-running analytical queries on replica",
+                    "Increase parallel worker threads (e.g., slave_parallel_workers)",
+                    "If gap exceeds SLA, reroute read traffic to healthy nodes",
+                ],
+            },
+            {
+                "name": "Point-in-Time Recovery (PITR) Execution",
+                "name_id": "Eksekusi Point-in-Time Recovery (PITR)",
+                "steps": [
+                    "Isolate target restore node from production traffic",
+                    "Fetch latest consistent base backup from object storage",
+                    "Replay WAL / Binlog stream up to the exact target timestamp",
+                    "Verify data consistency and promote node as primary",
+                ],
+            },
+        ],
+        "recommended_challenges": [
+            "banking-priority-accounts",
+            "monthly-transfer-channels",
+            "cumulative-transaction-ledger",
+        ],
+    },
+    {
+        "id": "data-engineer",
+        "title": "Backend & Data Engineer",
+        "title_id": "Insinyur Backend & Data",
+        "category": "Software Architecture",
+        "category_id": "Arsitektur Perangkat Lunak",
+        "summary": "Designs relational schemas, writes high-throughput queries, avoids ORM anti-patterns, and builds reliable ETL/ELT data pipelines.",
+        "summary_id": "Merancang skema relasional efisien, menulis kueri throughput tinggi, mencegah anti-pattern ORM, dan membangun pipa data ETL/ELT terpercaya.",
+        "engines": ["PostgreSQL", "MySQL", "SQLite", "SQL Server"],
+        "recommended_tools": ["bytebase", "flyway", "pgmustard", "litecli", "dbeaver"],
+        "core_responsibilities": [
+            "Design normalized (3NF) relational models and denormalized analytical tables",
+            "Optimize database access layers in application code (eliminate N+1 query patterns)",
+            "Execute zero-downtime schema migrations using expand-contract patterns",
+            "Build robust transactional boundaries and concurrency controls (Optimistic / Pessimistic locking)",
+        ],
+        "core_responsibilities_id": [
+            "Merancang model relasional normal (3NF) dan tabel denormalisasi analitik",
+            "Mengoptimalkan layer akses database di kode backend (mengatasi kueri N+1)",
+            "Mengeksekusi migrasi skema tanpa downtime menggunakan pola expand-contract",
+            "Membangun batasan transaksi kuat dan kontrol konkurensi (Optimistic / Pessimistic locking)",
+        ],
+        "skills_progression": {
+            "junior": [
+                "Table design with appropriate data types and constraints",
+                "Multi-table JOINs and standard aggregations",
+                "Writing clean migration scripts using Flyway / Alembic",
+                "Basic understanding of transaction isolation levels",
+            ],
+            "mid": [
+                "Composite indexing strategy based on query predicate selectivity",
+                "Common Table Expressions (CTEs) and Window functions",
+                "Batch processing with pagination (keyset / cursor-based pagination)",
+                "Connection lifecycle management in microservices",
+            ],
+            "senior": [
+                "High-volume CDC (Change Data Capture) pipelines with Debezium",
+                "Polyglot persistence architecture (Relational + Cache + Search)",
+                "Design for distributed transactions (Saga pattern vs 2PC)",
+                "Declarative database CI/CD and automated schema linting",
+            ],
+        },
+        "key_metrics": [
+            "Query Latency p95 and p99 (< 50ms target)",
+            "Query Execution Plan Cost & Temp Spill to Disk",
+            "Migration Execution Duration & Table Lock Time",
+            "ORM Query Amplification Ratio (Queries per API Request)",
+        ],
+        "runbooks": [
+            {
+                "name": "Zero-Downtime Column Addition & Migration",
+                "name_id": "Penambahan Kolom & Migrasi Skema Zero-Downtime",
+                "steps": [
+                    "Add new nullable column without heavy locks",
+                    "Deploy dual-writing backend code to write to old and new columns",
+                    "Backfill existing records in controlled batches",
+                    "Switch reads to new column and deprecate old column",
+                ],
+            },
+        ],
+        "recommended_challenges": [
+            "top-spending-customers",
+            "dormant-customers-anti-join",
+            "category-revenue-cte",
+        ],
+    },
+    {
+        "id": "data-analyst",
+        "title": "Data Analyst & BI Specialist",
+        "title_id": "Analis Data & Spesialis BI",
+        "category": "Analytics & Business Intelligence",
+        "category_id": "Analitik & Kecerdasan Bisnis",
+        "summary": "Unlocks strategic insights from relational data through advanced SQL, window functions, statistical aggregations, and dimensional modeling.",
+        "summary_id": "Menghasilkan wawasan strategis dari data relasional melalui SQL tingkat lanjut, window function, agregasi statistik, dan pemodelan dimensional.",
+        "engines": ["PostgreSQL", "SQLite", "Oracle", "MySQL"],
+        "recommended_tools": ["dbeaver", "grafana", "litecli"],
+        "core_responsibilities": [
+            "Author complex analytical SQL queries (Window functions, cohorts, rolling averages)",
+            "Build clean dimensional reporting models (Star Schema / Snowflake Schema)",
+            "Create performant database views and materialized views for reporting dashboards",
+            "Validate data quality and business metrics against financial ledgers",
+        ],
+        "core_responsibilities_id": [
+            "Menulis kueri SQL analitik kompleks (Fungsi jendela, kohort, rata-rata bergerak)",
+            "Membangun model pelaporan dimensional yang bersih (Star Schema / Snowflake Schema)",
+            "Membuat database view dan materialized view performa tinggi untuk dashboard",
+            "Memvalidasi kualitas data dan akurasi metrik bisnis terhadap buku kas keuangan",
+        ],
+        "skills_progression": {
+            "junior": [
+                "Filtering, sorting, and conditional aggregations (CASE WHEN)",
+                "GROUP BY, HAVING, and multi-table INNER/LEFT JOINs",
+                "Extracting metrics into clean CSV/Excel reports",
+                "Date/Time manipulations across database dialects",
+            ],
+            "mid": [
+                "Ranking functions (ROW_NUMBER, RANK, DENSE_RANK)",
+                "Cumulative running totals and sliding frame aggregations (ROWS BETWEEN)",
+                "Recursive CTEs for hierarchical and tree data navigation",
+                "Creating and refreshing materialized views with indexes",
+            ],
+            "senior": [
+                "Advanced statistical analysis in SQL (percentiles, regression, histograms)",
+                "Designing self-service data marts for non-technical stakeholders",
+                "Optimizing query performance for multi-terabyte data warehouses",
+                "Building automated data quality verification tests in SQL",
+            ],
+        },
+        "key_metrics": [
+            "Dashboard Refresh Time (< 5s target)",
+            "Analytical Query Compute Cost & Memory Usage",
+            "Data Accuracy & Reconciliation Match Rate (100%)",
+            "Report Delivery SLA Adherence",
+        ],
+        "runbooks": [
+            {
+                "name": "Slow Dashboard Query Troubleshooting",
+                "name_id": "Troubleshooting Query Dashboard yang Lambat",
+                "steps": [
+                    "Inspect EXPLAIN plan for full table scans on historical partitions",
+                    "Add covering composite index for filter and aggregation columns",
+                    "Convert real-time join calculation to a scheduled Materialized View",
+                    "Verify dashboard latency drops below 2 seconds",
+                ],
+            },
+        ],
+        "recommended_challenges": [
+            "product-price-category-rank",
+            "cumulative-transaction-ledger",
+            "category-revenue-cte",
+            "high-volume-authors",
+        ],
+    },
+    {
+        "id": "dbre",
+        "title": "Site Reliability Engineer (Database SRE / DBRE)",
+        "title_id": "Insinyur Keandalan Situs (DBRE / SRE)",
+        "category": "Infrastructure & Telemetry",
+        "category_id": "Infrastruktur & Telemetri",
+        "summary": "Applies software engineering disciplines to database operations, defining SLOs/SLIs, building automated telemetry pipelines, and orchestrating self-healing topologies.",
+        "summary_id": "Menerapkan disiplin rekayasa perangkat lunak pada operasional database, merumuskan SLO/SLI, membangun telemetri otomatis, dan orkestrasi arsitektur self-healing.",
+        "engines": ["PostgreSQL", "MySQL", "Oracle", "SQL Server"],
+        "recommended_tools": ["prometheus", "grafana", "pmm", "pgmustard"],
+        "core_responsibilities": [
+            "Define and monitor Database Service Level Objectives (SLOs: 99.99% availability, p99 latency < 20ms)",
+            "Maintain Prometheus metric exporters and Grafana alert rule pipelines",
+            "Automate infrastructure provisioning via Infrastructure-as-Code (Terraform / Ansible)",
+            "Conduct automated disaster recovery and chaos engineering drills",
+        ],
+        "core_responsibilities_id": [
+            "Menentukan dan memantau SLO database (Ketersediaan 99.99%, latensi p99 < 20ms)",
+            "Memelihara exporter metrik Prometheus dan pipeline aturan peringatan Grafana",
+            "Mengotomatiskan penyediaan infrastruktur melalui IaC (Terraform / Ansible)",
+            "Melakukan latihan pemulihan bencana otomatis dan pengujian chaos engineering",
+        ],
+        "skills_progression": {
+            "junior": [
+                "Linux OS performance fundamentals (CPU, I/O wait, memory buffers, disk queues)",
+                "Configuring Prometheus scrape targets and node/database exporters",
+                "Basic containerization and orchestration for database sidecars",
+                "Incident triage and logging aggregation (Loki, Elasticsearch)",
+            ],
+            "mid": [
+                "SLO / Error Budget alerting strategies (multi-window burn rate alerts)",
+                "Kernel sysctl parameter tuning for heavy database I/O (`vm.dirty_ratio`, `swappiness`)",
+                "Automated snapshot verification and restore validation bots",
+                "Distributed tracing across application and database layers (OpenTelemetry)",
+            ],
+            "senior": [
+                "Autonomous self-healing cluster orchestration and split-brain prevention (etcd, Raft)",
+                "Global multi-cloud active replication topologies with automatic traffic steering",
+                "Capacity forecasting models using machine learning on Prometheus telemetry",
+                "Zero-downtime kernel live-patching and security automation",
+            ],
+        },
+        "key_metrics": [
+            "SLO Error Budget Burn Rate",
+            "Storage IOPS & Disk Queue Depth",
+            "Connection Pool Saturation Ratio",
+            "MTTR (Mean Time to Resolution) during Failovers (< 30s)",
+        ],
+        "runbooks": [
+            {
+                "name": "Automated Primary Failover Verification",
+                "name_id": "Verifikasi Failover Primary Otomatis",
+                "steps": [
+                    "Verify consensus quorum in distributed coordination store (e.g. etcd)",
+                    "Confirm replica has fully applied WAL/Binlog stream with zero transaction loss",
+                    "Promote replica to primary and update virtual IP / DNS endpoint",
+                    "Demote previous primary to standby upon recovery",
+                ],
+            },
+        ],
+        "recommended_challenges": [
+            "banking-priority-accounts",
+            "cumulative-transaction-ledger",
+        ],
+    },
+    {
+        "id": "security-auditor",
+        "title": "Database Security & Compliance Specialist",
+        "title_id": "Spesialis Keamanan & Kepatuhan Database",
+        "category": "Security & Governance",
+        "category_id": "Keamanan & Tata Kelola",
+        "summary": "Enforces cryptographic protection, fine-grained access governance, audit logging, and regulatory compliance (PCI-DSS, SOC 2, GDPR, HIPAA) across all enterprise database tiers.",
+        "summary_id": "Menerapkan proteksi kriptografis, tata kelola akses mendalam, audit logging, dan kepatuhan regulasi (PCI-DSS, SOC 2, GDPR, HIPAA) pada seluruh tier database perusahaan.",
+        "engines": ["PostgreSQL", "Oracle", "SQL Server", "MySQL"],
+        "recommended_tools": ["bytebase", "dbeaver", "pmm"],
+        "core_responsibilities": [
+            "Implement Role-Based Access Control (RBAC) and Row-Level Security (RLS) policies",
+            "Configure Transparent Data Encryption (TDE) at rest and TLS 1.3 in transit",
+            "Audit privileged user activity and detect anomalous data exfiltration queries",
+            "Automate PII data masking in staging and development sandboxes",
+        ],
+        "core_responsibilities_id": [
+            "Menerapkan Role-Based Access Control (RBAC) dan kebijakan Row-Level Security (RLS)",
+            "Mengonfigurasi Transparent Data Encryption (TDE) saat diam dan TLS 1.3 saat transmisi",
+            "Mengaudit aktivitas pengguna istimewa dan mendeteksi kueri eksfiltrasi data anomali",
+            "Mengotomatiskan penyamaran data PII pada sandbox staging dan development",
+        ],
+        "skills_progression": {
+            "junior": [
+                "Principle of Least Privilege: granting precise table and column permissions",
+                "Configuring secure TLS connection certificates for database clients",
+                "Password complexity, rotation policies, and connection timeout rules",
+                "Reviewing database audit logs for unauthorized access attempts",
+            ],
+            "mid": [
+                "Implementing Row-Level Security (RLS) policies in PostgreSQL / Oracle",
+                "Transparent Data Encryption (TDE) and key management integration (Vault / KMS)",
+                "Dynamic data masking for sensitive fields (credit cards, national IDs)",
+                "SQL injection vulnerability assessment and parameterized query enforcement",
+            ],
+            "senior": [
+                "Zero-Trust database access architecture with ephemeral credentials",
+                "Regulatory audit defense and continuous compliance reporting (SOC 2, ISO 27001)",
+                "Hardware Security Module (HSM) key lifecycle management",
+                "Automated anomaly detection for suspicious bulk SELECT patterns",
+            ],
+        },
+        "key_metrics": [
+            "Privileged Account Exposure Count (Target: Minimal/Ephemeral)",
+            "Unencrypted Connection Rate (Target: 0%)",
+            "Audit Trail Coverage Rate (100% of DDL & DCL statements)",
+            "Vulnerability Remediation Mean Time (MTTR < 7 days)",
+        ],
+        "runbooks": [
+            {
+                "name": "Row-Level Security (RLS) Policy Implementation",
+                "name_id": "Penerapan Kebijakan Row-Level Security (RLS)",
+                "steps": [
+                    "Enable RLS on target table (`ALTER TABLE accounts ENABLE ROW LEVEL SECURITY;`)",
+                    "Define tenant isolation policy based on session variable `current_setting('app.current_tenant_id')`",
+                    "Verify standard user cannot read cross-tenant rows even with `SELECT *`",
+                    "Log policy violations to centralized SIEM security collector",
+                ],
+            },
+        ],
+        "recommended_challenges": [
+            "banking-priority-accounts",
+            "academic-grade-a",
+        ],
+    },
+]
+
+
 class ChallengeSubmitRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=50000)
     language: str = "id"
@@ -477,6 +820,19 @@ def _execute_mysql(dataset_slug: str, ref_sql: str, user_sql: str) -> tuple[list
         cur.execute(f"DROP DATABASE `{db_name}`;")
     conn.close()
     return ref_columns, ref_rows, user_cols, user_rows, elapsed_ms, err_msg
+
+
+@router.get("/roles")
+async def list_professions() -> list[dict]:
+    return PROFESSIONS
+
+
+@router.get("/roles/{role_id}")
+async def get_profession(role_id: str) -> dict:
+    role = next((r for r in PROFESSIONS if r["id"] == role_id), None)
+    if not role:
+        raise HTTPException(status_code=404, detail="Profession role not found")
+    return role
 
 
 @router.get("/exercises")

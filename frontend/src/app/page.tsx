@@ -4,13 +4,14 @@ import React, { useState, useEffect } from "react";
 import { Header } from "@/components/layout/header";
 import { QueryWorkbench } from "@/components/workbench/query-workbench";
 import { LearningChallenges } from "@/components/learning/learning-challenges";
+import { ProfessionsMatrix } from "@/components/roles/professions-matrix";
 import { KnowledgeCenter } from "@/components/knowledge/knowledge-center";
 import { ToolsCatalog } from "@/components/tools/tools-catalog";
 import { api } from "@/lib/api";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<
-    "workbench" | "challenges" | "knowledge" | "tools"
+    "workbench" | "challenges" | "roles" | "knowledge" | "tools"
   >("workbench");
   const [language, setLanguage] = useState<"en" | "id">("id");
   const [sandboxId, setSandboxId] = useState<string | null>(null);
@@ -109,6 +110,18 @@ export default function Home() {
           <LearningChallenges
             language={language}
             onOpenLabWithQuery={handleOpenLabWithQuery}
+          />
+        )}
+
+        {activeTab === "roles" && (
+          <ProfessionsMatrix
+            language={language}
+            onSelectChallenge={(_slug) => {
+              setActiveTab("challenges");
+            }}
+            onOpenTool={(_toolSlug) => {
+              setActiveTab("tools");
+            }}
           />
         )}
 
