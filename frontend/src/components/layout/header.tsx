@@ -1,11 +1,18 @@
 "use client";
 
 import React from "react";
-import { Database, RefreshCw, BookOpen, Wrench, Shield, Globe } from "lucide-react";
+import {
+  Database,
+  RefreshCw,
+  BookOpen,
+  Wrench,
+  GraduationCap,
+  Sparkles,
+} from "lucide-react";
 
 interface HeaderProps {
-  activeTab: "workbench" | "knowledge" | "tools";
-  setActiveTab: (tab: "workbench" | "knowledge" | "tools") => void;
+  activeTab: "workbench" | "challenges" | "knowledge" | "tools";
+  setActiveTab: (tab: "workbench" | "challenges" | "knowledge" | "tools") => void;
   language: "en" | "id";
   setLanguage: (lang: "en" | "id") => void;
   sandboxStatus: string;
@@ -36,7 +43,7 @@ export function Header({
             <div className="flex items-center gap-2">
               <span className="font-extrabold tracking-wider text-white">WIYATA</span>
               <span className="rounded bg-[#F2B84B]/20 px-1.5 py-0.2 text-[10px] font-semibold text-[#F2B84B] border border-[#F2B84B]/30">
-                LAB
+                PLATFORM
               </span>
             </div>
             <p className="text-[10px] text-slate-400">
@@ -49,7 +56,7 @@ export function Header({
         <nav className="flex items-center gap-1 border-l border-slate-800 pl-6">
           <button
             onClick={() => setActiveTab("workbench")}
-            className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
               activeTab === "workbench"
                 ? "bg-[#10264A] text-[#F2B84B] border border-[#F2B84B]/30"
                 : "text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
@@ -60,8 +67,20 @@ export function Header({
           </button>
 
           <button
+            onClick={() => setActiveTab("challenges")}
+            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+              activeTab === "challenges"
+                ? "bg-[#10264A] text-[#F2B84B] border border-[#F2B84B]/30"
+                : "text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
+            }`}
+          >
+            <GraduationCap className="h-3.5 w-3.5" />
+            <span>{isId ? "Tantangan SQL" : "SQL Challenges"}</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab("knowledge")}
-            className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
               activeTab === "knowledge"
                 ? "bg-[#10264A] text-[#F2B84B] border border-[#F2B84B]/30"
                 : "text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
@@ -73,14 +92,14 @@ export function Header({
 
           <button
             onClick={() => setActiveTab("tools")}
-            className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
               activeTab === "tools"
                 ? "bg-[#10264A] text-[#F2B84B] border border-[#F2B84B]/30"
                 : "text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
             }`}
           >
             <Wrench className="h-3.5 w-3.5" />
-            <span>{isId ? "Katalog Alat Profesional" : "Professional Tools"}</span>
+            <span>{isId ? "Katalog Alat" : "Professional Tools"}</span>
           </button>
         </nav>
       </div>

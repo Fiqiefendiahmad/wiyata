@@ -3,16 +3,27 @@
 import React, { useState } from "react";
 import { Header } from "@/components/layout/header";
 import { QueryWorkbench } from "@/components/workbench/query-workbench";
+import { LearningChallenges } from "@/components/learning/learning-challenges";
 import { KnowledgeCenter } from "@/components/knowledge/knowledge-center";
 import { ToolsCatalog } from "@/components/tools/tools-catalog";
 import { api } from "@/lib/api";
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<"workbench" | "knowledge" | "tools">("workbench");
+  const [activeTab, setActiveTab] = useState<
+    "workbench" | "challenges" | "knowledge" | "tools"
+  >("workbench");
   const [language, setLanguage] = useState<"en" | "id">("id");
   const [sandboxId, setSandboxId] = useState<string | null>(null);
   const [sandboxStatus, setSandboxStatus] = useState<string>("Ready");
   const [isResetting, setIsResetting] = useState<boolean>(false);
+
+  // Cross-component state injection
+  const [labInitialQuery, setLabInitialQuery] = useState<string | undefined>(
+    undefined
+  );
+  const [labInitialTemplate, setLabInitialTemplate] = useState<string | undefined>(
+    undefined
+  );
 
   const handleResetSandbox = async () => {
     if (!sandboxId) return;
@@ -21,7 +32,6 @@ export default function Home() {
     try {
       await api.post(`/sandboxes/${sandboxId}/reset`);
       setSandboxStatus("Ready");
-      // Force trigger state refresh
       setSandboxId(sandboxId);
     } catch (err) {
       console.error("Reset error:", err);
@@ -29,6 +39,12 @@ export default function Home() {
     } finally {
       setIsResetting(false);
     }
+  };
+
+  const handleOpenLabWithQuery = (query: string, template: string) => {
+    setLabInitialQuery(query);
+    setLabInitialTemplate(template);
+    setActiveTab("workbench");
   };
 
   return (
@@ -52,6 +68,15 @@ export default function Home() {
               setSandboxStatus("Ready");
             }}
             language={language}
+            initialQuery={labInitialQuery}
+            initialTemplate={labInitialTemplate}
+          />
+        )}
+
+        {activeTab === "challenges" && (
+          <LearningChallenges
+            language={language}
+            onOpenLabWithQuery={handleOpenLabWithQuery}
           />
         )}
 

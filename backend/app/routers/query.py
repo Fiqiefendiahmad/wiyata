@@ -1,3 +1,4 @@
+from typing import Any
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 import sqlglot
@@ -8,6 +9,11 @@ from app.schemas.query import (
     QueryResult,
     QueryValidateRequest,
 )
+from app.services.query_ai import (
+    explain_query_natural,
+    generate_sql_from_prompt,
+    optimize_query,
+)
 
 router = APIRouter(prefix="/query", tags=["Query"])
 
@@ -17,19 +23,55 @@ class QueryFormatRequest(BaseModel):
     dialect: str = "sqlite"
 
 
-class QueryExplainRequest(BaseModel):
+class QueryOptimizeRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=50000)
     dialect: str = "sqlite"
 
 
+class QueryExplainNaturalRequest(BaseModel):
+    query: str = Field(..., min_length=1, max_length=50000)
+    language: str = "en"
+
+
+class SchemaContext(BaseModel):
+    tables: list[dict[str, Any]] = []
+
+
+class QueryGenerateWithSchemaRequest(BaseModel):
+    request: str = Field(..., min_length=1, max_length=2000)
+    engine: str = "sqlite"
+    language: str = "en"
+    schema_context: list[dict[str, Any]] = []
+
+
 @router.post("/generate", response_model=QueryResult)
-async def generate_query(body: QueryGenerateRequest) -> QueryResult:
-    # Rule: Never execute AI generated SQL automatically. Display for explicit review.
-    return QueryResult(
-        status="not_implemented",
+async def generate_query(body: QueryGenerateWithSchemaRequest) -> QueryResult:
+    result = await generate_sql_from_prompt(
+        prompt=body.request,
+        schema=body.schema_context,
         engine=body.engine,
-        warnings=["AI query generation provider is in manual/offline mode. Connect Ollama or an external LLM key in .env."],
+        language=body.language,
     )
+    return QueryResult(**result)
+
+
+@router.post("/optimize")
+async def check_query_optimizations(body: QueryOptimizeRequest) -> dict:
+    suggestions = optimize_query(body.query, dialect=body.dialect)
+    return {
+        "status": "success",
+        "suggestions_count": len(suggestions),
+        "suggestions": suggestions,
+    }
+
+
+@router.post("/explain-natural")
+async def explain_query_in_plain_language(body: QueryExplainNaturalRequest) -> dict:
+    steps = explain_query_natural(body.query, language=body.language)
+    return {
+        "status": "success",
+        "steps": steps,
+    }
 
 
 @router.post("/convert")

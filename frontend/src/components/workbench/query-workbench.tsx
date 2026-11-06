@@ -17,6 +17,10 @@ import {
   ChevronDown,
   Key,
   Database,
+  Bookmark,
+  BookmarkPlus,
+  HelpCircle,
+  Lightbulb,
 } from "lucide-react";
 import { SqlEditor } from "@/components/editor/sql-editor";
 import { api } from "@/lib/api";
@@ -42,34 +46,59 @@ interface TemplateItem {
   description: string;
 }
 
+interface SavedQueryItem {
+  id: string;
+  title: string;
+  query_text: string;
+  description: string | null;
+}
+
 interface QueryWorkbenchProps {
   sandboxId: string | null;
   onSandboxChange: (id: string) => void;
   language: "en" | "id";
+  initialQuery?: string;
+  initialTemplate?: string;
 }
 
 export function QueryWorkbench({
   sandboxId,
   onSandboxChange,
   language,
+  initialQuery,
+  initialTemplate,
 }: QueryWorkbenchProps) {
   const isId = language === "id";
 
   // State
   const [query, setQuery] = useState<string>(
-    "SELECT c.first_name, c.last_name, COUNT(o.id) AS total_orders, SUM(o.total_amount) AS total_spent\nFROM customers c\nJOIN orders o ON c.id = o.customer_id\nGROUP BY c.id\nORDER BY total_spent DESC\nLIMIT 5;"
+    initialQuery ||
+      "SELECT c.first_name, c.last_name, COUNT(o.id) AS total_orders, SUM(o.total_amount) AS total_spent\nFROM customers c\nJOIN orders o ON c.id = o.customer_id\nGROUP BY c.id\nORDER BY total_spent DESC\nLIMIT 5;"
   );
   const [transpileTarget, setTranspileTarget] = useState<string>("postgres");
   const [transpiledSql, setTranspiledSql] = useState<string>("");
   const [transpileWarnings, setTranspileWarnings] = useState<string[]>([]);
   const [activeOutputTab, setActiveOutputTab] = useState<
-    "results" | "transpile" | "explain"
+    "results" | "transpile" | "explain" | "ai_explain" | "optimize"
   >("results");
   const [allowDdl, setAllowDdl] = useState<boolean>(false);
 
+  // AI & Optimization State
+  const [naturalPrompt, setNaturalPrompt] = useState<string>("");
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [aiExplanation, setAiExplanation] = useState<string[]>([]);
+  const [optimizations, setOptimizations] = useState<any[]>([]);
+
+  // Saved Queries Library
+  const [savedQueries, setSavedQueries] = useState<SavedQueryItem[]>([]);
+  const [showSavedModal, setShowSavedModal] = useState<boolean>(false);
+  const [newTitle, setNewTitle] = useState<string>("");
+
   // Schema & Templates
   const [templates, setTemplates] = useState<TemplateItem[]>([]);
-  const [activeTemplate, setActiveTemplate] = useState<string>("ecommerce");
+  const [activeTemplate, setActiveTemplate] = useState<string>(
+    initialTemplate || "ecommerce"
+  );
   const [schema, setSchema] = useState<TableSchema[]>([]);
   const [expandedTables, setExpandedTables] = useState<Record<string, boolean>>(
     { customers: true, orders: true }
@@ -89,18 +118,26 @@ export function QueryWorkbench({
   } | null>(null);
   const [explainPlan, setExplainPlan] = useState<any[] | null>(null);
 
-  // Fetch templates on mount
+  // Fetch templates & saved queries on mount
   useEffect(() => {
     api
       .get("/sandboxes/templates")
       .then((res) => setTemplates(res.data))
       .catch((err) => console.error("Failed to load templates:", err));
+
+    loadSavedQueries();
   }, []);
+
+  const loadSavedQueries = () => {
+    api
+      .get("/library/queries")
+      .then((res) => setSavedQueries(res.data))
+      .catch((err) => console.error("Failed to load queries:", err));
+  };
 
   // Initialize or fetch sandbox schema
   useEffect(() => {
     if (!sandboxId) {
-      // Create initial sandbox
       createSandbox(activeTemplate);
     } else {
       loadSchema(sandboxId);
@@ -179,7 +216,6 @@ export function QueryWorkbench({
           elapsedMs: res.data.elapsed_ms,
           truncated: res.data.truncated,
         });
-        // Reload schema in case DDL was executed
         if (allowDdl) {
           loadSchema(sandboxId);
         }
@@ -275,6 +311,81 @@ export function QueryWorkbench({
       console.error("Explain error:", err);
     } finally {
       setIsRunning(false);
+    }
+  };
+
+  // AI: Generate SQL from Natural Language
+  const handleGenerateSql = async () => {
+    if (!naturalPrompt.trim()) return;
+    setIsGenerating(true);
+
+    try {
+      const res = await api.post("/query/generate", {
+        request: naturalPrompt.trim(),
+        engine: "sqlite",
+        language: language,
+        schema_context: schema,
+      });
+
+      if (res.data.query) {
+        setQuery(res.data.query);
+        setNaturalPrompt("");
+      }
+    } catch (err: any) {
+      console.error("Generate error:", err);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // AI: Plain Language Explanation
+  const handleExplainNatural = async () => {
+    if (!query.trim()) return;
+    setActiveOutputTab("ai_explain");
+
+    try {
+      const res = await api.post("/query/explain-natural", {
+        query: query.trim(),
+        language: language,
+      });
+      setAiExplanation(res.data.steps || []);
+    } catch (err: any) {
+      console.error("Explain error:", err);
+    }
+  };
+
+  // Optimization & Lint Check
+  const handleOptimizeCheck = async () => {
+    if (!query.trim()) return;
+    setActiveOutputTab("optimize");
+
+    try {
+      const res = await api.post("/query/optimize", {
+        query: query.trim(),
+        dialect: "sqlite",
+      });
+      setOptimizations(res.data.suggestions || []);
+    } catch (err: any) {
+      console.error("Optimize check error:", err);
+    }
+  };
+
+  // Save Query to Library
+  const handleSaveQuery = async () => {
+    if (!newTitle.trim() || !query.trim()) return;
+    try {
+      await api.post("/library/queries", {
+        title: newTitle.trim(),
+        query_text: query.trim(),
+        engine: "sqlite",
+        dialect: "sqlite",
+        description: "Saved from Query Studio",
+      });
+      setNewTitle("");
+      setShowSavedModal(false);
+      loadSavedQueries();
+    } catch (err: any) {
+      console.error("Save query error:", err);
     }
   };
 
@@ -378,10 +489,65 @@ export function QueryWorkbench({
             )}
           </div>
         </div>
+
+        {/* Saved Queries Shortcut */}
+        <div className="border-t border-slate-800 p-2.5">
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-400 mb-1.5">
+            <span className="flex items-center gap-1.5">
+              <Bookmark className="h-3.5 w-3.5 text-[#F2B84B]" />
+              {isId ? "Koleksi Query" : "Saved Queries"}
+            </span>
+            <button
+              onClick={() => setShowSavedModal(true)}
+              className="text-[#F2B84B] hover:underline text-[11px]"
+            >
+              + {isId ? "Simpan" : "Save"}
+            </button>
+          </div>
+          <div className="space-y-1 max-h-24 overflow-y-auto">
+            {savedQueries.map((sq) => (
+              <div
+                key={sq.id}
+                onClick={() => setQuery(sq.query_text)}
+                className="text-[11px] text-slate-300 hover:text-[#F2B84B] cursor-pointer truncate rounded px-1.5 py-0.5 hover:bg-slate-800/60"
+                title={sq.title}
+              >
+                {sq.title}
+              </div>
+            ))}
+          </div>
+        </div>
       </aside>
 
       {/* MAIN QUERY WORKBENCH */}
       <main className="flex flex-1 flex-col overflow-hidden">
+        {/* AI Natural Language SQL Bar */}
+        <div className="flex items-center gap-2 border-b border-slate-800 bg-[#071A3A] px-3 py-1.5">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-[#F2B84B]">
+            <Sparkles className="h-3.5 w-3.5 text-[#F2B84B]" />
+            <span>AI SQL:</span>
+          </div>
+          <input
+            type="text"
+            placeholder={
+              isId
+                ? "Contoh: 'tampilkan 5 pelanggan dengan pengeluaran terbanyak' atau 'produk dengan stok menipis'..."
+                : "E.g. 'show top 5 spending customers' or 'find products low on inventory'..."
+            }
+            value={naturalPrompt}
+            onChange={(e) => setNaturalPrompt(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleGenerateSql()}
+            className="flex-1 rounded bg-[#10264A]/80 border border-slate-700/60 px-3 py-1 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#F2B84B]"
+          />
+          <button
+            onClick={handleGenerateSql}
+            disabled={isGenerating || !naturalPrompt.trim()}
+            className="rounded bg-[#F2B84B] px-3 py-1 text-xs font-bold text-[#071A3A] hover:opacity-90 disabled:opacity-50 transition-opacity"
+          >
+            {isGenerating ? (isId ? "Menghasilkan..." : "Generating...") : (isId ? "Hasilkan SQL" : "Generate SQL")}
+          </button>
+        </div>
+
         {/* Editor Toolbar */}
         <div className="flex h-11 items-center justify-between border-b border-slate-800 bg-[#10264A]/50 px-4">
           <div className="flex items-center gap-2">
@@ -402,7 +568,25 @@ export function QueryWorkbench({
               className="flex items-center gap-1.5 rounded border border-slate-700 bg-slate-800/60 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-700/60 transition-colors"
             >
               <Code2 className="h-3.5 w-3.5" />
-              <span>{isId ? "Format SQL" : "Format SQL"}</span>
+              <span>Format</span>
+            </button>
+
+            {/* Plain AI Explain */}
+            <button
+              onClick={handleExplainNatural}
+              className="flex items-center gap-1.5 rounded border border-slate-700 bg-slate-800/60 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-700/60 transition-colors"
+            >
+              <HelpCircle className="h-3.5 w-3.5 text-[#F2B84B]" />
+              <span>{isId ? "Jelaskan Logika" : "Explain Logic"}</span>
+            </button>
+
+            {/* Lint & Optimize */}
+            <button
+              onClick={handleOptimizeCheck}
+              className="flex items-center gap-1.5 rounded border border-slate-700 bg-slate-800/60 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-700/60 transition-colors"
+            >
+              <Lightbulb className="h-3.5 w-3.5 text-amber-400" />
+              <span>{isId ? "Audit Kueri" : "Audit Query"}</span>
             </button>
 
             {/* Explain Plan */}
@@ -411,12 +595,12 @@ export function QueryWorkbench({
               className="flex items-center gap-1.5 rounded border border-slate-700 bg-slate-800/60 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-700/60 transition-colors"
             >
               <Layers className="h-3.5 w-3.5" />
-              <span>{isId ? "Jelaskan Rencana" : "Explain Plan"}</span>
+              <span>Plan</span>
             </button>
 
             {/* Dialect Transpiler */}
             <div className="flex items-center gap-1 pl-2 border-l border-slate-800">
-              <span className="text-[11px] text-slate-400">Transpile ke:</span>
+              <span className="text-[11px] text-slate-400">Transpile:</span>
               <select
                 value={transpileTarget}
                 onChange={(e) => setTranspileTarget(e.target.value)}
@@ -464,7 +648,7 @@ export function QueryWorkbench({
         </div>
 
         {/* Editor Area */}
-        <div className="h-[46%] w-full p-2">
+        <div className="h-[44%] w-full p-2">
           <SqlEditor
             value={query}
             onChange={setQuery}
@@ -490,6 +674,30 @@ export function QueryWorkbench({
               </button>
 
               <button
+                onClick={() => setActiveOutputTab("ai_explain")}
+                className={`flex items-center gap-1.5 px-3 py-1 text-xs font-semibold transition-colors border-b-2 ${
+                  activeOutputTab === "ai_explain"
+                    ? "border-[#F2B84B] text-[#F2B84B]"
+                    : "border-transparent text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <Sparkles className="h-3.5 w-3.5 text-[#F2B84B]" />
+                <span>{isId ? "Penjelasan Alur" : "Logic Explanation"}</span>
+              </button>
+
+              <button
+                onClick={() => setActiveOutputTab("optimize")}
+                className={`flex items-center gap-1.5 px-3 py-1 text-xs font-semibold transition-colors border-b-2 ${
+                  activeOutputTab === "optimize"
+                    ? "border-[#F2B84B] text-[#F2B84B]"
+                    : "border-transparent text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <Lightbulb className="h-3.5 w-3.5 text-amber-400" />
+                <span>{isId ? "Saran Optimasi" : "Optimization Advice"}</span>
+              </button>
+
+              <button
                 onClick={() => setActiveOutputTab("transpile")}
                 className={`flex items-center gap-1.5 px-3 py-1 text-xs font-semibold transition-colors border-b-2 ${
                   activeOutputTab === "transpile"
@@ -498,7 +706,7 @@ export function QueryWorkbench({
                 }`}
               >
                 <ArrowRightLeft className="h-3.5 w-3.5" />
-                <span>{isId ? "Hasil Transpilasi" : "Transpile Output"}</span>
+                <span>{isId ? "Transpilasi" : "Transpile"}</span>
               </button>
 
               <button
@@ -510,7 +718,7 @@ export function QueryWorkbench({
                 }`}
               >
                 <Layers className="h-3.5 w-3.5" />
-                <span>{isId ? "Rencana Eksekusi" : "Explain Plan"}</span>
+                <span>Plan</span>
               </button>
             </div>
 
@@ -596,7 +804,67 @@ export function QueryWorkbench({
               </>
             )}
 
-            {/* 2. Transpile View */}
+            {/* 2. Logic Explanation Tab */}
+            {activeOutputTab === "ai_explain" && (
+              <div className="p-3">
+                <h4 className="text-xs font-bold text-[#F2B84B] mb-2 flex items-center gap-1.5">
+                  <Sparkles className="h-4 w-4" />
+                  <span>{isId ? "Alur Kerja Query Langkah-demi-Langkah:" : "Step-by-Step Query Execution Logic:"}</span>
+                </h4>
+                {aiExplanation.length === 0 ? (
+                  <div className="text-xs text-slate-400">
+                    {isId ? "Klik 'Jelaskan Logika' di toolbar untuk melihat urutan eksekusi query." : "Click 'Explain Logic' to inspect the query execution flow."}
+                  </div>
+                ) : (
+                  <div className="space-y-1.5 font-sans text-xs text-slate-200 bg-[#10264A]/40 p-3 rounded border border-slate-800">
+                    {aiExplanation.map((step, idx) => (
+                      <div key={idx} className="flex items-start gap-2 py-0.5">
+                        <span className="text-[#F2B84B] font-bold">•</span>
+                        <span>{step}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 3. Optimization Advice Tab */}
+            {activeOutputTab === "optimize" && (
+              <div className="p-3">
+                <h4 className="text-xs font-bold text-amber-400 mb-2 flex items-center gap-1.5">
+                  <Lightbulb className="h-4 w-4" />
+                  <span>{isId ? "Hasil Audit Kinerja & Rekomendasi:" : "Performance Audit & Recommendations:"}</span>
+                </h4>
+                {optimizations.length === 0 ? (
+                  <div className="text-xs text-slate-400">
+                    {isId ? "Query terlihat bersih atau klik 'Audit Kueri' untuk memeriksa anti-pattern." : "No critical anti-patterns detected or click 'Audit Query'."}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {optimizations.map((opt, idx) => (
+                      <div
+                        key={idx}
+                        className="rounded border border-amber-800/60 bg-amber-950/30 p-2.5 text-xs text-amber-200"
+                      >
+                        <div className="flex items-center justify-between font-bold text-[11px] mb-1">
+                          <span className="uppercase tracking-wider text-amber-400">
+                            {opt.type}
+                          </span>
+                          <span className="font-mono text-slate-400">
+                            {opt.rule}
+                          </span>
+                        </div>
+                        <p className="text-slate-300 leading-relaxed">
+                          {opt.message}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 4. Transpile View */}
             {activeOutputTab === "transpile" && (
               <div className="h-full flex flex-col space-y-2">
                 {transpileWarnings.length > 0 && (
@@ -622,12 +890,12 @@ export function QueryWorkbench({
               </div>
             )}
 
-            {/* 3. Explain Plan View */}
+            {/* 5. Explain Plan View */}
             {activeOutputTab === "explain" && (
               <div className="p-2">
                 {!explainPlan ? (
                   <div className="text-center text-xs text-slate-500 py-6">
-                    {isId ? "Klik 'Jelaskan Rencana' untuk melihat rencana optimasi query" : "Click 'Explain Plan' to inspect the execution plan"}
+                    {isId ? "Klik 'Plan' untuk melihat rencana optimasi query" : "Click 'Plan' to inspect the execution plan"}
                   </div>
                 ) : (
                   <div className="rounded border border-slate-800 bg-[#10264A]/40 p-3 font-mono text-xs">
@@ -646,6 +914,42 @@ export function QueryWorkbench({
           </div>
         </div>
       </main>
+
+      {/* Save Query Modal */}
+      {showSavedModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-lg border border-slate-700 bg-[#071A3A] p-5 shadow-2xl">
+            <h3 className="text-sm font-bold text-white mb-2">
+              {isId ? "Simpan Query ke Koleksi" : "Save Query to Library"}
+            </h3>
+            <p className="text-xs text-slate-400 mb-3">
+              {isId ? "Beri judul untuk kueri Anda:" : "Give this query a title:"}
+            </p>
+            <input
+              type="text"
+              placeholder="e.g. Analisis Pelanggan VIP"
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              className="w-full rounded bg-slate-900 border border-slate-700 px-3 py-2 text-xs text-white focus:outline-none focus:border-[#F2B84B] mb-4"
+            />
+            <div className="flex justify-end gap-2 text-xs">
+              <button
+                onClick={() => setShowSavedModal(false)}
+                className="px-3 py-1.5 rounded text-slate-400 hover:text-white"
+              >
+                {isId ? "Batal" : "Cancel"}
+              </button>
+              <button
+                onClick={handleSaveQuery}
+                disabled={!newTitle.trim()}
+                className="px-4 py-1.5 rounded bg-[#F2B84B] font-bold text-[#071A3A] hover:opacity-90 disabled:opacity-50"
+              >
+                {isId ? "Simpan" : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
