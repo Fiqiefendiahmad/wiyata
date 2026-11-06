@@ -69,6 +69,7 @@ interface VerificationResult {
 interface LearningChallengesProps {
   language: "en" | "id";
   onOpenLabWithQuery: (query: string, template: string) => void;
+  initialChallengeSlug?: string;
 }
 
 const LEVEL_LOCALES: Record<string, { en: string; id: string; badge: string }> = {
@@ -92,6 +93,7 @@ const LEVEL_LOCALES: Record<string, { en: string; id: string; badge: string }> =
 export function LearningChallenges({
   language,
   onOpenLabWithQuery,
+  initialChallengeSlug,
 }: LearningChallengesProps) {
   const isId = language === "id";
 
@@ -135,12 +137,15 @@ export function LearningChallenges({
       .then((res) => {
         setExercises(res.data);
         if (res.data.length > 0) {
-          setSelectedExercise(res.data[0]);
-          setSolutionSql(res.data[0].starter_sql);
+          const target = initialChallengeSlug
+            ? res.data.find((e: any) => e.slug === initialChallengeSlug) || res.data[0]
+            : res.data[0];
+          setSelectedExercise(target);
+          setSolutionSql(target.starter_sql);
         }
       })
       .catch((err) => console.error("Error loading exercises:", err));
-  }, []);
+  }, [initialChallengeSlug]);
 
   // Fetch dataset schema when exercise changes or drawer opens
   useEffect(() => {

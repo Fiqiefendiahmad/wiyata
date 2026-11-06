@@ -57,6 +57,9 @@ export default function Home() {
   const [labInitialTemplate, setLabInitialTemplate] = useState<string | undefined>(
     undefined
   );
+  const [selectedChallengeSlug, setSelectedChallengeSlug] = useState<string | undefined>(
+    undefined
+  );
 
   const handleResetSandbox = async () => {
     if (!sandboxId) return;
@@ -110,13 +113,15 @@ export default function Home() {
           <LearningChallenges
             language={language}
             onOpenLabWithQuery={handleOpenLabWithQuery}
+            initialChallengeSlug={selectedChallengeSlug}
           />
         )}
 
         {activeTab === "roles" && (
           <ProfessionsMatrix
             language={language}
-            onSelectChallenge={(_slug) => {
+            onSelectChallenge={(slug) => {
+              setSelectedChallengeSlug(slug);
               setActiveTab("challenges");
             }}
             onOpenTool={(_toolSlug) => {

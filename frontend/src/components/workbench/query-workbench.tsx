@@ -23,6 +23,7 @@ import {
   SidebarClose,
   SidebarOpen,
   Download,
+  RefreshCw,
 } from "lucide-react";
 import { SqlEditor } from "@/components/editor/sql-editor";
 import { api } from "@/lib/api";
@@ -153,11 +154,15 @@ export function QueryWorkbench({
     initialTemplate || "banking"
   );
   const [schema, setSchema] = useState<TableSchema[]>([]);
+  const [schemaStatus, setSchemaStatus] = useState<
+    "idle" | "loading" | "ready" | "empty" | "error"
+  >("idle");
+  const [schemaError, setSchemaError] = useState<string | null>(null);
   const [expandedTables, setExpandedTables] = useState<Record<string, boolean>>(
     { accounts: true, customers: true, transactions: true }
   );
 
-  // Execution State
+  // Execution & Provenance State
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [isFormatting, setIsFormatting] = useState<boolean>(false);
   const [isTranspiling, setIsTranspiling] = useState<boolean>(false);
@@ -170,6 +175,14 @@ export function QueryWorkbench({
     error?: string;
   } | null>(null);
   const [explainPlan, setExplainPlan] = useState<any[] | null>(null);
+  const [lastExecutedQuery, setLastExecutedQuery] = useState<string | null>(null);
+  const [lastExecutedTimestamp, setLastExecutedTimestamp] = useState<Date | null>(null);
+  const [lastExecutedEngine, setLastExecutedEngine] = useState<string>("sqlite");
+
+  // Provenance flag: whether editor SQL was modified after the last run
+  const isQueryStale = Boolean(
+    results && lastExecutedQuery && query.trim() !== lastExecutedQuery
+  );
 
   // Fetch templates & saved queries on mount
   useEffect(() => {
@@ -206,6 +219,8 @@ export function QueryWorkbench({
     engineChoice?: "sqlite" | "postgres" | "mysql" | "oracle" | "mssql"
   ) => {
     const engineToUse = engineChoice || activeEngine;
+    setSchemaStatus("loading");
+    setSchemaError(null);
     try {
       const res = await api.post("/sandboxes", {
         engine: engineToUse,
@@ -217,6 +232,10 @@ export function QueryWorkbench({
       loadSchema(res.data.id);
     } catch (err: any) {
       console.error("Error creating sandbox:", err);
+      setSchemaStatus("error");
+      setSchemaError(
+        err?.response?.data?.detail || err.message || "Failed to provision database sandbox"
+      );
     }
   };
 
@@ -228,11 +247,19 @@ export function QueryWorkbench({
   };
 
   const loadSchema = async (id: string) => {
+    setSchemaStatus("loading");
+    setSchemaError(null);
     try {
       const res = await api.get(`/sandboxes/${id}/schema`);
-      setSchema(res.data);
+      const tables = res.data || [];
+      setSchema(tables);
+      setSchemaStatus(tables.length === 0 ? "empty" : "ready");
     } catch (err: any) {
       console.error("Error loading schema:", err);
+      setSchemaStatus("error");
+      setSchemaError(
+        err?.response?.data?.detail || err.message || "Failed to load table schema"
+      );
     }
   };
 
@@ -294,6 +321,9 @@ export function QueryWorkbench({
           elapsedMs: res.data.elapsed_ms,
           truncated: res.data.truncated,
         });
+        setLastExecutedQuery(query.trim());
+        setLastExecutedTimestamp(new Date());
+        setLastExecutedEngine(activeEngine);
         if (allowDdl) {
           loadSchema(sandboxId);
         }
@@ -306,6 +336,9 @@ export function QueryWorkbench({
           truncated: false,
           error: res.data.error,
         });
+        setLastExecutedQuery(query.trim());
+        setLastExecutedTimestamp(new Date());
+        setLastExecutedEngine(activeEngine);
       }
     } catch (err: any) {
       setResults({
@@ -316,6 +349,9 @@ export function QueryWorkbench({
         truncated: false,
         error: err.message,
       });
+      setLastExecutedQuery(query.trim());
+      setLastExecutedTimestamp(new Date());
+      setLastExecutedEngine(activeEngine);
     } finally {
       setIsRunning(false);
     }
@@ -504,17 +540,30 @@ export function QueryWorkbench({
           </span>
         </button>
 
-        {/* Active Engine & Template Indicator (Static, No Horizontal Scroll) */}
+        {/* Active Engine & Template Indicator (Static, Truthful Badges) */}
         <div className="flex items-center gap-1.5 text-[11px] font-mono text-slate-300 shrink-0">
-          <span className="rounded-lg bg-slate-900 px-2.5 py-1 border border-slate-700/80 text-[#F2B84B] font-bold">
+          <span
+            title={
+              activeEngine === "postgres"
+                ? "PostgreSQL 17.0 (Dedicated Docker Container Sandbox)"
+                : activeEngine === "mysql"
+                ? "MariaDB 11.3 (MySQL Compatible Docker Container Sandbox)"
+                : activeEngine === "oracle"
+                ? "Oracle 23ai (SQLGlot AST Transpilation Sandbox)"
+                : activeEngine === "mssql"
+                ? "SQL Server 2022 (T-SQL AST Transpilation Sandbox)"
+                : "SQLite 3.45.0 (Isolated Native Sandbox)"
+            }
+            className="rounded-lg bg-slate-900 px-2.5 py-1 border border-slate-700/80 text-[#F2B84B] font-bold"
+          >
             {activeEngine === "postgres"
               ? "PostgreSQL 17"
               : activeEngine === "mysql"
-              ? "MySQL 11"
+              ? "MariaDB 11.3 (MySQL)"
               : activeEngine === "oracle"
-              ? "Oracle 23ai"
+              ? "Oracle 23ai (Transpiled)"
               : activeEngine === "mssql"
-              ? "SQL Server 2022"
+              ? "SQL Server 2022 (Transpiled)"
               : "SQLite 3.45"}
           </span>
           <span className="hidden sm:inline-block rounded-lg bg-slate-900/60 px-2 py-1 border border-slate-800 text-slate-400 capitalize">
@@ -529,22 +578,55 @@ export function QueryWorkbench({
           showMobileSidebar ? "flex" : "hidden"
         } lg:flex w-full lg:w-72 flex-col border-b lg:border-b-0 lg:border-r border-slate-800 bg-[#071A3A]/98 text-slate-200 z-30 max-h-[70vh] lg:max-h-none overflow-y-auto no-scrollbar touch-scroll`}
       >
-        {/* Engine Switcher (SQLite / PostgreSQL / MySQL / Oracle / MSSQL) */}
+        {/* Engine Switcher (Truthful Architecture & Versioning) */}
         <div className="border-b border-slate-800 p-3 bg-[#10264A]/30">
-          <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block mb-1.5">
-            {isId ? "Mesin Database Sandbox" : "Sandbox Database Engine"}
-          </label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+              {isId ? "Mesin Database Sandbox" : "Sandbox Database Engine"}
+            </label>
+            <span className="text-[9px] text-[#F2B84B] font-mono">
+              {activeEngine === "sqlite" || activeEngine === "postgres" || activeEngine === "mysql"
+                ? (isId ? "Kontainer/Native" : "Native Container")
+                : (isId ? "AST Emulasi" : "AST Transpiled")}
+            </span>
+          </div>
           <div className="grid grid-cols-2 xs:grid-cols-3 gap-1.5">
             {[
-              { id: "sqlite" as const, name: "SQLite", badge: "3.45" },
-              { id: "postgres" as const, name: "Postgres", badge: "17" },
-              { id: "mysql" as const, name: "MySQL", badge: "11" },
-              { id: "oracle" as const, name: "Oracle", badge: "23ai" },
-              { id: "mssql" as const, name: "SQL Server", badge: "2022" },
+              {
+                id: "sqlite" as const,
+                name: "SQLite",
+                badge: "3.45",
+                type: isId ? "Sandbox Lokal Terisolasi" : "Isolated Native Sandbox",
+              },
+              {
+                id: "postgres" as const,
+                name: "Postgres",
+                badge: "17",
+                type: isId ? "Kontainer Docker PostgreSQL 17" : "Docker Container PostgreSQL 17",
+              },
+              {
+                id: "mysql" as const,
+                name: "MariaDB",
+                badge: "11.3",
+                type: isId ? "Kontainer Docker (Kompatibel MySQL)" : "Docker Container (MySQL Compatible)",
+              },
+              {
+                id: "oracle" as const,
+                name: "Oracle",
+                badge: "23ai",
+                type: isId ? "Emulasi AST Transpiled SQLGlot" : "SQLGlot AST Transpiled",
+              },
+              {
+                id: "mssql" as const,
+                name: "SQL Server",
+                badge: "2022",
+                type: isId ? "Emulasi AST Transpiled T-SQL" : "T-SQL AST Transpiled",
+              },
             ].map((eng) => (
               <button
                 key={eng.id}
                 onClick={() => handleEngineChange(eng.id)}
+                title={`${eng.name} ${eng.badge} - ${eng.type}`}
                 className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg text-xs font-semibold transition-all border min-h-[44px] active:scale-95 ${
                   activeEngine === eng.id
                     ? "bg-[#10264A] text-[#F2B84B] border-[#F2B84B] shadow-sm ring-1 ring-[#F2B84B]/40"
@@ -576,6 +658,7 @@ export function QueryWorkbench({
               >
                 <span className="text-xs font-bold text-slate-100 flex items-center gap-1">
                   {tpl.slug === "banking" && "🏦 "}
+                  {tpl.slug === "dba_ops" && "⚡ "}
                   {TEMPLATE_LOCALES[tpl.slug]
                     ? isId
                       ? TEMPLATE_LOCALES[tpl.slug].nameId
@@ -594,19 +677,67 @@ export function QueryWorkbench({
           </div>
         </div>
 
-        {/* Schema Explorer */}
+        {/* Schema Explorer with Robust State Machine */}
         <div className="flex flex-1 flex-col overflow-hidden">
           <div className="flex items-center justify-between border-b border-slate-800 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
             <span className="flex items-center gap-1.5">
               <TableIcon className="h-3.5 w-3.5 text-[#F2B84B]" />
               {isId ? "Struktur Tabel" : "Tables & Columns"} ({schema.length})
             </span>
+            <button
+              onClick={() => sandboxId && loadSchema(sandboxId)}
+              disabled={schemaStatus === "loading"}
+              title={isId ? "Muat ulang skema tabel" : "Reload table schema"}
+              className="rounded p-1 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            >
+              <RefreshCw
+                className={`h-3 w-3 ${
+                  schemaStatus === "loading" ? "animate-spin text-[#F2B84B]" : ""
+                }`}
+              />
+            </button>
           </div>
 
           <div className="flex-1 overflow-y-auto p-2 space-y-1">
-            {schema.length === 0 ? (
-              <div className="p-4 text-center text-xs text-slate-500">
-                {isId ? "Memuat tabel..." : "Loading tables..."}
+            {schemaStatus === "loading" ? (
+              <div className="p-3 space-y-2 animate-pulse">
+                <div className="text-[11px] text-slate-400 flex items-center gap-2 mb-2">
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin text-[#F2B84B]" />
+                  <span>
+                    {isId ? "Mengambil skema tabel sandbox..." : "Loading sandbox table schema..."}
+                  </span>
+                </div>
+                <div className="h-8 bg-slate-800/80 rounded-lg"></div>
+                <div className="h-8 bg-slate-800/80 rounded-lg"></div>
+                <div className="h-8 bg-slate-800/80 rounded-lg"></div>
+              </div>
+            ) : schemaStatus === "error" ? (
+              <div className="p-3 m-1 rounded-xl border border-rose-800/60 bg-rose-950/30 text-xs text-rose-300">
+                <div className="flex items-center gap-1.5 font-bold mb-1 text-rose-200">
+                  <AlertTriangle className="h-3.5 w-3.5 text-rose-400" />
+                  <span>{isId ? "Gagal memuat skema" : "Failed to load schema"}</span>
+                </div>
+                <p className="text-[11px] text-slate-400 leading-relaxed mb-2.5">
+                  {schemaError || (isId ? "Koneksi ke sandbox terputus." : "Connection to sandbox failed.")}
+                </p>
+                <button
+                  onClick={() => sandboxId ? loadSchema(sandboxId) : createSandbox(activeTemplate, activeEngine)}
+                  className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-rose-900/60 hover:bg-rose-800 border border-rose-700/80 py-1.5 text-xs font-semibold text-white transition-colors"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  <span>{isId ? "Coba Muat Ulang" : "Retry Connection"}</span>
+                </button>
+              </div>
+            ) : schema.length === 0 ? (
+              <div className="p-4 text-center text-xs text-slate-400 space-y-1.5">
+                <p className="font-semibold text-slate-300">
+                  {isId ? "Database belum memiliki tabel." : "Database has no tables yet."}
+                </p>
+                <p className="text-[10px] text-slate-500 leading-relaxed">
+                  {isId
+                    ? "Pilih template dataset di atas atau ketik perintah DDL 'CREATE TABLE ...' lalu klik Jalankan."
+                    : "Choose a dataset template above or write DDL 'CREATE TABLE ...' and click Run."}
+                </p>
               </div>
             ) : (
               schema.map((tbl) => (
@@ -735,13 +866,18 @@ export function QueryWorkbench({
           </button>
         </div>
 
-        {/* Editor Toolbar (Smooth touch scroll on mobile) */}
+        {/* Editor Toolbar (Harmonized actions with tooltips) */}
         <div className="flex items-center justify-between border-b border-slate-800 bg-[#10264A]/50 px-2 py-1.5 sm:px-3 overflow-x-auto no-scrollbar touch-scroll gap-2">
           <div className="flex items-center gap-1.5 sm:gap-2 flex-nowrap shrink-0">
             {/* Run Button (Prominent 44px hit target) */}
             <button
               onClick={handleRunQuery}
               disabled={isRunning}
+              title={
+                isId
+                  ? "Jalankan kueri ke sandbox aktif (Ctrl+Enter)"
+                  : "Execute query against active sandbox (Ctrl+Enter)"
+              }
               className="flex items-center gap-1.5 rounded-lg bg-[#F2B84B] px-3.5 py-2 text-xs font-bold text-[#071A3A] hover:bg-[#F2B84B]/90 transition-colors shadow-sm disabled:opacity-50 min-h-[42px] active:scale-95"
             >
               <Play className="h-4 w-4 fill-current" />
@@ -752,6 +888,7 @@ export function QueryWorkbench({
             <button
               onClick={handleFormat}
               disabled={isFormatting}
+              title={isId ? "Rapikan format penulisan SQL" : "Format SQL syntax"}
               className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-700/60 transition-colors min-h-[42px]"
             >
               <Code2 className="h-3.5 w-3.5" />
@@ -761,6 +898,11 @@ export function QueryWorkbench({
             {/* Plain AI Explain */}
             <button
               onClick={handleExplainNatural}
+              title={
+                isId
+                  ? "Jelaskan logika dan tujuan kueri SQL dalam bahasa manusia"
+                  : "Explain SQL query logic and intent in plain English"
+              }
               className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-700/60 transition-colors min-h-[42px]"
             >
               <HelpCircle className="h-3.5 w-3.5 text-[#F2B84B]" />
@@ -770,6 +912,11 @@ export function QueryWorkbench({
             {/* Lint & Optimize */}
             <button
               onClick={handleOptimizeCheck}
+              title={
+                isId
+                  ? "Audit risiko keamanan (injeksi/destruktif) dan anti-pattern kueri"
+                  : "Audit security risks (injection/destructive) and query anti-patterns"
+              }
               className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-700/60 transition-colors min-h-[42px]"
             >
               <Lightbulb className="h-3.5 w-3.5 text-amber-400" />
@@ -779,6 +926,11 @@ export function QueryWorkbench({
             {/* Explain Plan */}
             <button
               onClick={handleExplain}
+              title={
+                isId
+                  ? "Lihat rencana eksekusi kueri mesin database (EXPLAIN PLAN)"
+                  : "View native database execution plan (EXPLAIN PLAN)"
+              }
               className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-700/60 transition-colors min-h-[42px]"
             >
               <Layers className="h-3.5 w-3.5" />
@@ -801,6 +953,11 @@ export function QueryWorkbench({
               <button
                 onClick={handleTranspile}
                 disabled={isTranspiling}
+                title={
+                  isId
+                    ? "Konversi sintaks SQL ke dialek mesin database lain via SQLGlot"
+                    : "Transpile SQL syntax across database engines via SQLGlot"
+                }
                 className="flex items-center gap-1 rounded-lg bg-[#10264A] border border-[#F2B84B]/40 px-3 py-2 text-xs font-semibold text-[#F2B84B] hover:bg-[#F2B84B] hover:text-[#071A3A] transition-colors min-h-[42px]"
               >
                 <ArrowRightLeft className="h-3.5 w-3.5" />
@@ -878,7 +1035,7 @@ export function QueryWorkbench({
                 }`}
               >
                 <TableIcon className="h-3.5 w-3.5" />
-                <span>{isId ? "Hasil Query" : "Results"}</span>
+                <span>{isId ? "Hasil Data" : "Data Results"}</span>
               </button>
 
               <button
@@ -890,7 +1047,7 @@ export function QueryWorkbench({
                 }`}
               >
                 <Sparkles className="h-3.5 w-3.5 text-[#F2B84B]" />
-                <span>{isId ? "Alur Logika" : "Logic"}</span>
+                <span>{isId ? "Alur Logika" : "Logic Flow"}</span>
               </button>
 
               <button
@@ -902,7 +1059,7 @@ export function QueryWorkbench({
                 }`}
               >
                 <Lightbulb className="h-3.5 w-3.5 text-amber-400" />
-                <span>Audit</span>
+                <span>{isId ? "Audit Risiko" : "Risk Audit"}</span>
               </button>
 
               <button
@@ -914,7 +1071,7 @@ export function QueryWorkbench({
                 }`}
               >
                 <ArrowRightLeft className="h-3.5 w-3.5" />
-                <span>{isId ? "Transpilasi" : "Transpile"}</span>
+                <span>{isId ? "Transpilasi Dialek" : "Dialect Transpile"}</span>
               </button>
 
               <button
@@ -926,19 +1083,38 @@ export function QueryWorkbench({
                 }`}
               >
                 <Layers className="h-3.5 w-3.5" />
-                <span>{isId ? "Rencana" : "Plan"}</span>
+                <span>{isId ? "Rencana Eksekusi" : "Execution Plan"}</span>
               </button>
             </div>
 
-            {/* Execution Stats */}
+            {/* Execution Stats & Provenance Badge */}
             {results && !results.error && activeOutputTab === "results" && (
-              <div className="flex items-center gap-2 sm:gap-3 text-xs font-mono text-slate-400 shrink-0 pr-1">
-                <span className="flex items-center gap-1">
-                  <CheckCircle2 className="h-3 w-3 text-emerald-400" />
+              <div className="flex items-center gap-2 sm:gap-3 text-xs font-mono shrink-0 pr-1">
+                {isQueryStale ? (
+                  <span
+                    title={
+                      isId
+                        ? "Kueri pada editor telah dimodifikasi sejak eksekusi ini dijalankan."
+                        : "Query text in editor was edited after this run."
+                    }
+                    className="flex items-center gap-1 rounded bg-amber-950/80 border border-amber-600/70 px-2 py-0.5 text-[10px] text-amber-300 font-semibold"
+                  >
+                    <AlertTriangle className="h-3 w-3 text-amber-400" />
+                    <span>{isId ? "Hasil Kueri Sebelumnya" : "Previous Run Result"}</span>
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 rounded bg-emerald-950/80 border border-emerald-600/70 px-2 py-0.5 text-[10px] text-emerald-300 font-semibold">
+                    <CheckCircle2 className="h-3 w-3 text-emerald-400" />
+                    <span>
+                      {isId ? "Eksekusi Langsung" : "Live Execution"} ({lastExecutedEngine.toUpperCase()})
+                    </span>
+                  </span>
+                )}
+                <span className="text-slate-300 font-bold">
                   {results.rowCount} {isId ? "baris" : "rows"}
                 </span>
-                <span className="flex items-center gap-1">
-                  <Clock className="h-3 w-3 text-slate-500" />
+                <span className="hidden sm:flex items-center gap-1 text-slate-500">
+                  <Clock className="h-3 w-3" />
                   {results.elapsedMs} ms
                 </span>
               </div>
@@ -961,16 +1137,29 @@ export function QueryWorkbench({
                     <p className="whitespace-pre-wrap">{results.error}</p>
                   </div>
                 ) : !results ? (
-                  <div className="flex h-full items-center justify-center text-xs text-slate-500 py-8">
-                    {isId
-                      ? "Tekan 'Jalankan' untuk mengeksekusi query database"
-                      : "Press 'Run' to execute database query"}
+                  <div className="flex flex-col items-center justify-center py-12 text-center text-slate-500 space-y-2">
+                    <div className="rounded-full bg-slate-900 border border-slate-800 p-3">
+                      <Play className="h-6 w-6 text-slate-500 ml-0.5" />
+                    </div>
+                    <p className="text-xs font-semibold text-slate-300">
+                      {isId ? "Belum Ada Eksekusi Kueri" : "No Execution Yet"}
+                    </p>
+                    <p className="text-[11px] text-slate-500 max-w-sm leading-relaxed">
+                      {isId
+                        ? "Klik tombol 'Jalankan' di atas atau tekan Ctrl+Enter untuk mengeksekusi kueri pada sandbox aktif."
+                        : "Click 'Run' above or press Ctrl+Enter to execute query against the active database sandbox."}
+                    </p>
                   </div>
                 ) : results.columns.length === 0 ? (
-                  <div className="p-4 text-center text-xs text-slate-400">
-                    {isId
-                      ? "Query selesai tanpa mengembalikan baris data."
-                      : "Query executed with no returned rows."}
+                  <div className="p-6 text-center text-xs text-slate-400">
+                    <p className="font-semibold text-slate-300">
+                      {isId ? "Query berhasil dieksekusi." : "Query executed successfully."}
+                    </p>
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      {isId
+                        ? "Pernyataan selesai tanpa mengembalikan baris data (DDL / DML)."
+                        : "Statement completed without returning data rows (DDL / DML)."}
+                    </p>
                   </div>
                 ) : (
                   <div className="w-full max-w-full overflow-x-auto no-scrollbar touch-scroll rounded-lg border border-slate-800 bg-slate-900/30">
