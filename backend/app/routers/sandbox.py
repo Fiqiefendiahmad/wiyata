@@ -151,13 +151,17 @@ async def create_sandbox(
         storage_ref = str(db_path)
         engine_version = body.engine_version or "11.5 (Transpiled)"
         _init_sqlite_db(db_path, template_slug)
-    else:
-        # Default to SQLite
-        engine = "sqlite"
+    elif engine == "sqlite":
         db_path = STORAGE_DIR / f"{sandbox_id}.db"
         storage_ref = str(db_path)
         engine_version = body.engine_version or "3.45.0"
         _init_sqlite_db(db_path, template_slug)
+    else:
+        # Default to PostgreSQL 17 (Enterprise primary engine)
+        engine = "postgres"
+        storage_ref = f"sb_{sandbox_id.hex[:12]}"
+        engine_version = body.engine_version or "17.0"
+        _init_postgres_sandbox(storage_ref, template_slug)
 
     sandbox = Sandbox(
         id=sandbox_id,

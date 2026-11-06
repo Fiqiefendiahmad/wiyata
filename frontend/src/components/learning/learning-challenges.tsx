@@ -103,8 +103,8 @@ export function LearningChallenges({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [result, setResult] = useState<VerificationResult | null>(null);
   const [activeEngine, setActiveEngine] = useState<
-    "sqlite" | "postgres" | "mysql" | "oracle" | "mssql" | "db2"
-  >("sqlite");
+    "postgres" | "mysql" | "oracle" | "mssql" | "db2" | "sqlite"
+  >("postgres");
 
   // Filtering & Search
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -569,16 +569,6 @@ export function LearningChallenges({
                   </span>
                   <div className="flex items-center rounded-lg bg-slate-900/90 p-0.5 border border-slate-700/80">
                     <button
-                      onClick={() => setActiveEngine("sqlite")}
-                      className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
-                        activeEngine === "sqlite"
-                          ? "bg-[#F2B84B] text-[#071A3A] shadow-xs"
-                          : "text-slate-400 hover:text-white"
-                      }`}
-                    >
-                      SQLite 3.45
-                    </button>
-                    <button
                       onClick={() => setActiveEngine("postgres")}
                       className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
                         activeEngine === "postgres"
@@ -627,6 +617,16 @@ export function LearningChallenges({
                       }`}
                     >
                       IBM Db2
+                    </button>
+                    <button
+                      onClick={() => setActiveEngine("sqlite")}
+                      className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+                        activeEngine === "sqlite"
+                          ? "bg-[#F2B84B] text-[#071A3A] shadow-xs"
+                          : "text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      SQLite 3.45
                     </button>
                   </div>
                 </div>

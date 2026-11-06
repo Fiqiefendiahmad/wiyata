@@ -177,7 +177,7 @@ export function QueryWorkbench({
   const [explainPlan, setExplainPlan] = useState<any[] | null>(null);
   const [lastExecutedQuery, setLastExecutedQuery] = useState<string | null>(null);
   const [lastExecutedTimestamp, setLastExecutedTimestamp] = useState<Date | null>(null);
-  const [lastExecutedEngine, setLastExecutedEngine] = useState<string>("sqlite");
+  const [lastExecutedEngine, setLastExecutedEngine] = useState<string>("postgres");
 
   // Provenance flag: whether editor SQL was modified after the last run
   const isQueryStale = Boolean(
@@ -202,8 +202,8 @@ export function QueryWorkbench({
   };
 
   const [activeEngine, setActiveEngine] = useState<
-    "sqlite" | "postgres" | "mysql" | "oracle" | "mssql" | "db2"
-  >("sqlite");
+    "postgres" | "mysql" | "oracle" | "mssql" | "db2" | "sqlite"
+  >("postgres");
 
   // Initialize or fetch sandbox schema
   useEffect(() => {
@@ -216,7 +216,7 @@ export function QueryWorkbench({
 
   const createSandbox = async (
     templateSlug: string,
-    engineChoice?: "sqlite" | "postgres" | "mysql" | "oracle" | "mssql" | "db2"
+    engineChoice?: "postgres" | "mysql" | "oracle" | "mssql" | "db2" | "sqlite"
   ) => {
     const engineToUse = engineChoice || activeEngine;
     setSchemaStatus("loading");
@@ -240,7 +240,7 @@ export function QueryWorkbench({
   };
 
   const handleEngineChange = (
-    engine: "sqlite" | "postgres" | "mysql" | "oracle" | "mssql" | "db2"
+    engine: "postgres" | "mysql" | "oracle" | "mssql" | "db2" | "sqlite"
   ) => {
     setActiveEngine(engine);
     createSandbox(activeTemplate, engine);
@@ -363,9 +363,10 @@ export function QueryWorkbench({
     if (!query.trim()) return;
     setIsFormatting(true);
     try {
+      const dialectToUse = activeEngine === "mssql" ? "tsql" : activeEngine;
       const res = await api.post("/query/format", {
         query: query,
-        dialect: "sqlite",
+        dialect: dialectToUse,
       });
       if (res.data.query) {
         setQuery(res.data.query);
@@ -384,8 +385,9 @@ export function QueryWorkbench({
     setActiveOutputTab("transpile");
 
     try {
+      const srcDialect = activeEngine === "mssql" ? "tsql" : activeEngine;
       const res = await api.post("/query/convert", {
-        source_dialect: "sqlite",
+        source_dialect: srcDialect,
         target_dialect: transpileTarget,
         query: query,
       });
@@ -457,7 +459,7 @@ export function QueryWorkbench({
     try {
       const res = await api.post("/query/generate", {
         request: naturalPrompt.trim(),
-        engine: "sqlite",
+        engine: activeEngine,
         language: language,
         schema_context: schema,
       });
@@ -495,9 +497,10 @@ export function QueryWorkbench({
     setActiveOutputTab("optimize");
 
     try {
+      const dialectToUse = activeEngine === "mssql" ? "tsql" : activeEngine;
       const res = await api.post("/query/optimize", {
         query: query.trim(),
-        dialect: "sqlite",
+        dialect: dialectToUse,
         language: language,
       });
       setOptimizations(res.data.suggestions || []);
@@ -510,11 +513,12 @@ export function QueryWorkbench({
   const handleSaveQuery = async () => {
     if (!newTitle.trim() || !query.trim()) return;
     try {
+      const dialectToUse = activeEngine === "mssql" ? "tsql" : activeEngine;
       await api.post("/library/queries", {
         title: newTitle.trim(),
         query_text: query.trim(),
-        engine: "sqlite",
-        dialect: "sqlite",
+        engine: activeEngine,
+        dialect: dialectToUse,
         description: "Saved from Query Studio",
       });
       setNewTitle("");
@@ -600,12 +604,6 @@ export function QueryWorkbench({
           <div className="grid grid-cols-2 xs:grid-cols-3 gap-1.5">
             {[
               {
-                id: "sqlite" as const,
-                name: "SQLite",
-                badge: "3.45",
-                type: isId ? "Sandbox Lokal Terisolasi" : "Isolated Native Sandbox",
-              },
-              {
                 id: "postgres" as const,
                 name: "Postgres",
                 badge: "17",
@@ -634,6 +632,12 @@ export function QueryWorkbench({
                 name: "IBM Db2",
                 badge: "11.5",
                 type: isId ? "Emulasi AST Transpiled ANSI/Db2" : "ANSI/Db2 AST Transpiled",
+              },
+              {
+                id: "sqlite" as const,
+                name: "SQLite",
+                badge: "3.45",
+                type: isId ? "Sandbox Lokal Terisolasi" : "Isolated Native Sandbox",
               },
             ].map((eng) => (
               <button

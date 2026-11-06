@@ -47,7 +47,7 @@ ORDER BY stock ASC;""",
             "Gunakan klausul WHERE dengan kondisi 'stock < 35'.",
             "Urutkan baris hasil akhir menggunakan 'ORDER BY stock ASC'."
         ],
-        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql", "db2"],
+        "supported_engines": ["postgres", "mysql", "oracle", "mssql", "db2", "sqlite"],
     },
     {
         "slug": "academic-grade-a",
@@ -81,7 +81,7 @@ FROM enrollments e
             "Lakukan JOIN ke courses pada e.course_id = c.id.",
             "Tambahkan filter WHERE e.grade = 'A' dan gunakan alias kolom AS student_name dan AS course_title."
         ],
-        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql", "db2"],
+        "supported_engines": ["postgres", "mysql", "oracle", "mssql", "db2", "sqlite"],
     },
     {
         "slug": "banking-priority-accounts",
@@ -115,7 +115,7 @@ JOIN customers c ON a.customer_id = c.customer_id
             "Gunakan dua filter pada WHERE: a.status = 'ACTIVE' AND a.balance > 30000000.0.",
             "Urutkan dengan ORDER BY a.balance DESC."
         ],
-        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql", "db2"],
+        "supported_engines": ["postgres", "mysql", "oracle", "mssql", "db2", "sqlite"],
     },
     {
         "slug": "top-spending-customers",
@@ -150,7 +150,7 @@ GROUP BY c.id, c.first_name, c.city;""",
             "Kelompokkan dengan GROUP BY c.id, c.first_name, c.city.",
             "Gunakan ORDER BY total_spent DESC dan LIMIT 5."
         ],
-        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql", "db2"],
+        "supported_engines": ["postgres", "mysql", "oracle", "mssql", "db2", "sqlite"],
     },
     {
         "slug": "high-volume-authors",
@@ -184,7 +184,7 @@ GROUP BY a.id, a.username;""",
             "Filter kelompok hasil agregasi menggunakan HAVING COUNT(p.id) > 1.",
             "Urutkan hasil dengan ORDER BY total_views DESC."
         ],
-        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql", "db2"],
+        "supported_engines": ["postgres", "mysql", "oracle", "mssql", "db2", "sqlite"],
     },
     {
         "slug": "monthly-transfer-channels",
@@ -216,7 +216,7 @@ ORDER BY total_volume DESC;""",
             "Filter dengan WHERE transaction_type = 'TRANSFER'.",
             "Kelompokkan berdasarkan channel dan hitung SUM(amount) serta AVG(fee)."
         ],
-        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql", "db2"],
+        "supported_engines": ["postgres", "mysql", "oracle", "mssql", "db2", "sqlite"],
     },
     {
         "slug": "dormant-customers-anti-join",
@@ -250,7 +250,7 @@ ORDER BY c.id ASC;""",
             "Saring baris yang tidak memiliki pasangan pesanan dengan WHERE o.id IS NULL.",
             "Urutkan dengan ORDER BY c.id ASC."
         ],
-        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql", "db2"],
+        "supported_engines": ["postgres", "mysql", "oracle", "mssql", "db2", "sqlite"],
     },
     {
         "slug": "cumulative-transaction-ledger",
@@ -282,7 +282,7 @@ ORDER BY transaction_id ASC;""",
             "Beri alias AS running_total.",
             "Pastikan query luar diurutkan dengan ORDER BY transaction_id ASC."
         ],
-        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql", "db2"],
+        "supported_engines": ["postgres", "mysql", "oracle", "mssql", "db2", "sqlite"],
     },
     {
         "slug": "product-price-category-rank",
@@ -314,7 +314,7 @@ ORDER BY category_id ASC, price_rank ASC;""",
             "Urutkan dalam jendela kategori dengan ORDER BY price DESC.",
             "Pengurutan luar harus berupa ORDER BY category_id ASC, price_rank ASC."
         ],
-        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql", "db2"],
+        "supported_engines": ["postgres", "mysql", "oracle", "mssql", "db2", "sqlite"],
     },
     {
         "slug": "category-revenue-cte",
@@ -358,7 +358,7 @@ ORDER BY cs.total_revenue DESC;""",
             "Hitung total pendapatan dengan SUM(oi.quantity * oi.unit_price).",
             "Hubungkan CTE dengan tabel categories pada cs.category_id = c.id dan urutkan dari total_revenue terbesar."
         ],
-        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql", "db2"],
+        "supported_engines": ["postgres", "mysql", "oracle", "mssql", "db2", "sqlite"],
     },
     {
         "slug": "tablespace-capacity-alert",
@@ -391,7 +391,7 @@ ORDER BY used_percent DESC;""",
             "Filter kondisi menggunakan WHERE (used_mb * 100.0) / allocated_mb >= 80.0.",
             "Urutkan hasil dengan ORDER BY used_percent DESC."
         ],
-        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql", "db2"],
+        "supported_engines": ["postgres", "mysql", "oracle", "mssql", "db2", "sqlite"],
     },
     {
         "slug": "blocking-sessions-root-cause",
@@ -430,7 +430,7 @@ WHERE s.blocked_by_spid IS NULL
             "Filter tabel induk dengan kondisi blocked_by_spid IS NULL AND spid IN (subquery).",
             "Gunakan klausa DISTINCT untuk menghindari duplikasi SPID root."
         ],
-        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql", "db2"],
+        "supported_engines": ["postgres", "mysql", "oracle", "mssql", "db2", "sqlite"],
     },
     {
         "slug": "replication-mirroring-lag-monitor",
@@ -464,7 +464,7 @@ ORDER BY lag_seconds DESC;""",
             "Gabungkan kondisi dengan operator OR: lag_seconds > 10.0 OR replay_queue_kb > 500.0 OR sync_state = 'DESYNCHRONIZED'.",
             "Urutkan hasil kueri dengan ORDER BY lag_seconds DESC."
         ],
-        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql", "db2"],
+        "supported_engines": ["postgres", "mysql", "oracle", "mssql", "db2", "sqlite"],
     },
     {
         "slug": "k8s-pod-buffer-cache-ratio",
@@ -508,7 +508,7 @@ ORDER BY cache_hit_pct ASC;""",
             "Bulatkan ke 2 tempat desimal menggunakan fungsi ROUND(..., 2).",
             "Urutkan dengan ORDER BY cache_hit_pct ASC agar pod bermasalah tampil paling atas."
         ],
-        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql", "db2"],
+        "supported_engines": ["postgres", "mysql", "oracle", "mssql", "db2", "sqlite"],
     },
     {
         "slug": "deadlock-contention-hotspot",
@@ -544,7 +544,7 @@ ORDER BY total_wait_sec DESC;""",
             "Kelompokkan dengan GROUP BY db_user, lock_type.",
             "Gunakan klausa HAVING SUM(wait_time_seconds) > 30 untuk menyaring antrean kritis."
         ],
-        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql", "db2"],
+        "supported_engines": ["postgres", "mysql", "oracle", "mssql", "db2", "sqlite"],
     },
     {
         "slug": "tablespace-autoextend-exhaustion",
@@ -596,7 +596,7 @@ ORDER BY allocated_mb DESC;""",
             "Periksa kondisi (autoextensible = 0 AND used_mb/allocated_mb >= 0.85) OR (autoextensible = 1 AND allocated_mb >= max_mb * 0.90).",
             "Urutkan hasil dengan ORDER BY allocated_mb DESC."
         ],
-        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql", "db2"],
+        "supported_engines": ["postgres", "mysql", "oracle", "mssql", "db2", "sqlite"],
     },
 ]
 
@@ -1180,7 +1180,7 @@ async def submit_exercise(slug: str, body: ChallengeSubmitRequest) -> ChallengeS
 
     is_id = body.language == "id"
     hints = challenge["hints_id"] if is_id else challenge["hints"]
-    engine = body.engine.lower() if body.engine else "sqlite"
+    engine = body.engine.lower() if body.engine else "postgres"
     dataset_slug = challenge["dataset"]
 
     try:
