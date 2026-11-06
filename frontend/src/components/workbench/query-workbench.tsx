@@ -301,16 +301,17 @@ export function QueryWorkbench({
   };
 
   // Run Query
-  const handleRunQuery = async () => {
+  const handleRunQuery = async (ddlOverride?: boolean) => {
     if (!sandboxId || !query.trim()) return;
+    const effectiveDdl = ddlOverride !== undefined ? ddlOverride : allowDdl;
     setIsRunning(true);
     setActiveOutputTab("results");
 
     try {
       const res = await api.post(`/sandboxes/${sandboxId}/execute`, {
         query: query.trim(),
-        confirmed: allowDdl,
-        read_only: !allowDdl,
+        confirmed: effectiveDdl,
+        read_only: !effectiveDdl,
       });
 
       if (res.data.success) {
@@ -324,7 +325,7 @@ export function QueryWorkbench({
         setLastExecutedQuery(query.trim());
         setLastExecutedTimestamp(new Date());
         setLastExecutedEngine(activeEngine);
-        if (allowDdl) {
+        if (effectiveDdl) {
           loadSchema(sandboxId);
         }
       } else {
@@ -878,12 +879,144 @@ export function QueryWorkbench({
           </button>
         </div>
 
-        {/* Editor Toolbar (Harmonized actions with tooltips) */}
-        <div className="flex items-center justify-between border-b border-slate-800 bg-[#10264A]/50 px-2 py-1.5 sm:px-3 overflow-x-auto no-scrollbar touch-scroll gap-2">
-          <div className="flex items-center gap-1.5 sm:gap-2 flex-nowrap shrink-0">
-            {/* Run Button (Prominent 44px hit target) */}
+        {/* MOBILE PRIMARY BAR: Run & Safety Mode Pinned (Zero horizontal scroll needed) */}
+        <div className="flex sm:hidden items-center justify-between border-b border-slate-800 bg-[#0d2140] px-2.5 py-1.5 gap-2 shrink-0">
+          {/* Run Button (Large touch target) */}
+          <button
+            onClick={() => handleRunQuery()}
+            disabled={isRunning}
+            title={
+              isId
+                ? "Jalankan kueri ke sandbox aktif"
+                : "Execute query against active sandbox"
+            }
+            className="flex items-center gap-2 rounded-lg bg-[#F2B84B] px-4 py-2 text-xs font-bold text-[#071A3A] hover:bg-[#F2B84B]/90 transition-all shadow-sm disabled:opacity-50 min-h-[42px] active:scale-95 shrink-0"
+          >
+            <Play className="h-4 w-4 fill-current" />
+            <span>{isRunning ? "..." : isId ? "Jalankan" : "Run"}</span>
+          </button>
+
+          {/* Mobile Safety Mode Segmented Switch (Always visible on mobile) */}
+          <div className="flex items-center rounded-lg bg-slate-900/90 p-0.5 border border-slate-700/80 shrink-0 shadow-inner">
             <button
-              onClick={handleRunQuery}
+              type="button"
+              onClick={() => setAllowDdl(false)}
+              title={isId ? "Mode Hanya Baca: Mencegah perubahan data/skema tidak sengaja" : "Read-Only Mode: Protects from accidental data/schema writes"}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold transition-all min-h-[38px] active:scale-95 ${
+                !allowDdl
+                  ? "bg-emerald-600 text-white shadow-xs"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              <ShieldCheck className="h-3.5 w-3.5" />
+              <span>{isId ? "Hanya Baca" : "Read Only"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setAllowDdl(true)}
+              title={isId ? "Mode Modifikasi: Mengizinkan perintah DDL/DML (CREATE, INSERT, UPDATE, DROP)" : "Modification Mode: Allows DDL/DML (CREATE, INSERT, UPDATE, DROP)"}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold transition-all min-h-[38px] active:scale-95 ${
+                allowDdl
+                  ? "bg-amber-500 text-[#071A3A] shadow-xs ring-1 ring-amber-400/60"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              <ShieldAlert className="h-3.5 w-3.5" />
+              <span>{isId ? "Mode DDL" : "DDL Mode"}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* MOBILE SECONDARY ACTIONS STRIP (Horizontal swipe for tools) */}
+        <div className="flex sm:hidden items-center border-b border-slate-800 bg-[#10264A]/30 px-2 py-1 overflow-x-auto no-scrollbar touch-scroll gap-1.5 shrink-0">
+          <button
+            onClick={handleFormat}
+            disabled={isFormatting}
+            title={isId ? "Rapikan format penulisan SQL" : "Format SQL syntax"}
+            className="flex items-center gap-1 rounded-md border border-slate-700 bg-slate-800/80 px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-700/60 transition-colors whitespace-nowrap min-h-[36px]"
+          >
+            <Code2 className="h-3.5 w-3.5" />
+            <span>Format</span>
+          </button>
+
+          <button
+            onClick={handleExplainNatural}
+            title={
+              isId
+                ? "Jelaskan logika kueri SQL dalam bahasa manusia"
+                : "Explain SQL query logic in plain English"
+            }
+            className="flex items-center gap-1 rounded-md border border-slate-700 bg-slate-800/80 px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-700/60 transition-colors whitespace-nowrap min-h-[36px]"
+          >
+            <HelpCircle className="h-3.5 w-3.5 text-[#F2B84B]" />
+            <span>{isId ? "Jelaskan" : "Explain"}</span>
+          </button>
+
+          <button
+            onClick={handleOptimizeCheck}
+            title={
+              isId
+                ? "Audit risiko keamanan dan anti-pattern kueri"
+                : "Audit security risks and query anti-patterns"
+            }
+            className="flex items-center gap-1 rounded-md border border-slate-700 bg-slate-800/80 px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-700/60 transition-colors whitespace-nowrap min-h-[36px]"
+          >
+            <Lightbulb className="h-3.5 w-3.5 text-amber-400" />
+            <span>Audit</span>
+          </button>
+
+          <button
+            onClick={handleExplain}
+            title={
+              isId
+                ? "Lihat rencana eksekusi kueri mesin database (EXPLAIN PLAN)"
+                : "View native database execution plan (EXPLAIN PLAN)"
+            }
+            className="flex items-center gap-1 rounded-md border border-slate-700 bg-slate-800/80 px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-700/60 transition-colors whitespace-nowrap min-h-[36px]"
+          >
+            <Layers className="h-3.5 w-3.5" />
+            <span>{isId ? "Rencana" : "Plan"}</span>
+          </button>
+
+          <div className="flex items-center gap-1 pl-1 border-l border-slate-800 shrink-0">
+            <select
+              value={transpileTarget}
+              onChange={(e) => setTranspileTarget(e.target.value)}
+              className="rounded-md bg-slate-800 border border-slate-700 text-slate-200 text-xs px-2 py-1.5 focus:outline-none min-h-[36px]"
+            >
+              <option value="postgres">PostgreSQL</option>
+              <option value="mysql">MySQL</option>
+              <option value="duckdb">DuckDB</option>
+              <option value="oracle">Oracle</option>
+              <option value="tsql">SQL Server</option>
+              <option value="db2">IBM Db2</option>
+            </select>
+            <button
+              onClick={handleTranspile}
+              disabled={isTranspiling}
+              className="flex items-center gap-1 rounded-md bg-[#10264A] border border-[#F2B84B]/40 px-2.5 py-1.5 text-xs font-semibold text-[#F2B84B] hover:bg-[#F2B84B] hover:text-[#071A3A] transition-colors whitespace-nowrap min-h-[36px]"
+            >
+              <ArrowRightLeft className="h-3 w-3" />
+              <span>{isId ? "Konversi" : "Convert"}</span>
+            </button>
+          </div>
+
+          <button
+            onClick={handleExportSql}
+            title={isId ? "Unduh DDL/DML SQL Database" : "Export SQL Database Dump"}
+            className="flex items-center gap-1 rounded-md border border-slate-700 bg-slate-800/80 px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:text-white transition-colors whitespace-nowrap min-h-[36px]"
+          >
+            <Download className="h-3.5 w-3.5 text-emerald-400" />
+            <span>{isId ? "Ekspor" : "Export"}</span>
+          </button>
+        </div>
+
+        {/* DESKTOP INTEGRATED TOOLBAR (Single unified bar) */}
+        <div className="hidden sm:flex items-center justify-between border-b border-slate-800 bg-[#10264A]/50 px-3 py-1.5 gap-2 overflow-x-auto no-scrollbar touch-scroll shrink-0">
+          <div className="flex items-center gap-2 flex-nowrap shrink-0">
+            {/* Run Button */}
+            <button
+              onClick={() => handleRunQuery()}
               disabled={isRunning}
               title={
                 isId
@@ -895,6 +1028,46 @@ export function QueryWorkbench({
               <Play className="h-4 w-4 fill-current" />
               <span>{isRunning ? "..." : isId ? "Jalankan" : "Run"}</span>
             </button>
+
+            {/* Desktop Segmented Safety Mode Switch (Positioned right next to Run) */}
+            <div className="flex items-center rounded-lg bg-slate-900/90 p-0.5 border border-slate-700/80 shadow-inner">
+              <button
+                type="button"
+                onClick={() => setAllowDdl(false)}
+                title={
+                  isId
+                    ? "Mode Keamanan: Hanya Baca (Mencegah modifikasi data/skema tidak sengaja)"
+                    : "Safety Mode: Read Only (Protects from accidental data or schema changes)"
+                }
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all min-h-[38px] active:scale-95 ${
+                  !allowDdl
+                    ? "bg-emerald-600 text-white shadow-xs"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <ShieldCheck className="h-4 w-4" />
+                <span>{isId ? "Hanya Baca" : "Read Only"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setAllowDdl(true)}
+                title={
+                  isId
+                    ? "Mode Modifikasi (DDL/DML): Mengizinkan CREATE, INSERT, UPDATE, DELETE, DROP"
+                    : "Modification Mode (DDL/DML): Permits CREATE, INSERT, UPDATE, DELETE, DROP"
+                }
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all min-h-[38px] active:scale-95 ${
+                  allowDdl
+                    ? "bg-amber-500 text-[#071A3A] font-bold shadow-xs ring-1 ring-amber-400/60"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <ShieldAlert className="h-4 w-4" />
+                <span>{isId ? "Mode Modifikasi (DDL)" : "Modification Mode (DDL)"}</span>
+              </button>
+            </div>
+
+            <div className="h-6 w-px bg-slate-800 mx-1" />
 
             {/* Format Button */}
             <button
@@ -988,40 +1161,28 @@ export function QueryWorkbench({
               <span>{isId ? "Ekspor" : "Export"}</span>
             </button>
           </div>
+        </div>
 
-          {/* Safety Mode Toggle */}
-          <div className="flex items-center gap-2 shrink-0">
+        {/* ACTIVE DDL MODE ALERT BANNER */}
+        {allowDdl && (
+          <div className="flex items-center justify-between bg-amber-950/70 border-b border-amber-600/60 px-3 py-1.5 text-xs text-amber-200 shrink-0">
+            <span className="flex items-center gap-2 font-medium">
+              <ShieldAlert className="h-4 w-4 text-amber-400 shrink-0 animate-pulse" />
+              <span>
+                {isId
+                  ? "Mode Modifikasi Aktif: Perintah DDL/DML (CREATE, INSERT, UPDATE, DROP) diizinkan."
+                  : "Modification Mode Active: DDL/DML statements (CREATE, INSERT, UPDATE, DROP) are permitted."}
+              </span>
+            </span>
             <button
-              onClick={() => setAllowDdl(!allowDdl)}
-              title={
-                allowDdl
-                  ? isId
-                    ? "Mode Modifikasi (DML/DDL): Perubahan data diizinkan"
-                    : "Modification Mode (DML/DDL): Data modifications permitted"
-                  : isId
-                  ? "Mode Keamanan: Hanya Baca"
-                  : "Safety Mode: Read Only"
-              }
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-mono transition-colors border min-h-[42px] ${
-                allowDdl
-                  ? "border-amber-500/50 bg-amber-500/10 text-amber-300"
-                  : "border-emerald-500/50 bg-emerald-500/10 text-emerald-300"
-              }`}
+              type="button"
+              onClick={() => setAllowDdl(false)}
+              className="text-[11px] font-bold text-amber-300 hover:text-white underline ml-3 shrink-0"
             >
-              {allowDdl ? (
-                <>
-                  <ShieldAlert className="h-4 w-4" />
-                  <span>DML/DDL</span>
-                </>
-              ) : (
-                <>
-                  <ShieldCheck className="h-4 w-4" />
-                  <span>{isId ? "Hanya Baca" : "Read Only"}</span>
-                </>
-              )}
+              {isId ? "Kembalikan ke Hanya Baca" : "Switch to Read Only"}
             </button>
           </div>
-        </div>
+        )}
 
         {/* Editor Area (Explicit responsive height with shrink-0) */}
         <div className="h-64 sm:h-72 lg:h-[340px] xl:h-[380px] w-full p-2 shrink-0">
@@ -1031,6 +1192,8 @@ export function QueryWorkbench({
             onExecute={handleRunQuery}
             language={language}
             engine={activeEngine}
+            allowDdl={allowDdl}
+            onToggleDdl={() => setAllowDdl(!allowDdl)}
           />
         </div>
 
@@ -1148,6 +1311,33 @@ export function QueryWorkbench({
                       </span>
                     </div>
                     <p className="whitespace-pre-wrap">{results.error}</p>
+
+                    {(results.error.includes("read-only mode") ||
+                      results.error.includes("confirmed=true") ||
+                      results.error.includes("DDL/DML")) && (
+                      <div className="mt-3 pt-2.5 border-t border-rose-800/60 flex flex-wrap items-center justify-between gap-2 bg-amber-950/50 -mx-3 -mb-3 p-3 rounded-b-lg border-t-amber-800/40">
+                        <span className="text-amber-200 text-xs">
+                          {isId
+                            ? "Kueri ini terhalang mode Hanya Baca. Aktifkan mode modifikasi untuk mengizinkan perubahan skema/data."
+                            : "This query was blocked by Read-Only safety mode. Enable modification mode to allow writes."}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAllowDdl(true);
+                            handleRunQuery(true);
+                          }}
+                          className="flex items-center gap-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-[#071A3A] px-3.5 py-1.5 text-xs font-bold transition-all shadow-md active:scale-95"
+                        >
+                          <ShieldAlert className="h-4 w-4" />
+                          <span>
+                            {isId
+                              ? "Izinkan Mode DDL & Jalankan Ulang"
+                              : "Enable DDL Mode & Rerun"}
+                          </span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ) : !results ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center text-slate-500 space-y-2">

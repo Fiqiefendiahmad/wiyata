@@ -12,6 +12,8 @@ interface SqlEditorProps {
   onChange: (value: string) => void;
   onExecute?: () => void;
   readOnly?: boolean;
+  allowDdl?: boolean;
+  onToggleDdl?: () => void;
   language?: "en" | "id";
   engine?: "sqlite" | "postgres" | "mysql" | "oracle" | "mssql" | "db2";
 }
@@ -31,6 +33,8 @@ export function SqlEditor({
   onChange,
   onExecute,
   readOnly = false,
+  allowDdl = false,
+  onToggleDdl,
   language = "id",
   engine = "sqlite",
 }: SqlEditorProps) {
@@ -182,25 +186,52 @@ export function SqlEditor({
 
       {/* Sleek Editor Status Footer */}
       <div className="flex items-center justify-between border-t border-slate-800 bg-[#10264A]/40 px-3 py-1 text-[10px] font-mono text-slate-500 shrink-0">
-        <span className="flex items-center gap-1.5">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-          <span className="font-semibold text-slate-300">
-            {engine === "postgres"
-              ? "PostgreSQL 17"
-              : engine === "mysql"
-              ? "MariaDB 11.3 (MySQL)"
-              : engine === "oracle"
-              ? "Oracle 23ai"
-              : engine === "mssql"
-              ? "SQL Server 2022"
-              : engine === "db2"
-              ? "IBM Db2 11.5"
-              : "SQLite 3.45"}
-          </span>
-          {readOnly && (
-            <span className="rounded bg-slate-800 px-1.5 py-0.2 text-[9px] text-amber-400 border border-amber-800/60 font-sans">
-              {isId ? "Hanya Baca" : "Read Only"}
+        <span className="flex items-center gap-2">
+          <span className="flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            <span className="font-semibold text-slate-300">
+              {engine === "postgres"
+                ? "PostgreSQL 17"
+                : engine === "mysql"
+                ? "MariaDB 11.3 (MySQL)"
+                : engine === "oracle"
+                ? "Oracle 23ai"
+                : engine === "mssql"
+                ? "SQL Server 2022"
+                : engine === "db2"
+                ? "IBM Db2 11.5"
+                : "SQLite 3.45"}
             </span>
+          </span>
+
+          {onToggleDdl ? (
+            <button
+              type="button"
+              onClick={onToggleDdl}
+              title={
+                allowDdl
+                  ? isId
+                    ? "Mode Modifikasi (DML/DDL): Perubahan data & skema diizinkan. Klik untuk kembali ke mode Hanya Baca."
+                    : "Modification Mode (DML/DDL): Schema & data writes permitted. Click to lock Read Only."
+                  : isId
+                  ? "Mode Keamanan: Hanya Baca. Klik untuk mengaktifkan izin DML/DDL."
+                  : "Safety Mode: Read Only. Click to permit DML/DDL writes."
+              }
+              className={`flex items-center gap-1 rounded px-2 py-0.5 text-[9px] font-sans font-bold transition-all border active:scale-95 ${
+                allowDdl
+                  ? "bg-amber-950/90 border-amber-500/80 text-amber-300 ring-1 ring-amber-500/40"
+                  : "bg-emerald-950/80 border-emerald-600/70 text-emerald-300 hover:border-emerald-500"
+              }`}
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${allowDdl ? "bg-amber-400 animate-pulse" : "bg-emerald-400"}`} />
+              <span>{allowDdl ? (isId ? "Mode Modifikasi (DDL)" : "Edit Mode (DDL)") : (isId ? "Hanya Baca" : "Read Only")}</span>
+            </button>
+          ) : (
+            readOnly && (
+              <span className="rounded bg-slate-800 px-1.5 py-0.2 text-[9px] text-amber-400 border border-amber-800/60 font-sans">
+                {isId ? "Hanya Baca" : "Read Only"}
+              </span>
+            )
           )}
         </span>
         <div className="flex items-center gap-3">
