@@ -6,12 +6,8 @@ import {
   Play,
   CheckCircle2,
   XCircle,
-  HelpCircle,
-  Award,
-  Clock,
-  Sparkles,
-  ArrowRight,
   Database,
+  ChevronDown,
 } from "lucide-react";
 import { SqlEditor } from "@/components/editor/sql-editor";
 import { api } from "@/lib/api";
@@ -108,9 +104,33 @@ export function LearningChallenges({
   };
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem)] w-full overflow-hidden bg-[#071A3A] text-slate-200">
-      {/* Exercise Sidebar */}
-      <aside className="w-80 flex flex-col border-r border-slate-800 bg-[#071A3A]/95">
+    <div className="flex flex-col lg:flex-row h-auto lg:h-[calc(100dvh-3.5rem)] w-full overflow-hidden bg-[#071A3A] text-slate-200">
+      {/* MOBILE CHALLENGE SELECTOR BAR (< lg) */}
+      <div className="lg:hidden border-b border-slate-800 bg-[#10264A]/80 p-3">
+        <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block mb-1">
+          {isId ? "Pilih Tantangan SQL:" : "Select Challenge:"}
+        </label>
+        <div className="relative">
+          <select
+            value={selectedExercise?.slug || ""}
+            onChange={(e) => {
+              const ex = exercises.find((item) => item.slug === e.target.value);
+              if (ex) handleSelectExercise(ex);
+            }}
+            className="w-full appearance-none rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-xs text-white focus:outline-none focus:border-[#F2B84B] min-h-[44px]"
+          >
+            {exercises.map((ex) => (
+              <option key={ex.slug} value={ex.slug}>
+                [{ex.level}] {isId ? ex.title_id : ex.title}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-3 top-3.5 h-4 w-4 text-slate-400" />
+        </div>
+      </div>
+
+      {/* DESKTOP SIDEBAR (>= lg) */}
+      <aside className="hidden lg:flex w-80 flex-col border-r border-slate-800 bg-[#071A3A]/95 overflow-hidden">
         <div className="p-4 border-b border-slate-800">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#F2B84B] mb-1">
             <GraduationCap className="h-4 w-4" />
@@ -163,17 +183,17 @@ export function LearningChallenges({
       </aside>
 
       {/* Solver Pane */}
-      <main className="flex-1 flex flex-col overflow-hidden bg-[#071A3A]">
+      <main className="flex-1 flex flex-col overflow-hidden bg-[#071A3A] min-w-0">
         {selectedExercise && (
           <>
             {/* Challenge Header */}
-            <div className="border-b border-slate-800 bg-[#10264A]/40 p-4">
-              <div className="flex items-center justify-between mb-2">
+            <div className="border-b border-slate-800 bg-[#10264A]/40 p-3 sm:p-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="rounded bg-[#F2B84B]/20 px-2 py-0.5 text-xs font-bold text-[#F2B84B] border border-[#F2B84B]/30">
+                  <span className="rounded bg-[#F2B84B]/20 px-2 py-0.5 text-[11px] font-bold text-[#F2B84B] border border-[#F2B84B]/30 shrink-0">
                     {selectedExercise.level}
                   </span>
-                  <h1 className="text-xl font-bold text-white">
+                  <h1 className="text-base sm:text-xl font-bold text-white truncate">
                     {isId ? selectedExercise.title_id : selectedExercise.title}
                   </h1>
                 </div>
@@ -182,10 +202,10 @@ export function LearningChallenges({
                   onClick={() =>
                     onOpenLabWithQuery(solutionSql, selectedExercise.dataset)
                   }
-                  className="flex items-center gap-1.5 rounded border border-slate-700 bg-slate-800/80 px-2.5 py-1 text-xs text-slate-300 hover:text-white hover:border-[#F2B84B] transition-colors"
+                  className="flex items-center justify-center gap-1.5 rounded border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-xs text-slate-300 hover:text-white hover:border-[#F2B84B] transition-colors min-h-[36px] shrink-0"
                 >
                   <Database className="h-3.5 w-3.5 text-[#F2B84B]" />
-                  <span>{isId ? "Buka di Query Studio" : "Open in Studio"}</span>
+                  <span>{isId ? "Buka di Studio" : "Open in Studio"}</span>
                 </button>
               </div>
 
@@ -195,7 +215,7 @@ export function LearningChallenges({
                   : selectedExercise.description}
               </p>
 
-              <div className="flex items-center gap-2 text-[11px] font-mono text-slate-400">
+              <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-mono text-slate-400">
                 <span className="font-semibold text-slate-300">
                   {isId ? "Kolom Diharapkan:" : "Expected Columns:"}
                 </span>
@@ -211,8 +231,8 @@ export function LearningChallenges({
             </div>
 
             {/* Editor & Verification Section */}
-            <div className="flex-1 flex flex-col p-4 overflow-hidden">
-              <div className="flex-1 min-h-[220px]">
+            <div className="flex-1 flex flex-col p-2 sm:p-4 overflow-hidden">
+              <div className="h-64 sm:flex-1 min-h-[220px]">
                 <SqlEditor
                   value={solutionSql}
                   onChange={setSolutionSql}
@@ -221,25 +241,25 @@ export function LearningChallenges({
               </div>
 
               {/* Action Toolbar */}
-              <div className="flex items-center justify-between py-3">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 py-3">
                 <button
                   onClick={handleVerify}
                   disabled={isSubmitting}
-                  className="flex items-center gap-2 rounded bg-gradient-to-r from-[#F2B84B] to-[#D99A32] px-5 py-2 text-xs font-bold text-[#071A3A] hover:opacity-90 shadow-md transition-all disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 rounded bg-gradient-to-r from-[#F2B84B] to-[#D99A32] px-5 py-2.5 text-xs font-bold text-[#071A3A] hover:opacity-90 shadow-md transition-all disabled:opacity-50 min-h-[44px]"
                 >
-                  <Play className="h-3.5 w-3.5 fill-current" />
+                  <Play className="h-4 w-4 fill-current" />
                   <span>
                     {isSubmitting
                       ? isId
                         ? "Menguji Solusi..."
                         : "Verifying Query..."
                       : isId
-                      ? "Verifikasi Jawaban (Ctrl+Enter)"
-                      : "Submit & Verify (Ctrl+Enter)"}
+                      ? "Verifikasi Jawaban"
+                      : "Submit & Verify"}
                   </span>
                 </button>
 
-                <span className="text-[11px] text-slate-500">
+                <span className="text-[11px] text-slate-500 text-center sm:text-right">
                   {isId
                     ? "Query diuji langsung di sandbox SQLite terisolasi"
                     : "Verified in an isolated SQLite sandbox"}
@@ -249,7 +269,7 @@ export function LearningChallenges({
               {/* Test Result Banner */}
               {result && (
                 <div
-                  className={`rounded-lg border p-4 text-xs font-mono transition-all ${
+                  className={`rounded-lg border p-3 sm:p-4 text-xs font-mono transition-all ${
                     result.passed
                       ? "border-emerald-600/60 bg-emerald-950/40 text-emerald-300"
                       : "border-rose-700/60 bg-rose-950/40 text-rose-300"
@@ -258,26 +278,26 @@ export function LearningChallenges({
                   <div className="flex items-center gap-2 font-bold text-sm mb-1">
                     {result.passed ? (
                       <>
-                        <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                        <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
                         <span>{result.message}</span>
                       </>
                     ) : (
                       <>
-                        <XCircle className="h-4 w-4 text-rose-400" />
+                        <XCircle className="h-4 w-4 text-rose-400 shrink-0" />
                         <span>{result.message}</span>
                       </>
                     )}
                   </div>
 
-                  <div className="mt-2 flex items-center gap-4 text-[11px] text-slate-300">
+                  <div className="mt-2 flex flex-wrap items-center gap-3 sm:gap-4 text-[11px] text-slate-300">
                     <span>
-                      {isId ? "Baris Hasil:" : "Result Rows:"}{" "}
+                      {isId ? "Baris:" : "Rows:"}{" "}
                       <strong className="text-white">
                         {result.row_count} / {result.expected_row_count}
                       </strong>
                     </span>
                     <span>
-                      {isId ? "Waktu Eksekusi:" : "Execution Time:"}{" "}
+                      {isId ? "Waktu:" : "Time:"}{" "}
                       <strong className="text-white">{result.elapsed_ms} ms</strong>
                     </span>
                   </div>

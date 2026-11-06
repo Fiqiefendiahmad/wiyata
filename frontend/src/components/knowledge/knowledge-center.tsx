@@ -1,7 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
-import { BookOpen, Search, ArrowRight, Tag, Database, CheckCircle2 } from "lucide-react";
+import {
+  BookOpen,
+  Search,
+  ArrowRight,
+  Tag,
+  Database,
+  ArrowLeft,
+} from "lucide-react";
 
 interface Article {
   slug: string;
@@ -107,6 +114,7 @@ export function KnowledgeCenter({ language, onOpenLab }: KnowledgeCenterProps) {
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(
     ARTICLES[0]
   );
+  const [mobileViewingArticle, setMobileViewingArticle] = useState(false);
 
   const filtered = ARTICLES.filter(
     (a) =>
@@ -115,19 +123,30 @@ export function KnowledgeCenter({ language, onOpenLab }: KnowledgeCenterProps) {
       a.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleSelect = (art: Article) => {
+    setSelectedArticle(art);
+    setMobileViewingArticle(true);
+  };
+
   return (
-    <div className="flex h-[calc(100vh-3.5rem)] w-full overflow-hidden bg-[#071A3A] text-slate-200">
+    <div className="flex flex-col lg:flex-row h-auto lg:h-[calc(100dvh-3.5rem)] w-full overflow-hidden bg-[#071A3A] text-slate-200">
       {/* Sidebar Article List */}
-      <aside className="w-80 flex flex-col border-r border-slate-800 bg-[#071A3A]/95">
+      <aside
+        className={`${
+          mobileViewingArticle ? "hidden" : "flex"
+        } lg:flex w-full lg:w-80 flex-col border-b lg:border-b-0 lg:border-r border-slate-800 bg-[#071A3A]/95 overflow-hidden`}
+      >
         <div className="p-3 border-b border-slate-800">
           <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+            <Search className="absolute left-2.5 top-3 h-3.5 w-3.5 text-slate-400" />
             <input
               type="text"
-              placeholder={isId ? "Cari artikel database..." : "Search database guides..."}
+              placeholder={
+                isId ? "Cari artikel database..." : "Search database guides..."
+              }
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded bg-slate-900 border border-slate-800 pl-8 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-[#F2B84B]"
+              className="w-full rounded bg-slate-900 border border-slate-800 pl-8 pr-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-[#F2B84B] min-h-[40px]"
             />
           </div>
         </div>
@@ -136,7 +155,7 @@ export function KnowledgeCenter({ language, onOpenLab }: KnowledgeCenterProps) {
           {filtered.map((art) => (
             <div
               key={art.slug}
-              onClick={() => setSelectedArticle(art)}
+              onClick={() => handleSelect(art)}
               className={`p-3 rounded border cursor-pointer transition-all ${
                 selectedArticle?.slug === art.slug
                   ? "border-[#F2B84B] bg-[#10264A] shadow-sm"
@@ -161,7 +180,24 @@ export function KnowledgeCenter({ language, onOpenLab }: KnowledgeCenterProps) {
       </aside>
 
       {/* Main Reading Pane */}
-      <main className="flex-1 overflow-y-auto p-8 max-w-4xl">
+      <main
+        className={`${
+          mobileViewingArticle ? "flex" : "hidden"
+        } lg:flex flex-1 flex-col overflow-y-auto p-4 sm:p-8 max-w-4xl`}
+      >
+        {/* Mobile Back Button */}
+        <div className="lg:hidden mb-4">
+          <button
+            onClick={() => setMobileViewingArticle(false)}
+            className="flex items-center gap-1.5 text-xs text-[#F2B84B] font-semibold py-1.5 px-2 rounded bg-slate-900 border border-slate-800 min-h-[36px]"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span>
+              {isId ? "Kembali ke Daftar Artikel" : "Back to Article List"}
+            </span>
+          </button>
+        </div>
+
         {selectedArticle ? (
           <div>
             <div className="flex items-center gap-2 text-xs text-[#F2B84B] font-semibold uppercase tracking-wider mb-2">
@@ -172,22 +208,24 @@ export function KnowledgeCenter({ language, onOpenLab }: KnowledgeCenterProps) {
               <span>{selectedArticle.engine}</span>
             </div>
 
-            <h1 className="text-3xl font-extrabold text-white tracking-tight mb-4">
+            <h1 className="text-xl sm:text-3xl font-extrabold text-white tracking-tight mb-4">
               {isId ? selectedArticle.titleId : selectedArticle.title}
             </h1>
 
-            <p className="text-sm text-slate-300 leading-relaxed italic mb-6 border-l-2 border-[#F2B84B] pl-3 py-0.5">
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed italic mb-6 border-l-2 border-[#F2B84B] pl-3 py-0.5">
               {isId ? selectedArticle.summaryId : selectedArticle.summary}
             </p>
 
-            <div className="prose prose-invert prose-sm max-w-none text-slate-300 whitespace-pre-wrap leading-relaxed font-sans">
+            <div className="prose prose-invert prose-sm max-w-none text-slate-300 whitespace-pre-wrap leading-relaxed font-sans text-xs sm:text-sm">
               {isId ? selectedArticle.bodyId : selectedArticle.body}
             </div>
 
-            <div className="mt-10 rounded-lg border border-[#F2B84B]/30 bg-[#10264A]/60 p-4 flex items-center justify-between">
+            <div className="mt-8 rounded-lg border border-[#F2B84B]/30 bg-[#10264A]/60 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h4 className="text-xs font-bold text-[#F2B84B]">
-                  {isId ? "Praktikkan Teori Ini Langsung" : "Practice This Live in Sandbox"}
+                  {isId
+                    ? "Praktikkan Teori Ini Langsung"
+                    : "Practice This Live in Sandbox"}
                 </h4>
                 <p className="text-[11px] text-slate-400 mt-0.5">
                   {isId
@@ -197,7 +235,7 @@ export function KnowledgeCenter({ language, onOpenLab }: KnowledgeCenterProps) {
               </div>
               <button
                 onClick={onOpenLab}
-                className="flex items-center gap-1.5 rounded bg-[#F2B84B] px-3 py-1.5 text-xs font-bold text-[#071A3A] hover:bg-[#F2B84B]/90 transition-colors"
+                className="flex items-center justify-center gap-1.5 rounded bg-[#F2B84B] px-4 py-2 text-xs font-bold text-[#071A3A] hover:bg-[#F2B84B]/90 transition-colors min-h-[40px] shrink-0"
               >
                 <span>{isId ? "Buka Studio" : "Open Studio"}</span>
                 <ArrowRight className="h-3.5 w-3.5" />
@@ -205,8 +243,10 @@ export function KnowledgeCenter({ language, onOpenLab }: KnowledgeCenterProps) {
             </div>
           </div>
         ) : (
-          <div className="flex h-full items-center justify-center text-xs text-slate-500">
-            Select an article from the sidebar
+          <div className="flex h-full items-center justify-center text-xs text-slate-500 py-10">
+            {isId
+              ? "Pilih artikel dari daftar"
+              : "Select an article from the list"}
           </div>
         )}
       </main>

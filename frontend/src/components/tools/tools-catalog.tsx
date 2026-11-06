@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Wrench, ExternalLink, ShieldCheck, Tag, Search } from "lucide-react";
+import { Wrench, ExternalLink, Search } from "lucide-react";
 
 interface Tool {
   slug: string;
@@ -105,12 +105,17 @@ export function ToolsCatalog({ language }: ToolsCatalogProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
 
-  const categories = ["All", ...Array.from(new Set(TOOLS.map((t) => t.category)))];
+  const categories = [
+    "All",
+    ...Array.from(new Set(TOOLS.map((t) => t.category))),
+  ];
 
   const filtered = TOOLS.filter((t) => {
     const matchesSearch =
       t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.engines.some((e) => e.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      t.engines.some((e) =>
+        e.toLowerCase().includes(searchTerm.toLowerCase())
+      ) ||
       t.summary.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory =
       selectedCategory === "All" || t.category === selectedCategory;
@@ -118,18 +123,24 @@ export function ToolsCatalog({ language }: ToolsCatalogProps) {
   });
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem)] w-full flex-col overflow-y-auto bg-[#071A3A] p-8 text-slate-200">
+    <div className="flex h-auto lg:h-[calc(100dvh-3.5rem)] w-full flex-col overflow-y-auto bg-[#071A3A] p-4 sm:p-8 text-slate-200">
       <div className="max-w-6xl mx-auto w-full">
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#F2B84B]">
             <Wrench className="h-3.5 w-3.5" />
-            <span>{isId ? "Direktori Software Profesional" : "Professional Software Directory"}</span>
+            <span>
+              {isId
+                ? "Direktori Software Profesional"
+                : "Professional Software Directory"}
+            </span>
           </div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight mt-1">
-            {isId ? "Katalog Alat & Ekosistem Database" : "Database Tools & Ecosystem Catalog"}
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mt-1">
+            {isId
+              ? "Katalog Alat & Ekosistem Database"
+              : "Database Tools & Ecosystem Catalog"}
           </h1>
-          <p className="text-sm text-slate-400 mt-1 max-w-2xl leading-relaxed">
+          <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl leading-relaxed">
             {isId
               ? "Koleksi software terverifikasi untuk DBA, insinyur performa, dan pengembang data. Lisensi dan status kepemilikan selalu transparan."
               : "Curated software applications for DBAs, reliability engineers, and developers. Licensing, compatibility, and vendor details are verified against official documentation."}
@@ -137,26 +148,30 @@ export function ToolsCatalog({ language }: ToolsCatalogProps) {
         </div>
 
         {/* Filter bar */}
-        <div className="flex flex-col sm:flex-row gap-3 items-center justify-between mb-6 pb-4 border-b border-slate-800">
+        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between mb-6 pb-4 border-b border-slate-800">
           <div className="relative w-full sm:w-72">
-            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+            <Search className="absolute left-3 top-3 h-3.5 w-3.5 text-slate-400" />
             <input
               type="text"
-              placeholder={isId ? "Cari nama alat atau database..." : "Search tool or database..."}
+              placeholder={
+                isId
+                  ? "Cari nama alat atau database..."
+                  : "Search tool or database..."
+              }
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded bg-slate-900 border border-slate-800 pl-8 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-[#F2B84B]"
+              className="w-full rounded bg-slate-900 border border-slate-800 pl-9 pr-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-[#F2B84B] min-h-[40px]"
             />
           </div>
 
-          <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-1 rounded text-xs font-medium transition-colors whitespace-nowrap ${
+                className={`px-3 py-1.5 rounded text-xs font-medium transition-colors whitespace-nowrap min-h-[36px] ${
                   selectedCategory === cat
-                    ? "bg-[#10264A] text-[#F2B84B] border border-[#F2B84B]/40"
+                    ? "bg-[#10264A] text-[#F2B84B] border border-[#F2B84B]/40 font-semibold"
                     : "bg-slate-900/60 text-slate-400 hover:text-slate-200 border border-slate-800"
                 }`}
               >
@@ -171,16 +186,18 @@ export function ToolsCatalog({ language }: ToolsCatalogProps) {
           {filtered.map((tool) => (
             <div
               key={tool.slug}
-              className="rounded-lg border border-slate-800 bg-[#10264A]/30 p-4 flex flex-col justify-between hover:border-slate-700 hover:bg-[#10264A]/50 transition-all"
+              className="rounded-lg border border-slate-800 bg-[#10264A]/30 p-4 sm:p-5 flex flex-col justify-between hover:border-slate-700 hover:bg-[#10264A]/50 transition-all"
             >
               <div>
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div>
-                    <h3 className="font-bold text-sm text-white">{tool.name}</h3>
+                    <h3 className="font-bold text-sm text-white">
+                      {tool.name}
+                    </h3>
                     <p className="text-[11px] text-slate-400">{tool.vendor}</p>
                   </div>
                   <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-semibold tracking-wide border ${
+                    className={`px-2 py-0.5 rounded text-[10px] font-semibold tracking-wide border shrink-0 ${
                       tool.license === "Open Source"
                         ? "bg-emerald-950/60 border-emerald-600/40 text-emerald-300"
                         : tool.license === "Commercial"
@@ -213,10 +230,12 @@ export function ToolsCatalog({ language }: ToolsCatalogProps) {
                   href={tool.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center justify-center gap-1.5 w-full rounded border border-slate-700 bg-slate-800/80 py-1.5 text-xs font-semibold text-slate-200 hover:bg-[#F2B84B] hover:text-[#071A3A] hover:border-[#F2B84B] transition-colors"
+                  className="flex items-center justify-center gap-1.5 w-full rounded border border-slate-700 bg-slate-800/80 py-2.5 text-xs font-semibold text-slate-200 hover:bg-[#F2B84B] hover:text-[#071A3A] hover:border-[#F2B84B] transition-colors min-h-[44px]"
                 >
-                  <span>{isId ? "Kunjungi Situs Resmi" : "Official Website"}</span>
-                  <ExternalLink className="h-3 w-3" />
+                  <span>
+                    {isId ? "Kunjungi Situs Resmi" : "Official Website"}
+                  </span>
+                  <ExternalLink className="h-3.5 w-3.5" />
                 </a>
               </div>
             </div>
