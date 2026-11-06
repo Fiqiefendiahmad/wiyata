@@ -32,8 +32,6 @@ export function SqlEditor({
 }: SqlEditorProps) {
   const [mounted, setMounted] = useState(false);
   const [isMobileScreen, setIsMobileScreen] = useState(false);
-  const [monacoLoaded, setMonacoLoaded] = useState(false);
-  const [monacoFailed, setMonacoFailed] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -44,21 +42,12 @@ export function SqlEditor({
     checkMobile();
     window.addEventListener("resize", checkMobile);
 
-    // Timeout fallback for desktop Monaco loader
-    const timer = setTimeout(() => {
-      if (!monacoLoaded) {
-        setMonacoFailed(true);
-      }
-    }, 4000);
-
     return () => {
       window.removeEventListener("resize", checkMobile);
-      clearTimeout(timer);
     };
-  }, [monacoLoaded]);
+  }, []);
 
   const handleEditorDidMount = (editor: any, monaco: any) => {
-    setMonacoLoaded(true);
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
       if (onExecute) onExecute();
     });
@@ -104,10 +93,10 @@ export function SqlEditor({
   const lineCount = (value.match(/\n/g) || []).length + 1;
 
   return (
-    <div className="relative flex flex-col h-full w-full overflow-hidden rounded-md border border-slate-700/60 bg-[#071A3A]">
+    <div className="relative flex flex-col h-full w-full overflow-hidden rounded-lg border border-slate-700/80 bg-[#071A3A] shadow-inner">
       {/* Mobile Quick Keywords Toolbar */}
       {isMobileScreen && !readOnly && (
-        <div className="flex items-center gap-1 overflow-x-auto border-b border-slate-800 bg-[#10264A]/90 px-2 py-1.5 no-scrollbar shrink-0">
+        <div className="flex items-center gap-1 overflow-x-auto border-b border-slate-800 bg-[#10264A]/90 px-2 py-1.5 no-scrollbar touch-scroll shrink-0">
           <span className="text-[10px] font-mono text-slate-500 uppercase px-1">
             SQL:
           </span>
@@ -124,45 +113,47 @@ export function SqlEditor({
         </div>
       )}
 
-      {/* Editor Surface */}
-      <div className="relative flex-1 h-full w-full overflow-hidden">
-        {mounted && !isMobileScreen && !monacoFailed ? (
-          <Editor
-            height="100%"
-            defaultLanguage="sql"
-            theme="vs-dark"
-            value={value}
-            onChange={(val) => onChange(val || "")}
-            onMount={handleEditorDidMount}
-            loading={
-              <div className="flex h-full w-full items-center justify-center font-mono text-xs text-slate-400">
-                Memuat SQL Editor...
-              </div>
-            }
-            options={{
-              minimap: { enabled: false },
-              fontSize: 13,
-              fontFamily: "var(--font-mono), monospace",
-              lineNumbers: "on",
-              scrollBeyondLastLine: false,
-              automaticLayout: true,
-              readOnly: readOnly,
-              padding: { top: 12, bottom: 12 },
-              wordWrap: "on",
-            }}
-          />
-        ) : (
-          <div className="flex h-full w-full overflow-hidden bg-[#071A3A]">
-            {/* Gutter Line Numbers */}
-            <div className="select-none py-3 pl-2 pr-2 font-mono text-[11px] text-slate-600 text-right bg-[#071A3A] border-r border-slate-800/60 shrink-0">
-              {Array.from({ length: Math.max(lineCount, 6) }).map((_, i) => (
-                <div key={i} className="leading-5 h-5">
-                  {i + 1}
+      {/* Editor Surface with Absolute Inset positioning to guarantee non-zero pixel bounds in Flexbox */}
+      <div className="relative flex-1 w-full min-h-0 overflow-hidden">
+        {mounted && !isMobileScreen ? (
+          <div className="absolute inset-0">
+            <Editor
+              height="100%"
+              width="100%"
+              defaultLanguage="sql"
+              language="sql"
+              theme="vs-dark"
+              value={value}
+              onChange={(val) => onChange(val || "")}
+              onMount={handleEditorDidMount}
+              loading={
+                <div className="flex h-full w-full items-center justify-center font-mono text-xs text-slate-400 bg-[#071A3A]">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-[#F2B84B] animate-ping" />
+                    <span>Memuat SQL Editor...</span>
+                  </div>
                 </div>
-              ))}
-            </div>
-
-            {/* Mobile Native Textarea */}
+              }
+              options={{
+                minimap: { enabled: false },
+                fontSize: 14,
+                fontFamily: "var(--font-mono), monospace",
+                lineNumbers: "on",
+                scrollBeyondLastLine: false,
+                automaticLayout: true,
+                readOnly: readOnly,
+                padding: { top: 12, bottom: 12 },
+                wordWrap: "on",
+                tabSize: 2,
+                cursorBlinking: "smooth",
+                smoothScrolling: true,
+                renderLineHighlight: "all",
+                formatOnPaste: true,
+              }}
+            />
+          </div>
+        ) : (
+          <div className="absolute inset-0 flex flex-col bg-[#071A3A]">
             <textarea
               ref={textareaRef}
               value={value}
@@ -173,11 +164,23 @@ export function SqlEditor({
               autoComplete="off"
               autoCorrect="off"
               spellCheck={false}
-              className="flex-1 h-full w-full resize-none bg-transparent p-3 font-mono text-xs text-slate-100 leading-5 focus:outline-none placeholder-slate-600"
+              className="flex-1 w-full h-full resize-none bg-transparent p-3 font-mono text-xs text-slate-100 leading-relaxed focus:outline-none placeholder-slate-600"
               placeholder="-- Tulis perintah SQL di sini...&#10;SELECT * FROM accounts LIMIT 10;"
             />
           </div>
         )}
+      </div>
+
+      {/* Sleek Editor Status Footer */}
+      <div className="flex items-center justify-between border-t border-slate-800 bg-[#10264A]/40 px-3 py-1 text-[10px] font-mono text-slate-500 shrink-0">
+        <span className="flex items-center gap-1.5">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+          <span>SQLite 3</span>
+        </span>
+        <div className="flex items-center gap-3">
+          <span>{lineCount} baris</span>
+          <span className="hidden sm:inline">Ctrl + Enter untuk Menjalankan</span>
+        </div>
       </div>
     </div>
   );

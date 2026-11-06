@@ -597,7 +597,7 @@ export function QueryWorkbench({
       </aside>
 
       {/* MAIN QUERY WORKBENCH */}
-      <main className="flex flex-1 flex-col overflow-hidden min-w-0">
+      <main className="flex flex-1 flex-col h-full min-h-0 overflow-hidden min-w-0">
         {/* AI Natural Language SQL Bar (Responsive layout) */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 border-b border-slate-800 bg-[#071A3A] p-2.5 sm:px-3 sm:py-2">
           <div className="flex items-center gap-1.5 text-xs font-bold text-[#F2B84B] shrink-0">
@@ -741,8 +741,8 @@ export function QueryWorkbench({
           </div>
         </div>
 
-        {/* Editor Area (Responsive height) */}
-        <div className="h-56 sm:h-[40%] lg:h-[44%] w-full p-2">
+        {/* Editor Area (Explicit responsive height with shrink-0) */}
+        <div className="h-64 sm:h-72 lg:h-[340px] xl:h-[380px] w-full p-2 shrink-0">
           <SqlEditor
             value={query}
             onChange={setQuery}
