@@ -97,3 +97,42 @@ async def test_query_generator_schema_aware() -> None:
         assert data["status"] == "success"
         assert "SELECT" in data["query"]
         assert "customers" in data["query"]
+
+
+@pytest.mark.asyncio
+async def test_knowledge_v2_endpoints() -> None:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        # 1. Glossary
+        glossary_res = await client.get("/api/v1/knowledge/glossary?search=wal")
+        assert glossary_res.status_code == 200
+        terms = glossary_res.json()
+        assert len(terms) >= 1
+        assert terms[0]["acronym"] == "WAL"
+
+        # 2. Comparisons
+        comp_res = await client.get("/api/v1/knowledge/comparisons")
+        assert comp_res.status_code == 200
+        comps = comp_res.json()
+        assert len(comps) >= 2
+        assert "postgres" in comps[0]["engines"]
+        assert "oracle" in comps[0]["engines"]
+
+        # 3. Incidents
+        inc_res = await client.get("/api/v1/knowledge/incidents")
+        assert inc_res.status_code == 200
+        incs = inc_res.json()
+        assert len(incs) >= 2
+        assert any(i["slug"] == "high-cpu-runaway-queries" for i in incs)
+
+        # 4. Visual Lessons
+        vis_res = await client.get("/api/v1/knowledge/visual-lessons")
+        assert vis_res.status_code == 200
+        vis = vis_res.json()
+        assert len(vis) >= 2
+        slug = vis[0]["slug"]
+
+        vis_detail = await client.get(f"/api/v1/knowledge/visual-lessons/{slug}")
+        assert vis_detail.status_code == 200
+        assert len(vis_detail.json()["steps"]) >= 3

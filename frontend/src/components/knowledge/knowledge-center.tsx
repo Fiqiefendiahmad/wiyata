@@ -12,8 +12,16 @@ import {
   Layers,
   Activity,
   CheckCircle,
+  Play,
+  ArrowRightLeft,
+  ShieldAlert,
+  Sparkles,
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { VisualDatabaseAcademy } from "./visual-player";
+import { GlossaryExplorer } from "./glossary-explorer";
+import { CrossComparisonMatrix } from "./cross-comparison-matrix";
+import { DbaHandbookIncidents } from "./dba-handbook-incidents";
 
 interface ArticleItem {
   id?: string;
@@ -387,6 +395,8 @@ ACID adalah empat pilar jaminan keandalan transaksi database relasional:
   },
 ];
 
+type KnowledgeSection = "articles" | "visual" | "glossary" | "comparison" | "handbook";
+
 interface KnowledgeCenterProps {
   language: "en" | "id";
   onOpenLab: () => void;
@@ -394,12 +404,51 @@ interface KnowledgeCenterProps {
 
 export function KnowledgeCenter({ language, onOpenLab }: KnowledgeCenterProps) {
   const isId = language === "id";
+  const [activeSection, setActiveSection] = useState<KnowledgeSection>("articles");
   const [articles, setArticles] = useState<ArticleItem[]>(FALLBACK_ARTICLES);
   const [selectedArticle, setSelectedArticle] = useState<ArticleItem | null>(FALLBACK_ARTICLES[0]);
   const [activeEngineFilter, setActiveEngineFilter] = useState<string>("ALL");
   const [searchTerm, setSearchTerm] = useState("");
   const [mobileViewingArticle, setMobileViewingArticle] = useState(false);
   const [fullArticleDetail, setFullArticleDetail] = useState<string | null>(null);
+
+  const subSections: {
+    id: KnowledgeSection;
+    labelEn: string;
+    labelId: string;
+    icon: React.ElementType;
+  }[] = [
+    {
+      id: "articles",
+      labelEn: "Architecture Articles",
+      labelId: "Ensiklopedia & Artikel",
+      icon: BookOpen,
+    },
+    {
+      id: "visual",
+      labelEn: "Visual Academy (Simulations)",
+      labelId: "Akademi Visual (Simulasi)",
+      icon: Activity,
+    },
+    {
+      id: "glossary",
+      labelEn: "Glossary & Field Terms",
+      labelId: "Glosarium & Istilah",
+      icon: Tag,
+    },
+    {
+      id: "comparison",
+      labelEn: "Cross-Database Matrix",
+      labelId: "Matriks Komparasi",
+      icon: ArrowRightLeft,
+    },
+    {
+      id: "handbook",
+      labelEn: "DBA Incident Runbooks",
+      labelId: "Buku Saku Insiden",
+      icon: ShieldAlert,
+    },
+  ];
 
   // Fetch live articles from API
   useEffect(() => {
@@ -478,207 +527,262 @@ export function KnowledgeCenter({ language, onOpenLab }: KnowledgeCenterProps) {
       : "");
 
   return (
-    <div className="flex flex-col lg:flex-row h-auto lg:h-[calc(100dvh-3.5rem)] w-full overflow-hidden bg-[#071A3A] text-slate-200">
-      {/* Sidebar Article List */}
-      <aside
-        className={`${
-          mobileViewingArticle ? "hidden" : "flex"
-        } lg:flex w-full lg:w-84 xl:w-96 flex-col border-b lg:border-b-0 lg:border-r border-slate-800 bg-[#071A3A]/95 overflow-hidden`}
-      >
-        <div className="p-3.5 border-b border-slate-800 bg-[#10264A]/30">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#F2B84B] mb-1.5">
-            <BookOpen className="h-4 w-4" />
-            <span>{isId ? "Ensiklopedia Mesin Database" : "Database Engine Encyclopedia"}</span>
-          </div>
-
-          {/* Search Box */}
-          <div className="relative mb-2.5">
-            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
-            <input
-              type="text"
-              placeholder={
-                isId ? "Cari panduan arsitektur..." : "Search engine architecture..."
-              }
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-lg bg-slate-900 border border-slate-700/80 pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#F2B84B]"
-            />
-          </div>
-
-          {/* Engine Filter Chips */}
-          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar touch-scroll pb-1">
-            {[
-              { id: "ALL", label: isId ? "Semua" : "All" },
-              { id: "postgres", label: "Postgres" },
-              { id: "mysql", label: "MySQL" },
-              { id: "oracle", label: "Oracle" },
-              { id: "sql server", label: "SQL Server" },
-              { id: "ibm db2", label: "IBM Db2" },
-              { id: "sqlite", label: "SQLite" },
-              { id: "universal", label: isId ? "Infrastruktur & APM" : "Infra & APM" },
-            ].map((chip) => (
+    <div className="flex flex-col h-auto lg:h-[calc(100dvh-3.5rem)] w-full overflow-hidden bg-[#071A3A] text-slate-200">
+      {/* Top Knowledge Sub-Navigation Header */}
+      <header className="flex-none border-b border-slate-800 bg-[#091b36] px-3 py-2 z-10 shadow-sm">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar touch-scroll">
+          {subSections.map((sec) => {
+            const Icon = sec.icon;
+            const isActive = activeSection === sec.id;
+            return (
               <button
-                key={chip.id}
-                onClick={() => setActiveEngineFilter(chip.id)}
-                className={`rounded-md px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap transition-colors ${
-                  activeEngineFilter === chip.id
-                    ? "bg-[#F2B84B] text-[#071A3A] font-bold"
-                    : "bg-slate-900/80 text-slate-400 hover:text-white border border-slate-800"
+                key={sec.id}
+                onClick={() => setActiveSection(sec.id)}
+                className={`flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-all ${
+                  isActive
+                    ? "bg-gradient-to-r from-[#F2B84B] to-[#E5A838] text-[#071A3A] shadow-md font-bold"
+                    : "bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-slate-800/80"
                 }`}
               >
-                {chip.label}
+                <Icon className={`h-3.5 w-3.5 ${isActive ? "text-[#071A3A]" : "text-[#F2B84B]"}`} />
+                <span>{isId ? sec.labelId : sec.labelEn}</span>
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
+      </header>
 
-        {/* Article Cards List */}
-        <div className="flex-1 overflow-y-auto p-2 space-y-2">
-          {filteredArticles.length === 0 ? (
-            <div className="p-6 text-center text-xs text-slate-500">
-              {isId ? "Tidak ada artikel yang cocok." : "No articles found."}
-            </div>
-          ) : (
-            filteredArticles.map((art) => {
-              const isSelected = selectedArticle?.slug === art.slug;
-              return (
-                <div
-                  key={art.slug}
-                  onClick={() => handleSelect(art)}
-                  className={`p-3 rounded-xl border cursor-pointer transition-all ${
-                    isSelected
-                      ? "border-[#F2B84B] bg-[#10264A] shadow-md ring-1 ring-[#F2B84B]/20"
-                      : "border-slate-800/80 bg-slate-900/40 hover:border-slate-700 hover:bg-slate-800/40"
-                  }`}
-                >
-                  <div className="flex items-center justify-between text-[10px] mb-1">
-                    <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[#F2B84B] font-mono font-semibold">
-                      {art.engine}
-                    </span>
-                    <span className="text-slate-500">{art.readTime || "5 min read"}</span>
-                  </div>
-                  <h3 className="text-xs font-bold text-white leading-snug line-clamp-2">
-                    {art.title}
-                  </h3>
-                  <p className="mt-1 text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
-                    {art.summary}
-                  </p>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </aside>
-
-      {/* Reader Pane */}
-      <main
-        className={`${
-          mobileViewingArticle ? "flex" : "hidden"
-        } lg:flex flex-1 flex-col overflow-y-auto bg-[#071A3A]`}
-      >
-        {selectedArticle ? (
-          <div className="mx-auto w-full max-w-4xl p-4 sm:p-8">
-            {/* Mobile Back Button */}
-            <button
-              onClick={() => setMobileViewingArticle(false)}
-              className="lg:hidden mb-4 flex items-center gap-1.5 text-xs text-[#F2B84B] font-semibold"
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-hidden flex flex-col">
+        {activeSection === "articles" && (
+          <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
+            {/* Sidebar Article List */}
+            <aside
+              className={`${
+                mobileViewingArticle ? "hidden" : "flex"
+              } lg:flex w-full lg:w-84 xl:w-96 flex-col border-b lg:border-b-0 lg:border-r border-slate-800 bg-[#071A3A]/95 overflow-hidden`}
             >
-              <ArrowLeft className="h-4 w-4" />
-              <span>{isId ? "Kembali ke Daftar Artikel" : "Back to Article List"}</span>
-            </button>
+              <div className="p-3.5 border-b border-slate-800 bg-[#10264A]/30">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#F2B84B] mb-1.5">
+                  <BookOpen className="h-4 w-4" />
+                  <span>{isId ? "Ensiklopedia Mesin Database" : "Database Engine Encyclopedia"}</span>
+                </div>
 
-            {/* Article Header */}
-            <div className="border-b border-slate-800 pb-5 mb-6">
-              <div className="flex items-center gap-2 mb-2 flex-wrap">
-                <span className="rounded-lg bg-[#F2B84B]/20 border border-[#F2B84B]/40 px-2.5 py-0.5 text-xs font-bold text-[#F2B84B]">
-                  {selectedArticle.engine}
-                </span>
-                <span className="text-xs text-slate-400">
-                  {selectedArticle.readTime || "6 min read"}
-                </span>
+                {/* Search Box */}
+                <div className="relative mb-2.5">
+                  <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder={
+                      isId ? "Cari panduan arsitektur..." : "Search engine architecture..."
+                    }
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full rounded-lg bg-slate-900 border border-slate-700/80 pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#F2B84B]"
+                  />
+                </div>
+
+                {/* Engine Filter Chips */}
+                <div className="flex items-center gap-1 overflow-x-auto no-scrollbar touch-scroll pb-1">
+                  {[
+                    { id: "ALL", label: isId ? "Semua" : "All" },
+                    { id: "postgres", label: "Postgres" },
+                    { id: "mysql", label: "MySQL" },
+                    { id: "oracle", label: "Oracle" },
+                    { id: "sql server", label: "SQL Server" },
+                    { id: "ibm db2", label: "IBM Db2" },
+                    { id: "sqlite", label: "SQLite" },
+                    { id: "universal", label: isId ? "Infrastruktur & APM" : "Infra & APM" },
+                  ].map((chip) => (
+                    <button
+                      key={chip.id}
+                      onClick={() => setActiveEngineFilter(chip.id)}
+                      className={`rounded-md px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap transition-colors ${
+                        activeEngineFilter === chip.id
+                          ? "bg-[#F2B84B] text-[#071A3A] font-bold"
+                          : "bg-slate-900/80 text-slate-400 hover:text-white border border-slate-800"
+                      }`}
+                    >
+                      {chip.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <h1 className="text-xl sm:text-2xl font-bold text-white mb-3 leading-snug">
-                {selectedArticle.title}
-              </h1>
+              {/* Article Cards List */}
+              <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                {filteredArticles.length === 0 ? (
+                  <div className="p-6 text-center text-xs text-slate-500">
+                    {isId ? "Tidak ada artikel yang cocok." : "No articles found."}
+                  </div>
+                ) : (
+                  filteredArticles.map((art) => {
+                    const isSelected = selectedArticle?.slug === art.slug;
+                    return (
+                      <div
+                        key={art.slug}
+                        onClick={() => handleSelect(art)}
+                        className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                          isSelected
+                            ? "border-[#F2B84B] bg-[#10264A] shadow-md ring-1 ring-[#F2B84B]/20"
+                            : "border-slate-800/80 bg-slate-900/40 hover:border-slate-700 hover:bg-slate-800/40"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between text-[10px] mb-1">
+                          <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[#F2B84B] font-mono font-semibold">
+                            {art.engine}
+                          </span>
+                          <span className="text-slate-500">{art.readTime || "5 min read"}</span>
+                        </div>
+                        <h3 className="text-xs font-bold text-white leading-snug line-clamp-2">
+                          {art.title}
+                        </h3>
+                        <p className="mt-1 text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
+                          {art.summary}
+                        </p>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </aside>
 
-              <p className="text-sm text-slate-300 leading-relaxed bg-[#10264A]/30 p-3 rounded-xl border border-slate-800">
-                {selectedArticle.summary}
-              </p>
-            </div>
+            {/* Reader Pane */}
+            <main
+              className={`${
+                mobileViewingArticle ? "flex" : "hidden"
+              } lg:flex flex-1 flex-col overflow-y-auto bg-[#071A3A]`}
+            >
+              {selectedArticle ? (
+                <div className="mx-auto w-full max-w-4xl p-4 sm:p-8">
+                  {/* Mobile Back Button */}
+                  <button
+                    onClick={() => setMobileViewingArticle(false)}
+                    className="lg:hidden mb-4 flex items-center gap-1.5 text-xs text-[#F2B84B] font-semibold"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    <span>{isId ? "Kembali ke Daftar Artikel" : "Back to Article List"}</span>
+                  </button>
 
-            {/* Markdown Body */}
-            <div className="prose prose-invert prose-slate max-w-none text-xs sm:text-sm leading-relaxed space-y-4">
-              {articleBodyToRender.split("\n\n").map((block, idx) => {
-                if (block.startsWith("### ")) {
-                  return (
-                    <h3
-                      key={idx}
-                      className="text-base font-bold text-white border-b border-slate-800/80 pb-1.5 mt-6 mb-2 flex items-center gap-2"
+                  {/* Article Header */}
+                  <div className="border-b border-slate-800 pb-5 mb-6">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <span className="rounded-lg bg-[#F2B84B]/20 border border-[#F2B84B]/40 px-2.5 py-0.5 text-xs font-bold text-[#F2B84B]">
+                        {selectedArticle.engine}
+                      </span>
+                      <span className="text-xs text-slate-400">
+                        {selectedArticle.readTime || "6 min read"}
+                      </span>
+                    </div>
+
+                    <h1 className="text-xl sm:text-2xl font-bold text-white mb-3 leading-snug">
+                      {selectedArticle.title}
+                    </h1>
+
+                    <p className="text-sm text-slate-300 leading-relaxed bg-[#10264A]/30 p-3 rounded-xl border border-slate-800">
+                      {selectedArticle.summary}
+                    </p>
+                  </div>
+
+                  {/* Markdown Body */}
+                  <div className="prose prose-invert prose-slate max-w-none text-xs sm:text-sm leading-relaxed space-y-4">
+                    {articleBodyToRender.split("\n\n").map((block, idx) => {
+                      if (block.startsWith("### ")) {
+                        return (
+                          <h3
+                            key={idx}
+                            className="text-base font-bold text-white border-b border-slate-800/80 pb-1.5 mt-6 mb-2 flex items-center gap-2"
+                          >
+                            <Layers className="h-4 w-4 text-[#F2B84B]" />
+                            <span>{block.replace("### ", "")}</span>
+                          </h3>
+                        );
+                      } else if (block.startsWith("```")) {
+                        const cleaned = block.replace(/```[a-z]*\n?/g, "").trim();
+                        return (
+                          <pre
+                            key={idx}
+                            className="rounded-xl border border-slate-800 bg-[#071329] p-3.5 font-mono text-xs overflow-x-auto text-emerald-300"
+                          >
+                            <code>{cleaned}</code>
+                          </pre>
+                        );
+                      } else if (block.startsWith("- ")) {
+                        const items = block.split("\n- ").map((item) => item.replace(/^- /, ""));
+                        return (
+                          <ul key={idx} className="list-disc pl-5 space-y-1 text-slate-300 text-xs sm:text-sm">
+                            {items.map((item, i) => (
+                              <li key={i}>{item}</li>
+                            ))}
+                          </ul>
+                        );
+                      } else if (/^\d+\.\s/.test(block)) {
+                        const items = block.split(/\n\d+\.\s/).map((item) => item.replace(/^\d+\.\s/, ""));
+                        return (
+                          <ol key={idx} className="list-decimal pl-5 space-y-1 text-slate-300 text-xs sm:text-sm">
+                            {items.map((item, i) => (
+                              <li key={i}>{item}</li>
+                            ))}
+                          </ol>
+                        );
+                      }
+                      return (
+                        <p key={idx} className="text-slate-300 leading-relaxed text-xs sm:text-sm">
+                          {block}
+                        </p>
+                      );
+                    })}
+                  </div>
+
+                  {/* Quick Action Footer */}
+                  <div className="mt-8 border-t border-slate-800 pt-5 flex items-center justify-between flex-wrap gap-3">
+                    <span className="text-xs text-slate-400">
+                      {isId
+                        ? "Ingin menguji kueri pada mesin ini secara langsung?"
+                        : "Ready to test queries on this engine?"}
+                    </span>
+                    <button
+                      onClick={onOpenLab}
+                      className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#F2B84B] to-[#D99A32] px-4 py-2 text-xs font-bold text-[#071A3A] hover:opacity-95 shadow-md transition-all"
                     >
-                      <Layers className="h-4 w-4 text-[#F2B84B]" />
-                      <span>{block.replace("### ", "")}</span>
-                    </h3>
-                  );
-                } else if (block.startsWith("```")) {
-                  const cleaned = block.replace(/```[a-z]*\n?/g, "").trim();
-                  return (
-                    <pre
-                      key={idx}
-                      className="rounded-xl border border-slate-800 bg-[#071329] p-3.5 font-mono text-xs overflow-x-auto text-emerald-300"
-                    >
-                      <code>{cleaned}</code>
-                    </pre>
-                  );
-                } else if (block.startsWith("- ")) {
-                  const items = block.split("\n- ").map((item) => item.replace(/^- /, ""));
-                  return (
-                    <ul key={idx} className="list-disc pl-5 space-y-1 text-slate-300 text-xs sm:text-sm">
-                      {items.map((item, i) => (
-                        <li key={i}>{item}</li>
-                      ))}
-                    </ul>
-                  );
-                } else if (/^\d+\.\s/.test(block)) {
-                  const items = block.split(/\n\d+\.\s/).map((item) => item.replace(/^\d+\.\s/, ""));
-                  return (
-                    <ol key={idx} className="list-decimal pl-5 space-y-1 text-slate-300 text-xs sm:text-sm">
-                      {items.map((item, i) => (
-                        <li key={i}>{item}</li>
-                      ))}
-                    </ol>
-                  );
-                }
-                return (
-                  <p key={idx} className="text-slate-300 leading-relaxed text-xs sm:text-sm">
-                    {block}
-                  </p>
-                );
-              })}
-            </div>
-
-            {/* Quick Action Footer */}
-            <div className="mt-8 border-t border-slate-800 pt-5 flex items-center justify-between flex-wrap gap-3">
-              <span className="text-xs text-slate-400">
-                {isId
-                  ? "Ingin menguji kueri pada mesin ini secara langsung?"
-                  : "Ready to test queries on this engine?"}
-              </span>
-              <button
-                onClick={onOpenLab}
-                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#F2B84B] to-[#D99A32] px-4 py-2 text-xs font-bold text-[#071A3A] hover:opacity-95 shadow-md transition-all"
-              >
-                <Database className="h-4 w-4" />
-                <span>{isId ? "Buka di Query Studio" : "Open in Query Studio"}</span>
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="p-8 text-center text-slate-500">
-            {isId ? "Pilih artikel dari daftar." : "Select an article from the list."}
+                      <Database className="h-4 w-4" />
+                      <span>{isId ? "Buka di Query Studio" : "Open in Query Studio"}</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-8 text-center text-slate-500">
+                  {isId ? "Pilih artikel dari daftar." : "Select an article from the list."}
+                </div>
+              )}
+            </main>
           </div>
         )}
-      </main>
+
+        {activeSection === "visual" && (
+          <div className="flex-1 overflow-y-auto">
+            <VisualDatabaseAcademy language={language} onOpenLab={onOpenLab} />
+          </div>
+        )}
+
+        {activeSection === "glossary" && (
+          <div className="flex-1 overflow-y-auto">
+            <GlossaryExplorer language={language} />
+          </div>
+        )}
+
+        {activeSection === "comparison" && (
+          <div className="flex-1 overflow-y-auto">
+            <CrossComparisonMatrix language={language} />
+          </div>
+        )}
+
+        {activeSection === "handbook" && (
+          <div className="flex-1 overflow-y-auto">
+            <DbaHandbookIncidents language={language} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
