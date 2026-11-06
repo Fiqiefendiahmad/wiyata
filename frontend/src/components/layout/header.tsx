@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import {
   Database,
@@ -63,6 +63,23 @@ export function Header({
     setActiveTab(tab);
     setMobileMenuOpen(false);
   };
+
+  // Close popover menu on Escape key or when window resizes to desktop size
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileMenuOpen(false);
+    };
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) setMobileMenuOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [mobileMenuOpen]);
 
   return (
     <>
@@ -192,57 +209,83 @@ export function Header({
         </div>
       </header>
 
-      {/* Mobile Drawer Navigation Menu */}
+      {/* Mobile & Tablet Floating Dropdown Popover Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-x-0 top-14 z-50 border-b border-slate-800 bg-[#071A3A]/98 p-3 shadow-2xl backdrop-blur-lg">
-          <nav className="flex flex-col gap-1.5 mb-3">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleTabClick(item.id)}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-semibold text-left transition-colors min-h-[44px] ${
-                    isActive
-                      ? "bg-[#10264A] text-[#F2B84B] border border-[#F2B84B]/30"
-                      : "text-slate-300 hover:bg-slate-800/80 active:bg-slate-800"
-                  }`}
-                >
-                  <Icon className="h-4 w-4 text-[#F2B84B] shrink-0" />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
-          </nav>
+        <>
+          {/* Backdrop overlay for outside-click dismissal */}
+          <div
+            onClick={() => setMobileMenuOpen(false)}
+            className="lg:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-xs transition-opacity"
+            aria-hidden="true"
+          />
 
-          {/* Mobile Refresh Data Button */}
-          <div className="border-t border-slate-800/80 pt-3">
-            <button
-              onClick={() => {
-                onResetSandbox();
-                setMobileMenuOpen(false);
-              }}
-              disabled={isResetting}
-              className="w-full flex items-center justify-center gap-2 rounded-lg bg-[#10264A] border border-[#F2B84B]/40 py-2.5 text-xs font-bold text-white hover:bg-[#F2B84B] hover:text-[#071A3A] transition-colors min-h-[44px] active:scale-95"
-            >
-              <RefreshCw
-                className={`h-4 w-4 text-[#F2B84B] ${
-                  isResetting ? "animate-spin" : ""
-                }`}
-              />
-              <span>
-                {isResetting
-                  ? isId
-                    ? "Memulihkan Data..."
-                    : "Refreshing Data..."
-                  : isId
-                  ? "Refresh & Pulihkan Data Sandbox"
-                  : "Refresh & Reset Sandbox Data"}
-              </span>
-            </button>
+          {/* Right-anchored Floating Card (Not stretched full-width) */}
+          <div className="lg:hidden fixed top-16 right-3 sm:right-4 w-[calc(100vw-1.5rem)] sm:w-80 max-w-sm z-50 rounded-2xl border border-slate-700/80 bg-[#071A3A]/98 p-3.5 shadow-2xl backdrop-blur-xl ring-1 ring-white/10 animate-in fade-in duration-150">
+            <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-800 px-1 text-xs font-semibold text-slate-400">
+              <span>{isId ? "Menu Navigasi" : "Navigation"}</span>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="rounded-md p-1 hover:bg-slate-800 text-slate-400 hover:text-white"
+                aria-label="Tutup Menu"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <nav className="flex flex-col gap-1.5 mb-3">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleTabClick(item.id)}
+                    className={`flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-semibold text-left transition-all min-h-[44px] ${
+                      isActive
+                        ? "bg-[#10264A] text-[#F2B84B] border border-[#F2B84B]/40 shadow-sm"
+                        : "text-slate-300 hover:bg-slate-800/80 hover:text-white"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Icon className="h-4 w-4 text-[#F2B84B] shrink-0" />
+                      <span>{item.label}</span>
+                    </div>
+                    {isActive && (
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#F2B84B]" />
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+
+            {/* Mobile Refresh Data Button */}
+            <div className="border-t border-slate-800/80 pt-2.5">
+              <button
+                onClick={() => {
+                  onResetSandbox();
+                  setMobileMenuOpen(false);
+                }}
+                disabled={isResetting}
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#10264A] border border-[#F2B84B]/40 py-2.5 text-xs font-bold text-white hover:bg-[#F2B84B] hover:text-[#071A3A] transition-colors min-h-[44px] active:scale-95"
+              >
+                <RefreshCw
+                  className={`h-4 w-4 text-[#F2B84B] ${
+                    isResetting ? "animate-spin" : ""
+                  }`}
+                />
+                <span>
+                  {isResetting
+                    ? isId
+                      ? "Memulihkan Data..."
+                      : "Refreshing Data..."
+                    : isId
+                    ? "Segarkan Data Sandbox"
+                    : "Refresh Sandbox Data"}
+                </span>
+              </button>
+            </div>
           </div>
-        </div>
+        </>
       )}
     </>
   );
