@@ -77,6 +77,54 @@ class OracleAdapter(SQLiteAdapter):
         result["elapsed_ms"] = elapsed_ms
         return result
 
+    def get_database_metadata(
+        self, database_name: str = "sandbox", engine_version: str = "23ai (Transpiled)"
+    ) -> dict[str, Any]:
+        meta = super().get_database_metadata(database_name, engine_version)
+        meta["overview"]["engine"] = "oracle"
+        meta["overview"]["engine_version"] = engine_version
+
+        type_map = {
+            "INTEGER": "NUMBER(38)",
+            "INT": "NUMBER(38)",
+            "BIGINT": "NUMBER(38)",
+            "REAL": "NUMBER(12,2)",
+            "FLOAT": "NUMBER(12,2)",
+            "DOUBLE": "NUMBER(12,2)",
+            "TEXT": "VARCHAR2(4000)",
+            "VARCHAR": "VARCHAR2(255)",
+            "TIMESTAMP": "TIMESTAMP(6)",
+            "DATETIME": "DATE",
+            "BLOB": "BLOB",
+            "BOOLEAN": "NUMBER(1)",
+        }
+
+        filtered_tables = []
+        for t in meta["tables"]:
+            if t["name"].upper() == "DUAL":
+                continue
+            t["schema_name"] = "SYSTEM"
+            for col in t["columns"]:
+                raw_type = col.get("data_type", "").upper()
+                for k, v in type_map.items():
+                    if k in raw_type:
+                        col["data_type"] = v
+                        break
+            filtered_tables.append(t)
+
+        meta["tables"] = filtered_tables
+        meta["schemas"] = [
+            {
+                "name": "SYSTEM",
+                "tables": [t["name"] for t in filtered_tables],
+                "views": [],
+                "functions": [],
+                "sequences": [],
+            }
+        ]
+        meta["overview"]["table_count"] = len(filtered_tables)
+        return meta
+
     def get_full_schema(self) -> list[dict[str, Any]]:
         raw_schema = super().get_full_schema()
         oracle_schema = []

@@ -41,3 +41,22 @@ class DatabaseAdapter(ABC):
 
     def explain(self, query: str) -> dict[str, Any]:
         raise NotImplementedError("Explain is not supported by this adapter")
+
+    @abstractmethod
+    def get_full_schema(self) -> list[dict[str, Any]]: ...
+
+    @abstractmethod
+    def get_database_metadata(
+        self, database_name: str = "sandbox", engine_version: str = "1.0"
+    ) -> dict[str, Any]: ...
+
+    @abstractmethod
+    def preview_table_data(
+        self,
+        table: str,
+        schema: str | None = None,
+        page: int = 1,
+        page_size: int = 20,
+        sort_by: str | None = None,
+        sort_order: str = "ASC",
+    ) -> dict[str, Any]: ...

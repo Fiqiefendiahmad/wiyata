@@ -24,8 +24,10 @@ import {
   SidebarOpen,
   Download,
   RefreshCw,
+  Network,
 } from "lucide-react";
 import { SqlEditor } from "@/components/editor/sql-editor";
+import { SchemaExplorer } from "./schema-explorer";
 import { api } from "@/lib/api";
 
 interface ColumnInfo {
@@ -161,6 +163,8 @@ export function QueryWorkbench({
   const [expandedTables, setExpandedTables] = useState<Record<string, boolean>>(
     { accounts: true, customers: true, transactions: true }
   );
+  const [activeWorkbenchMode, setActiveWorkbenchMode] = useState<"editor" | "explorer">("editor");
+  const [explorerTableTarget, setExplorerTableTarget] = useState<string | null>(null);
 
   // Execution & Provenance State
   const [isRunning, setIsRunning] = useState<boolean>(false);
@@ -533,19 +537,47 @@ export function QueryWorkbench({
     <div className="relative flex flex-col lg:flex-row h-auto lg:h-[calc(100dvh-3.5rem)] w-full overflow-hidden bg-[#071A3A]">
       {/* MOBILE TOP CONTROLS BAR (< lg) */}
       <div className="lg:hidden flex items-center justify-between border-b border-slate-800 bg-[#10264A]/90 px-3 py-2 text-xs gap-2">
-        <button
-          onClick={() => setShowMobileSidebar(!showMobileSidebar)}
-          className="flex items-center gap-1.5 rounded-lg bg-slate-800 px-3 py-2 font-semibold text-[#F2B84B] border border-slate-700 min-h-[40px] shrink-0 active:bg-slate-700"
-        >
-          {showMobileSidebar ? (
-            <SidebarClose className="h-4 w-4" />
-          ) : (
-            <SidebarOpen className="h-4 w-4" />
-          )}
-          <span>
-            {isId ? "Skema & Tabel" : "Schema"} ({schema.length})
-          </span>
-        </button>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            onClick={() => setShowMobileSidebar(!showMobileSidebar)}
+            className="flex items-center gap-1.5 rounded-lg bg-slate-800 px-3 py-2 font-semibold text-[#F2B84B] border border-slate-700 min-h-[40px] shrink-0 active:bg-slate-700"
+          >
+            {showMobileSidebar ? (
+              <SidebarClose className="h-4 w-4" />
+            ) : (
+              <SidebarOpen className="h-4 w-4" />
+            )}
+            <span>
+              {isId ? "Tabel" : "Tables"} ({schema.length})
+            </span>
+          </button>
+
+          {/* Mobile Mode Switcher: SQL vs ERD */}
+          <div className="flex items-center rounded-lg bg-slate-900/90 p-0.5 border border-slate-700 shrink-0">
+            <button
+              type="button"
+              onClick={() => setActiveWorkbenchMode("editor")}
+              className={`px-2.5 py-1.5 rounded-md text-[11px] font-bold transition-all min-h-[36px] ${
+                activeWorkbenchMode === "editor"
+                  ? "bg-[#10264A] text-[#F2B84B]"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              SQL
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveWorkbenchMode("explorer")}
+              className={`px-2.5 py-1.5 rounded-md text-[11px] font-bold transition-all min-h-[36px] ${
+                activeWorkbenchMode === "explorer"
+                  ? "bg-[#10264A] text-[#F2B84B]"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              ERD
+            </button>
+          </div>
+        </div>
 
         {/* Active Engine & Template Indicator (Static, Truthful Badges) */}
         <div className="flex items-center gap-1.5 text-[11px] font-mono text-slate-300 shrink-0">
@@ -716,6 +748,18 @@ export function QueryWorkbench({
           </div>
 
           <div className="flex-1 overflow-y-auto p-2 space-y-1">
+            {/* Visual Schema Explorer Launch Button */}
+            <button
+              onClick={() => {
+                setActiveWorkbenchMode("explorer");
+                setShowMobileSidebar(false);
+              }}
+              className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-[#10264A] to-[#163566] hover:from-[#142f5c] hover:to-[#1c437e] border border-[#F2B84B]/40 py-2 px-3 text-xs font-bold text-[#F2B84B] transition-all shadow-sm mb-2"
+            >
+              <Network className="h-3.5 w-3.5 text-[#F2B84B]" />
+              <span>{isId ? "Visual Schema Explorer & ERD" : "Schema Explorer & ERD"}</span>
+            </button>
+
             {schemaStatus === "loading" ? (
               <div className="p-3 space-y-2 animate-pulse">
                 <div className="text-[11px] text-slate-400 flex items-center gap-2 mb-2">
@@ -774,16 +818,30 @@ export function QueryWorkbench({
                       )}
                       <span>{tbl.name}</span>
                     </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        insertQueryForTable(tbl.name);
-                      }}
-                      title="SELECT * FROM table"
-                      className="rounded bg-[#10264A] px-2.5 py-1 text-[11px] font-mono font-semibold text-[#F2B84B] hover:bg-[#F2B84B] hover:text-[#071A3A] transition-colors min-h-[30px]"
-                    >
-                      {isId ? "kueri" : "query"}
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExplorerTableTarget(tbl.name);
+                          setActiveWorkbenchMode("explorer");
+                          setShowMobileSidebar(false);
+                        }}
+                        title={isId ? "Inspeksi struktur & diagram" : "Inspect table structure"}
+                        className="rounded bg-slate-800 hover:bg-slate-700 px-2 py-1 text-[10px] text-slate-300 font-mono transition-colors min-h-[30px]"
+                      >
+                        {isId ? "inspeksi" : "inspect"}
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          insertQueryForTable(tbl.name);
+                        }}
+                        title="SELECT * FROM table"
+                        className="rounded bg-[#10264A] px-2.5 py-1 text-[11px] font-mono font-semibold text-[#F2B84B] hover:bg-[#F2B84B] hover:text-[#071A3A] transition-colors min-h-[30px]"
+                      >
+                        {isId ? "kueri" : "query"}
+                      </button>
+                    </div>
                   </div>
 
                   {expandedTables[tbl.name] && (
@@ -848,7 +906,23 @@ export function QueryWorkbench({
 
       {/* MAIN QUERY WORKBENCH */}
       <main className="flex flex-1 flex-col h-full min-h-0 overflow-hidden min-w-0">
-        {/* AI Natural Language SQL Bar (Responsive layout) */}
+        {activeWorkbenchMode === "explorer" ? (
+          <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#071A3A]">
+            <SchemaExplorer
+              sandboxId={sandboxId}
+              language={language}
+              activeEngine={activeEngine}
+              initialSelectedTable={explorerTableTarget}
+              onOpenQueryInEditor={(sql) => {
+                setQuery(sql);
+                setActiveWorkbenchMode("editor");
+              }}
+              onClose={() => setActiveWorkbenchMode("editor")}
+            />
+          </div>
+        ) : (
+          <>
+            {/* AI Natural Language SQL Bar (Responsive layout) */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 border-b border-slate-800 bg-[#071A3A] p-2.5 sm:px-3 sm:py-2">
           <div className="flex items-center gap-1.5 text-xs font-bold text-[#F2B84B] shrink-0">
             <Sparkles className="h-4 w-4 text-[#F2B84B]" />
@@ -1018,6 +1092,36 @@ export function QueryWorkbench({
         {/* DESKTOP INTEGRATED TOOLBAR (Single unified bar) */}
         <div className="hidden sm:flex items-center justify-between border-b border-slate-800 bg-[#10264A]/50 px-3 py-1.5 gap-2 overflow-x-auto no-scrollbar touch-scroll shrink-0">
           <div className="flex items-center gap-2 flex-nowrap shrink-0">
+            {/* Desktop Segmented Mode Switcher */}
+            <div className="flex items-center rounded-lg bg-slate-900/90 p-0.5 border border-slate-700/80 shadow-inner mr-1 shrink-0">
+              <button
+                type="button"
+                onClick={() => setActiveWorkbenchMode("editor")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all min-h-[38px] ${
+                  (activeWorkbenchMode as string) === "editor"
+                    ? "bg-[#10264A] text-[#F2B84B] border border-[#F2B84B]/40 shadow-xs"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <Code2 className="h-4 w-4" />
+                <span>{isId ? "Studio SQL" : "SQL Studio"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveWorkbenchMode("explorer")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all min-h-[38px] ${
+                  (activeWorkbenchMode as string) === "explorer"
+                    ? "bg-[#10264A] text-[#F2B84B] border border-[#F2B84B]/40 shadow-xs"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <Network className="h-4 w-4" />
+                <span>{isId ? "Skema & ERD" : "Schema & ERD"}</span>
+              </button>
+            </div>
+
+            <div className="h-6 w-px bg-slate-800 mx-1" />
+
             {/* Run Button */}
             <button
               onClick={() => handleRunQuery()}
@@ -1556,6 +1660,8 @@ export function QueryWorkbench({
             )}
           </div>
         </div>
+          </>
+        )}
       </main>
 
       {/* Save Query Modal */}

@@ -194,3 +194,55 @@ async def test_multi_engine_sandboxes() -> None:
         await client.delete(f"/api/v1/sandboxes/{ms_id}")
         await client.delete(f"/api/v1/sandboxes/{db2_id}")
 
+
+@pytest.mark.asyncio
+async def test_sandbox_schema_metadata_and_preview() -> None:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        # Create a PostgreSQL Banking Sandbox
+        res = await client.post(
+            "/api/v1/sandboxes",
+            json={"engine": "postgres", "template_slug": "banking"},
+        )
+        assert res.status_code == 201
+        sb_id = res.json()["id"]
+
+        # 1. Fetch full database metadata
+        meta_res = await client.get(f"/api/v1/sandboxes/{sb_id}/metadata")
+        assert meta_res.status_code == 200
+        meta = meta_res.json()
+
+        assert meta["overview"]["engine"] == "postgres"
+        assert meta["overview"]["table_count"] == 5
+        assert meta["overview"]["relationship_count"] >= 4
+        assert meta["overview"]["total_row_count"] >= 20
+
+        # Verify accounts table columns and foreign keys
+        accounts_tbl = next((t for t in meta["tables"] if t["name"] == "accounts"), None)
+        assert accounts_tbl is not None
+        cust_fk = next((c for c in accounts_tbl["columns"] if c["name"] == "customer_id"), None)
+        assert cust_fk is not None
+        assert cust_fk["foreign_key"] is True
+        assert "customers.customer_id" in cust_fk["foreign_key_target"]
+
+        # Verify declared relationships
+        rel_acc_cust = next(
+            (r for r in meta["relationships"] if r["from_table"] == "accounts" and r["to_table"] == "customers"),
+            None,
+        )
+        assert rel_acc_cust is not None
+        assert rel_acc_cust["source"] == "declared"
+
+        # 2. Test paginated table data preview
+        prev_res = await client.get(f"/api/v1/sandboxes/{sb_id}/tables/accounts/preview?page=1&page_size=2&sort_by=balance&sort_order=DESC")
+        assert prev_res.status_code == 200
+        prev = prev_res.json()
+        assert prev["table_name"] == "accounts"
+        assert len(prev["rows"]) == 2
+        assert prev["total_rows"] >= 5
+        assert "balance" in prev["columns"]
+
+        # Clean up
+        await client.delete(f"/api/v1/sandboxes/{sb_id}")
+

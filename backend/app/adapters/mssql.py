@@ -58,6 +58,54 @@ class MSSQLAdapter(SQLiteAdapter):
         result["elapsed_ms"] = elapsed_ms
         return result
 
+    def get_database_metadata(
+        self, database_name: str = "sandbox", engine_version: str = "2022 (Transpiled)"
+    ) -> dict[str, Any]:
+        meta = super().get_database_metadata(database_name, engine_version)
+        meta["overview"]["engine"] = "mssql"
+        meta["overview"]["engine_version"] = engine_version
+
+        type_map = {
+            "INTEGER": "INT",
+            "INT": "INT",
+            "BIGINT": "BIGINT",
+            "REAL": "DECIMAL(18,2)",
+            "FLOAT": "FLOAT",
+            "DOUBLE": "FLOAT",
+            "TEXT": "NVARCHAR(MAX)",
+            "VARCHAR": "NVARCHAR(255)",
+            "TIMESTAMP": "DATETIME2",
+            "DATETIME": "DATETIME2",
+            "BLOB": "VARBINARY(MAX)",
+            "BOOLEAN": "BIT",
+        }
+
+        filtered_tables = []
+        for t in meta["tables"]:
+            if t["name"].upper() == "DUAL":
+                continue
+            t["schema_name"] = "dbo"
+            for col in t["columns"]:
+                raw_type = col.get("data_type", "").upper()
+                for k, v in type_map.items():
+                    if k in raw_type:
+                        col["data_type"] = v
+                        break
+            filtered_tables.append(t)
+
+        meta["tables"] = filtered_tables
+        meta["schemas"] = [
+            {
+                "name": "dbo",
+                "tables": [t["name"] for t in filtered_tables],
+                "views": [],
+                "functions": [],
+                "sequences": [],
+            }
+        ]
+        meta["overview"]["table_count"] = len(filtered_tables)
+        return meta
+
     def get_full_schema(self) -> list[dict[str, Any]]:
         raw_schema = super().get_full_schema()
         mssql_schema = []

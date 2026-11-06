@@ -103,6 +103,52 @@ class Db2Adapter(SQLiteAdapter):
         result["elapsed_ms"] = elapsed_ms
         return result
 
+    def get_database_metadata(
+        self, database_name: str = "sandbox", engine_version: str = "11.5 (Transpiled)"
+    ) -> dict[str, Any]:
+        meta = super().get_database_metadata(database_name, engine_version)
+        meta["overview"]["engine"] = "db2"
+        meta["overview"]["engine_version"] = engine_version
+
+        type_map = {
+            "INTEGER": "INTEGER",
+            "INT": "INTEGER",
+            "BIGINT": "BIGINT",
+            "REAL": "DECIMAL(12,2)",
+            "FLOAT": "DOUBLE",
+            "DOUBLE": "DOUBLE",
+            "TEXT": "CLOB",
+            "VARCHAR": "VARCHAR(255)",
+            "TIMESTAMP": "TIMESTAMP",
+            "DATETIME": "TIMESTAMP",
+            "DATE": "DATE",
+            "BLOB": "BLOB",
+            "BOOLEAN": "SMALLINT",
+        }
+
+        filtered_tables = []
+        for t in meta["tables"]:
+            if t["name"].upper() in ("SYSIBM_SYSDUMMY1", "SYSDUMMY1"):
+                continue
+            t["schema_name"] = "DB2ADMIN"
+            for col in t["columns"]:
+                raw_type = col.get("data_type", "").upper().split("(")[0].strip()
+                col["data_type"] = type_map.get(raw_type, "VARCHAR(255)")
+            filtered_tables.append(t)
+
+        meta["tables"] = filtered_tables
+        meta["schemas"] = [
+            {
+                "name": "DB2ADMIN",
+                "tables": [t["name"] for t in filtered_tables],
+                "views": [],
+                "functions": [],
+                "sequences": [],
+            }
+        ]
+        meta["overview"]["table_count"] = len(filtered_tables)
+        return meta
+
     def get_full_schema(self) -> list[dict[str, Any]]:
         raw_schema = super().get_full_schema()
         db2_schema = []

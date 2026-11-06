@@ -45,3 +45,106 @@ class TemplateInfo(BaseModel):
     slug: str
     name: str
     description: str
+
+
+class ColumnMetadata(BaseModel):
+    name: str
+    data_type: str
+    length: int | None = None
+    precision: int | None = None
+    scale: int | None = None
+    nullable: bool = True
+    primary_key: bool = False
+    foreign_key: bool = False
+    foreign_key_target: str | None = None  # e.g. "customers.customer_id"
+    unique: bool = False
+    default_value: str | None = None
+    auto_increment: bool = False
+    comment: str | None = None
+
+
+class IndexMetadata(BaseModel):
+    name: str
+    table_name: str
+    columns: list[str] = []
+    is_unique: bool = False
+    is_primary: bool = False
+    index_type: str = "B-TREE"
+    predicate: str | None = None
+
+
+class ConstraintMetadata(BaseModel):
+    name: str
+    table_name: str
+    type: str  # "PRIMARY KEY", "FOREIGN KEY", "UNIQUE", "CHECK", "NOT NULL"
+    columns: list[str] = []
+    definition: str | None = None
+    referenced_table: str | None = None
+    referenced_columns: list[str] | None = None
+
+
+class RelationshipMetadata(BaseModel):
+    id: str
+    from_table: str
+    from_column: str
+    to_table: str
+    to_column: str
+    source: str = "declared"  # "declared" | "inferred"
+    constraint_name: str | None = None
+    cardinality: str = "N:1"  # "1:1", "1:N", "N:1"
+
+
+class TableMetadata(BaseModel):
+    name: str
+    type: str = "table"  # "table" | "view"
+    schema_name: str = "public"
+    columns: list[ColumnMetadata] = []
+    indexes: list[IndexMetadata] = []
+    constraints: list[ConstraintMetadata] = []
+    row_count: int = 0
+    row_count_estimated: bool = False
+
+
+class SchemaMetadata(BaseModel):
+    name: str
+    tables: list[str] = []
+    views: list[str] = []
+    functions: list[str] = []
+    sequences: list[str] = []
+
+
+class DatabaseOverview(BaseModel):
+    database_name: str
+    engine: str
+    engine_version: str
+    schema_count: int = 1
+    table_count: int = 0
+    view_count: int = 0
+    index_count: int = 0
+    relationship_count: int = 0
+    total_row_count: int = 0
+    row_count_is_estimated: bool = False
+
+
+class FullDatabaseMetadata(BaseModel):
+    overview: DatabaseOverview
+    schemas: list[SchemaMetadata] = []
+    tables: list[TableMetadata] = []
+    relationships: list[RelationshipMetadata] = []
+    indexes: list[IndexMetadata] = []
+    constraints: list[ConstraintMetadata] = []
+    refreshed_at: str
+
+
+class TableDataPreviewResponse(BaseModel):
+    table_name: str
+    schema_name: str = "public"
+    page: int = 1
+    page_size: int = 20
+    total_rows: int = 0
+    columns: list[str] = []
+    column_types: dict[str, str] = {}
+    rows: list[dict[str, Any]] = []
+    sort_by: str | None = None
+    sort_direction: str = "ASC"
+

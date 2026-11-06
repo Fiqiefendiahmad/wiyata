@@ -4,7 +4,7 @@ import sqlite3
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from fastapi.responses import FileResponse
 import psycopg
 import pymysql
@@ -22,10 +22,12 @@ from app.config import settings
 from app.deps import get_db
 from app.models.sandbox import Sandbox
 from app.schemas.sandbox import (
+    FullDatabaseMetadata,
     SandboxCreate,
     SandboxExecuteRequest,
     SandboxExecuteResult,
     SandboxResponse,
+    TableDataPreviewResponse,
     TemplateInfo,
 )
 from app.templates.datasets import TEMPLATES
@@ -206,6 +208,63 @@ async def get_sandbox_schema(
     try:
         schema = adapter.get_full_schema()
         return schema
+    finally:
+        adapter.close()
+
+
+@router.get("/{sandbox_id}/metadata", response_model=FullDatabaseMetadata)
+async def get_sandbox_metadata(
+    sandbox_id: uuid.UUID, db: AsyncSession = Depends(get_db)
+) -> FullDatabaseMetadata:
+    sandbox = await db.get(Sandbox, sandbox_id)
+    if not sandbox or sandbox.status == "deleted":
+        raise HTTPException(status_code=404, detail="Sandbox not found")
+
+    storage_ref = sandbox.storage_reference or (str(STORAGE_DIR / f"{sandbox_id}.db"))
+    adapter = _get_adapter(sandbox.engine, storage_ref)
+    try:
+        db_name = (
+            f"{sandbox.template_slug.capitalize()} Sandbox"
+            if sandbox.template_slug
+            else "Sandbox Database"
+        )
+        meta = adapter.get_database_metadata(
+            database_name=db_name,
+            engine_version=sandbox.engine_version or "1.0",
+        )
+        return FullDatabaseMetadata.model_validate(meta)
+    finally:
+        adapter.close()
+
+
+@router.get(
+    "/{sandbox_id}/tables/{table_name}/preview",
+    response_model=TableDataPreviewResponse,
+)
+async def preview_table_data(
+    sandbox_id: uuid.UUID,
+    table_name: str,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    sort_by: str | None = Query(default=None),
+    sort_order: str = Query(default="ASC", pattern="^(ASC|DESC|asc|desc)$"),
+    db: AsyncSession = Depends(get_db),
+) -> TableDataPreviewResponse:
+    sandbox = await db.get(Sandbox, sandbox_id)
+    if not sandbox or sandbox.status == "deleted":
+        raise HTTPException(status_code=404, detail="Sandbox not found")
+
+    storage_ref = sandbox.storage_reference or (str(STORAGE_DIR / f"{sandbox_id}.db"))
+    adapter = _get_adapter(sandbox.engine, storage_ref)
+    try:
+        preview = adapter.preview_table_data(
+            table=table_name,
+            page=page,
+            page_size=page_size,
+            sort_by=sort_by,
+            sort_order=sort_order,
+        )
+        return TableDataPreviewResponse.model_validate(preview)
     finally:
         adapter.close()
 
