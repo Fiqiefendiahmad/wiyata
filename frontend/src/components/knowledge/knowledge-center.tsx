@@ -469,9 +469,10 @@ export function KnowledgeCenter({ language, onOpenLab }: KnowledgeCenterProps) {
               { id: "ALL", label: isId ? "Semua" : "All" },
               { id: "postgres", label: "Postgres" },
               { id: "mysql", label: "MySQL" },
-              { id: "sqlite", label: "SQLite" },
               { id: "oracle", label: "Oracle" },
               { id: "sql server", label: "SQL Server" },
+              { id: "sqlite", label: "SQLite" },
+              { id: "universal", label: isId ? "Infrastruktur & APM" : "Infra & APM" },
             ].map((chip) => (
               <button
                 key={chip.id}

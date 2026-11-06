@@ -186,6 +186,186 @@ const DEFAULT_TOOLS: Tool[] = [
     },
   },
   {
+    slug: "oracle-enterprise-manager",
+    name: "Oracle Enterprise Manager (OEM)",
+    vendor: "Oracle Corporation",
+    category: "Monitoring & Observability",
+    license: "Commercial / Enterprise",
+    engines: ["Oracle"],
+    summary:
+      "Enterprise management platform for full lifecycle monitoring, Active Session History (ASH), AWR diagnostics, and Exadata tuning.",
+    summaryId:
+      "Platform manajemen enterprise untuk pemantauan menyeluruh, Active Session History (ASH), laporan AWR, dan optimasi cluster Exadata.",
+    url: "https://www.oracle.com/enterprise-manager/",
+    guide: {
+      goldenSignals: [
+        "Active Session History (ASH): 1-second sample of non-idle sessions waiting on CPU or I/O wait events",
+        "AWR Top SQL: Queries consuming the highest percentage of Database Time (DB Time)",
+        "Tablespace HWM: Datafile autoextend threshold warnings (> 85% capacity)",
+        "Redo Log Contention: Log file switch completion and log buffer space waits",
+      ],
+      goldenSignalsId: [
+        "Active Session History (ASH): Sampel 1-detik sesi aktif yang menunggu CPU atau antrean I/O",
+        "AWR Top SQL: Kueri yang memakan porsi terbesar dari waktu total database (DB Time)",
+        "Tablespace HWM: Peringatan batas alokasi autoextend datafile (> 85% kapasitas)",
+        "Kontensi Redo Log: Frekuensi log switch dan penundaan alokasi ruang log buffer",
+      ],
+      sampleAlertQuery: `SELECT tablespace_name, ROUND(used_percent, 1) FROM dba_tablespace_usage_metrics WHERE used_percent >= 85.0;`,
+      architectureOverview:
+        "Three-tier architecture: Oracle Management Agent (OMA) on DB host -> Oracle Management Service (OMS WebLogic) -> Oracle Management Repository (OMR database).",
+      architectureOverviewId:
+        "Arsitektur 3-tingkat: Oracle Management Agent (OMA) di host -> Oracle Management Service (OMS WebLogic) -> Oracle Management Repository (OMR).",
+      whenToUse:
+        "Mandatory cockpit for mission-critical Oracle RAC, Exadata, and Active Data Guard disaster recovery environments.",
+      whenToUseId:
+        "Pusat kendali wajib untuk lingkungan enterprise Oracle RAC, Exadata, dan disaster recovery Active Data Guard.",
+    },
+  },
+  {
+    slug: "manageengine-db-manager",
+    name: "ManageEngine Applications Manager",
+    vendor: "Zoho Corporation",
+    category: "Monitoring & Observability",
+    license: "Commercial",
+    engines: ["Oracle", "SQL Server", "PostgreSQL", "MySQL", "DB2"],
+    summary:
+      "Full-stack heterogeneous database APM with automated anomaly detection, replication lag alerts, and automated runbooks.",
+    summaryId:
+      "APM database heterogen terpadu dengan deteksi anomali berbasis AI, pemantauan lag replikasi, dan runbook remediasi otomatis.",
+    url: "https://www.manageengine.com/products/applications_manager/database-monitoring.html",
+    guide: {
+      goldenSignals: [
+        "Connection Pool Exhaustion: Active client connections vs configured maximum threshold",
+        "Buffer Cache Hit Ratio: Memory caching efficiency across Oracle, SQL Server, and MySQL",
+        "Replication Sync Lag: Standby node delay in seconds across heterogeneous clusters",
+        "Deadlock Occurrence Frequency: Automated alerts when deadlocks occur in business transactions",
+      ],
+      goldenSignalsId: [
+        "Saturasi Connection Pool: Koneksi aktif berbanding batas maksimal konfigurasi",
+        "Buffer Cache Hit Ratio: Efisiensi cache memori di Oracle, SQL Server, dan MySQL",
+        "Lag Replikasi: Keterlambatan node standby dalam detik di seluruh cluster",
+        "Frekuensi Deadlock: Alert otomatis saat terjadi deadlock pada transaksi bisnis",
+      ],
+      sampleAlertQuery: `SELECT spid, blocked_by_spid, wait_time_seconds FROM active_sessions WHERE wait_time_seconds > 30;`,
+      architectureOverview:
+        "Centralized collector utilizing agentless JDBC/WMI/SSH or lightweight local agents with webhook integrations into PagerDuty and ServiceNow.",
+      architectureOverviewId:
+        "Kolektor terpusat berbasis JDBC/WMI/SSH agentless atau agen lokal ringan dengan integrasi webhook ke PagerDuty dan ServiceNow.",
+      whenToUse:
+        "Ideal for enterprise IT operations teams managing mixed database environments requiring single-pane-of-glass SLA tracking.",
+      whenToUseId:
+        "Sangat ideal untuk tim IT enterprise yang mengelola aneka vendor database dengan pelacakan SLA dalam satu layar terpadu.",
+    },
+  },
+  {
+    slug: "ibm-dmc",
+    name: "IBM Db2 Data Management Console (DMC)",
+    vendor: "IBM",
+    category: "Monitoring & Observability",
+    license: "Enterprise / Included with Db2",
+    engines: ["IBM Db2"],
+    summary:
+      "Browser-based administration console for IBM Db2 featuring real-time lock trees, statement cache metrics, and workload management.",
+    summaryId:
+      "Konsol web resmi untuk IBM Db2 dengan visualisasi grafis antrean lock, metrik statement cache, dan manajemen beban kerja (WLM).",
+    url: "https://www.ibm.com/products/db2-data-management-console",
+    guide: {
+      goldenSignals: [
+        "Lock Waiters & Blocker Trees: Visual graph of waiting transactions and lock escalations",
+        "Statement Cache Hit Ratio: Performance of dynamic and static SQL statement reuse",
+        "Bufferpool Hit Ratio: Data and index page cache efficiency",
+        "WLM Queue Delay: Workload Manager queue wait times protecting OLTP priority",
+      ],
+      goldenSignalsId: [
+        "Antrean Lock & Blocker Tree: Grafik visual transaksi yang saling mengunci dan eskalasi lock",
+        "Statement Cache Hit Ratio: Efisiensi penggunaan ulang kueri SQL dinamis dan statis",
+        "Bufferpool Hit Ratio: Rasio efisiensi cache halaman data dan indeks di RAM",
+        "WLM Queue Delay: Waktu antrean Workload Manager untuk melindungi prioritas transaksi OLTP",
+      ],
+      sampleAlertQuery: `SELECT APPLICATION_HANDLE, BLOCKING_APPLICATION_HANDLE, LOCK_WAIT_ELAPSED_TIME FROM TABLE(MON_GET_APPL_LOCKWAIT(NULL, -2));`,
+      architectureOverview:
+        "Modern browser-based web application interacting with Db2 engine monitor table functions (`MON_GET_*`) and event monitors.",
+      architectureOverviewId:
+        "Aplikasi web modern yang berinteraksi langsung dengan table function monitor internal Db2 (`MON_GET_*`).",
+      whenToUse:
+        "Essential for enterprise banking and legacy core systems running IBM Db2 on Linux, Unix, Windows, or IBM z/OS.",
+      whenToUseId:
+        "Wajib untuk sistem core banking dan enterprise yang menjalankan IBM Db2 di Linux, Unix, Windows, atau IBM z/OS.",
+    },
+  },
+  {
+    slug: "edb-pem",
+    name: "EDB Postgres Enterprise Manager (PEM)",
+    vendor: "EnterpriseDB",
+    category: "Monitoring & Observability",
+    license: "Commercial / Enterprise",
+    engines: ["PostgreSQL"],
+    summary:
+      "Enterprise management suite for large-scale Postgres instances with SQL Profiler, Postgres Expert advisor, and replication maps.",
+    summaryId:
+      "Suite manajemen enterprise untuk cluster PostgreSQL skala besar dengan SQL Profiler, Postgres Expert advisor, dan topologi replikasi.",
+    url: "https://www.enterprisedb.com/products/edb-postgres-enterprise-manager-pem",
+    guide: {
+      goldenSignals: [
+        "Streaming Replication Delay: Bytes and time lag between primary and standbys",
+        "Autovacuum Backlog: Dead tuple bloat and table freeze age to prevent transaction ID wraparound",
+        "Shared Buffer Contention: Buffer allocation efficiency and background writer checkpoints",
+        "Lock Contention: Exclusive table locks waiting on long-running analytical queries",
+      ],
+      goldenSignalsId: [
+        "Keterlambatan Replikasi Streaming: Selisih byte dan detik antara primary dan standby",
+        "Antrean Autovacuum: Pembengkakan dead tuple dan usia freeze tabel untuk mencegah XID wraparound",
+        "Kontensi Shared Buffer: Efisiensi alokasi buffer dan checkpoint background writer",
+        "Kontensi Lock: Antrean kunci eksklusif yang tertahan kueri analitik berdurasi panjang",
+      ],
+      sampleAlertQuery: `SELECT datname, age(datfrozenxid) AS xid_age FROM pg_database WHERE age(datfrozenxid) > 1500000000;`,
+      architectureOverview:
+        "PEM Server hosting centralized alert engine and metadata, receiving telemetry from PEM Agents deployed on database hosts.",
+      architectureOverviewId:
+        "PEM Server yang mengelola mesin alert dan metadata terpusat, menerima telemetri dari PEM Agent di tiap node database.",
+      whenToUse:
+        "Recommended for enterprise PostgreSQL deployments requiring automated capacity planning, compliance audits, and commercial support.",
+      whenToUseId:
+        "Sangat direkomendasikan untuk cluster PostgreSQL enterprise yang membutuhkan audit kepatuhan, capacity planning, dan dukungan komersial.",
+    },
+  },
+  {
+    slug: "node-exporter",
+    name: "Prometheus Node Exporter & Host Monitor",
+    vendor: "CNCF",
+    category: "Monitoring & Observability",
+    license: "Open Source",
+    engines: ["Linux", "Host Server", "Universal"],
+    summary:
+      "Host and OS telemetry collector exposing CPU steal/iowait, disk IOPS queue depth, memory swap paging, and filesystem inode exhaustion.",
+    summaryId:
+      "Pengumpul telemetri sistem operasi dan server host: CPU iowait, antrean antarmuka disk IOPS, paging swap RAM, dan kapasitas inode.",
+    url: "https://github.com/prometheus/node_exporter",
+    guide: {
+      goldenSignals: [
+        "Disk I/O Utilization (%util): Sustained 100% utilization indicates storage queue saturation",
+        "CPU I/O Wait (%iowait): CPU cycles stalled waiting on disk reads or synchronous WAL/Redo writes",
+        "Memory Swap Thrashing: OS swapping database memory to disk, devastating query latency",
+        "Inode Capacity (df -i): Inode exhaustion causing 'Disk Full' errors despite free disk gigabytes",
+      ],
+      goldenSignalsId: [
+        "Utilisasi I/O Disk (%util): Utilisasi 100% kontinu menandakan antrean disk jenuh",
+        "CPU I/O Wait (%iowait): Siklus prosesor terbuang menunggu pembacaan disk atau penulisan WAL/Redo",
+        "Swap Thrashing: Sistem operasi memindahkan RAM buffer pool ke swap disk, melumpuhkan latensi kueri",
+        "Kapasitas Inode (df -i): Kehabisan inode memicu galat 'Disk Full' meskipun sisa gigabyte disk masih banyak",
+      ],
+      sampleAlertQuery: `rate(node_disk_io_time_seconds_total[5m]) > 0.95`,
+      architectureOverview:
+        "Lightweight standalone daemon reading `/proc` and `/sys` kernel subsystems, exposing metric endpoints on HTTP port 9100 for Prometheus scraping.",
+      architectureOverviewId:
+        "Daemon ringan yang membaca subsistem kernel `/proc` dan `/sys`, mengekspos endpoint metrik di port HTTP 9100 untuk Prometheus.",
+      whenToUse:
+        "Universal requirement on every database server host to isolate physical infrastructure bottlenecks from application SQL issues.",
+      whenToUseId:
+        "Komponen wajib pada setiap server database untuk membedakan bottleneck perangkat keras OS dari masalah kueri SQL aplikasi.",
+    },
+  },
+  {
     slug: "dbeaver",
     name: "DBeaver Community",
     vendor: "DBeaver Corp",
@@ -249,6 +429,29 @@ const DEFAULT_TOOLS: Tool[] = [
     summaryId:
       "Lingkungan resmi Microsoft untuk mengelola infrastruktur SQL Server, Query Store, dan jadwal SQL Agent.",
     url: "https://learn.microsoft.com/en-us/ssms/",
+    guide: {
+      goldenSignals: [
+        "Activity Monitor Tasks: Waiting tasks, blocked sessions count, and data file I/O latency (MB/s)",
+        "Lock Wait Time: Cumulative wait duration in sys.dm_os_waiting_tasks (LCK_M_X, LCK_M_S)",
+        "Query Store Plan Regressions: Queries whose CPU or duration degraded after recompilation",
+        "TempDB Contention: Page allocation latch contention in TempDB (PAGELATCH_UP / PAGELATCH_SH)",
+      ],
+      goldenSignalsId: [
+        "Task Activity Monitor: Task menunggu, jumlah sesi terblokir, dan latensi file I/O (MB/s)",
+        "Waktu Antrean Lock: Akumulasi durasi tunggu di sys.dm_os_waiting_tasks (LCK_M_X, LCK_M_S)",
+        "Regresi Plan Query Store: Kueri yang mengalami penurunan performa CPU/durasi setelah rekompilasi",
+        "Kontensi TempDB: Perebutan latch alokasi halaman di TempDB (PAGELATCH_UP / PAGELATCH_SH)",
+      ],
+      sampleAlertQuery: `SELECT session_id, blocking_session_id, wait_type, wait_time FROM sys.dm_exec_requests WHERE blocking_session_id <> 0;`,
+      architectureOverview:
+        "Microsoft's native Win32 cockpit integrating Activity Monitor, Extended Events (XEvents), and Query Store flight recorder for SQL Server and Azure SQL.",
+      architectureOverviewId:
+        "Cockpit administratif resmi Microsoft yang mengintegrasikan Activity Monitor, Extended Events (XEvents), dan Query Store untuk SQL Server dan Azure SQL.",
+      whenToUse:
+        "Primary administrative interface for configuring SQL Server AlwaysOn Availability Groups, inspecting deadlock graphs, and forcing stable query execution plans.",
+      whenToUseId:
+        "Antarmuka administratif utama untuk mengonfigurasi AlwaysOn Availability Groups, menganalisis grafik deadlock, dan mengunci execution plan yang stabil.",
+    },
   },
   {
     slug: "litecli",

@@ -359,6 +359,244 @@ ORDER BY cs.total_revenue DESC;""",
         ],
         "supported_engines": ["sqlite", "postgres", "mysql"],
     },
+    {
+        "slug": "tablespace-capacity-alert",
+        "title": "Tablespace Capacity & High Water Mark Alert",
+        "title_id": "Peringatan Ambang Batas Kapasitas Tablespace (> 80%)",
+        "level": "Intermediate",
+        "category": "Storage & Capacity Planning",
+        "category_id": "Penyimpanan & Kapasitas",
+        "dataset": "dba_ops",
+        "description": "Enterprise monitoring tools (OEM, SSMS, PEM) raise alerts when tablespace usage breaches 80%. Select tablespace_name, allocated_mb, used_mb, and used_percent (calculated as ROUND((used_mb * 100.0) / allocated_mb, 1)) for all tablespaces where used_percent is >= 80.0. Sort by used_percent descending.",
+        "description_id": "Aplikasi monitoring enterprise (OEM, SSMS, PEM) membunyikan alert saat utilisasi tablespace melampaui 80%. Tampilkan tablespace_name, allocated_mb, used_mb, dan used_percent (dihitung sebagai ROUND((used_mb * 100.0) / allocated_mb, 1)) untuk semua tablespace dengan used_percent >= 80.0. Urutkan dari used_percent tertinggi.",
+        "expected_columns": ["tablespace_name", "allocated_mb", "used_mb", "used_percent"],
+        "solution_sql": """SELECT tablespace_name, allocated_mb, used_mb, ROUND((used_mb * 100.0) / allocated_mb, 1) AS used_percent
+FROM dba_tablespaces
+WHERE (used_mb * 100.0) / allocated_mb >= 80.0
+ORDER BY used_percent DESC;""",
+        "starter_sql": """-- Deteksi tablespace dengan utilisasi >= 80.0%:
+SELECT tablespace_name, allocated_mb, used_mb,
+       ROUND((used_mb * 100.0) / allocated_mb, 1) AS used_percent
+FROM dba_tablespaces
+WHERE (used_mb * 100.0) / allocated_mb >= 80.0
+ORDER BY used_percent DESC;""",
+        "hints": [
+            "Compute the percentage with ROUND((used_mb * 100.0) / allocated_mb, 1).",
+            "Filter using WHERE (used_mb * 100.0) / allocated_mb >= 80.0.",
+            "Order by used_percent DESC."
+        ],
+        "hints_id": [
+            "Hitung persentase dengan ROUND((used_mb * 100.0) / allocated_mb, 1).",
+            "Filter kondisi menggunakan WHERE (used_mb * 100.0) / allocated_mb >= 80.0.",
+            "Urutkan hasil dengan ORDER BY used_percent DESC."
+        ],
+        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql"],
+    },
+    {
+        "slug": "blocking-sessions-root-cause",
+        "title": "Root Blocking Session Detector (Head of Blocker Tree)",
+        "title_id": "Deteksi Root Blocker (Induk Antrean Lock Menggantung)",
+        "level": "Advanced",
+        "category": "Concurrency & Lock Diagnostics",
+        "category_id": "Konkurensi & Diagnostik Lock",
+        "dataset": "dba_ops",
+        "description": "In transactional databases, a chain of blocked sessions traces back to a lead blocker that is not waiting on any other session. Find all root blocking sessions: sessions whose spid appears as blocked_by_spid for other waiting sessions, but who themselves have blocked_by_spid IS NULL. Return distinct spid, db_user, lock_type, wait_time_seconds, and query_snippet.",
+        "description_id": "Pada database transaksional, rantai sesi menggantung bermuara pada satu sesi induk (lead blocker) yang tidak terblokir sesi mana pun. Temukan semua root blocking session: sesi yang nilai spid-nya tercantum dalam blocked_by_spid sesi lain, namun spid miliknya memiliki blocked_by_spid IS NULL. Tampilkan spid unik, db_user, lock_type, wait_time_seconds, dan query_snippet.",
+        "expected_columns": ["spid", "db_user", "lock_type", "wait_time_seconds", "query_snippet"],
+        "solution_sql": """SELECT DISTINCT s.spid, s.db_user, s.lock_type, s.wait_time_seconds, s.query_snippet
+FROM active_sessions s
+WHERE s.blocked_by_spid IS NULL
+  AND s.spid IN (
+    SELECT blocked_by_spid 
+    FROM active_sessions 
+    WHERE blocked_by_spid IS NOT NULL
+  );""",
+        "starter_sql": """-- Temukan lead blocker yang menahan lock tanpa diblokir oleh sesi lain:
+SELECT DISTINCT s.spid, s.db_user, s.lock_type, s.wait_time_seconds, s.query_snippet
+FROM active_sessions s
+WHERE s.blocked_by_spid IS NULL
+  AND s.spid IN (
+    -- Subquery sesi yang sedang memblokir:
+    SELECT blocked_by_spid FROM active_sessions WHERE blocked_by_spid IS NOT NULL
+  );""",
+        "hints": [
+            "Use a subquery to find all blocked_by_spid values that are NOT NULL.",
+            "Filter the outer query for sessions where blocked_by_spid IS NULL AND spid IN (subquery).",
+            "Use DISTINCT to ensure no duplicate root SPIDs."
+        ],
+        "hints_id": [
+            "Gunakan subquery untuk memilih semua blocked_by_spid yang NOT NULL.",
+            "Filter tabel induk dengan kondisi blocked_by_spid IS NULL AND spid IN (subquery).",
+            "Gunakan klausa DISTINCT untuk menghindari duplikasi SPID root."
+        ],
+        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql"],
+    },
+    {
+        "slug": "replication-mirroring-lag-monitor",
+        "title": "Database Mirroring & Replication Lag Audit",
+        "title_id": "Audit Keterlambatan Replikasi & Mirroring Cluster",
+        "level": "Intermediate",
+        "category": "High Availability & Disaster Recovery",
+        "category_id": "Ketersediaan Tinggi & Replikasi",
+        "dataset": "dba_ops",
+        "description": "High Availability clusters (AlwaysOn, Data Guard, Patroni) require low replication lag. Identify all replica nodes violating SLA where lag_seconds > 10.0, or replay_queue_kb > 500.0, or sync_state = 'DESYNCHRONIZED'. Display replica_name, replica_role, sync_state, lag_seconds, and replay_queue_kb, ordered by lag_seconds descending.",
+        "description_id": "Cluster High Availability (AlwaysOn, Data Guard, Patroni) menuntut replikasi real-time. Identifikasi replica yang melanggar SLA yaitu lag_seconds > 10.0, atau replay_queue_kb > 500.0, atau sync_state = 'DESYNCHRONIZED'. Tampilkan replica_name, replica_role, sync_state, lag_seconds, dan replay_queue_kb, diurutkan dari lag_seconds terbesar.",
+        "expected_columns": ["replica_name", "replica_role", "sync_state", "lag_seconds", "replay_queue_kb"],
+        "solution_sql": """SELECT replica_name, replica_role, sync_state, lag_seconds, replay_queue_kb
+FROM cluster_replicas
+WHERE lag_seconds > 10.0 
+   OR replay_queue_kb > 500.0 
+   OR sync_state = 'DESYNCHRONIZED'
+ORDER BY lag_seconds DESC;""",
+        "starter_sql": """-- Cari replika cluster dengan lag tinggi atau status desynchronized:
+SELECT replica_name, replica_role, sync_state, lag_seconds, replay_queue_kb
+FROM cluster_replicas
+WHERE lag_seconds > 10.0 
+   OR replay_queue_kb > 500.0 
+   OR sync_state = 'DESYNCHRONIZED'
+ORDER BY lag_seconds DESC;""",
+        "hints": [
+            "Combine the conditions using OR: lag_seconds > 10.0 OR replay_queue_kb > 500.0 OR sync_state = 'DESYNCHRONIZED'.",
+            "Order results by lag_seconds DESC."
+        ],
+        "hints_id": [
+            "Gabungkan kondisi dengan operator OR: lag_seconds > 10.0 OR replay_queue_kb > 500.0 OR sync_state = 'DESYNCHRONIZED'.",
+            "Urutkan hasil kueri dengan ORDER BY lag_seconds DESC."
+        ],
+        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql"],
+    },
+    {
+        "slug": "k8s-pod-buffer-cache-ratio",
+        "title": "Kubernetes Database Pod Buffer Cache Hit Ratio",
+        "title_id": "Rasio Hit Buffer Cache Pod Database Kubernetes",
+        "level": "Advanced",
+        "category": "Container & Server Telemetry",
+        "category_id": "Telemetri Server & Kontainer",
+        "dataset": "dba_ops",
+        "description": "In Kubernetes StatefulSets, low buffer cache hit ratio (< 95%) forces frequent disk reads, causing I/O bottleneck and cgroup CPU throttling. Compute the buffer cache hit percentage for each database pod as ROUND(((buffer_cache_reads - disk_physical_reads) * 100.0) / buffer_cache_reads, 2) AS cache_hit_pct. Filter for pods where cache_hit_pct < 95.0 or cpu_throttled_seconds > 10.0. Return pod_name, node_name, db_engine, memory_used_mb, cache_hit_pct, ordered by cache_hit_pct ascending.",
+        "description_id": "Pada StatefulSet Kubernetes, rasio hit buffer cache yang rendah (< 95%) memicu disk read fisik berlebih dan throttling CPU cgroup. Hitung persentase cache hit untuk tiap pod database sebagai ROUND(((buffer_cache_reads - disk_physical_reads) * 100.0) / buffer_cache_reads, 2) AS cache_hit_pct. Filter pod dengan cache_hit_pct < 95.0 atau cpu_throttled_seconds > 10.0. Tampilkan pod_name, node_name, db_engine, memory_used_mb, cache_hit_pct, diurutkan dari cache_hit_pct terkecil.",
+        "expected_columns": ["pod_name", "node_name", "db_engine", "memory_used_mb", "cache_hit_pct"],
+        "solution_sql": """SELECT 
+  pod_name, 
+  node_name, 
+  db_engine, 
+  memory_used_mb, 
+  ROUND(((buffer_cache_reads - disk_physical_reads) * 100.0) / buffer_cache_reads, 2) AS cache_hit_pct
+FROM k8s_db_pods
+WHERE (((buffer_cache_reads - disk_physical_reads) * 100.0) / buffer_cache_reads) < 95.0
+   OR cpu_throttled_seconds > 10.0
+ORDER BY cache_hit_pct ASC;""",
+        "starter_sql": """-- Hitung efisiensi buffer cache per pod database di Kubernetes:
+SELECT 
+  pod_name, 
+  node_name, 
+  db_engine, 
+  memory_used_mb, 
+  ROUND(((buffer_cache_reads - disk_physical_reads) * 100.0) / buffer_cache_reads, 2) AS cache_hit_pct
+FROM k8s_db_pods
+WHERE (((buffer_cache_reads - disk_physical_reads) * 100.0) / buffer_cache_reads) < 95.0
+   OR cpu_throttled_seconds > 10.0
+ORDER BY cache_hit_pct ASC;""",
+        "hints": [
+            "Formula for hit ratio: ((buffer_cache_reads - disk_physical_reads) * 100.0) / buffer_cache_reads.",
+            "Round to 2 decimal places using ROUND(..., 2).",
+            "Order by cache_hit_pct ASC to show the most degraded pods first."
+        ],
+        "hints_id": [
+            "Rumus rasio hit: ((buffer_cache_reads - disk_physical_reads) * 100.0) / buffer_cache_reads.",
+            "Bulatkan ke 2 tempat desimal menggunakan fungsi ROUND(..., 2).",
+            "Urutkan dengan ORDER BY cache_hit_pct ASC agar pod bermasalah tampil paling atas."
+        ],
+        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql"],
+    },
+    {
+        "slug": "deadlock-contention-hotspot",
+        "title": "Exclusive Lock Contention Hotspot",
+        "title_id": "Pusat Antrean & Kontensi Exclusive Lock",
+        "level": "Intermediate",
+        "category": "Concurrency & Lock Diagnostics",
+        "category_id": "Konkurensi & Diagnostik Lock",
+        "dataset": "dba_ops",
+        "description": "Identify users and lock types generating high cumulative wait times in the lock queue. For all sessions where blocked_by_spid IS NOT NULL, calculate blocked_count (COUNT(*)) and total_wait_sec (SUM(wait_time_seconds)) grouped by db_user and lock_type. Include only groups with total_wait_sec > 30, ordered by total_wait_sec descending.",
+        "description_id": "Identifikasi user dan tipe lock yang menimbulkan akumulasi waktu antrean terpanjang. Untuk sesi yang memiliki blocked_by_spid IS NOT NULL, hitung blocked_count (COUNT(*)) dan total_wait_sec (SUM(wait_time_seconds)) dikelompokkan berdasarkan db_user dan lock_type. Hanya sertakan grup dengan total_wait_sec > 30, diurutkan dari total_wait_sec terbesar.",
+        "expected_columns": ["db_user", "lock_type", "blocked_count", "total_wait_sec"],
+        "solution_sql": """SELECT db_user, lock_type, COUNT(*) AS blocked_count, SUM(wait_time_seconds) AS total_wait_sec
+FROM active_sessions
+WHERE blocked_by_spid IS NOT NULL
+GROUP BY db_user, lock_type
+HAVING SUM(wait_time_seconds) > 30
+ORDER BY total_wait_sec DESC;""",
+        "starter_sql": """-- Agregasi durasi tunggu lock yang menggantung:
+SELECT db_user, lock_type, COUNT(*) AS blocked_count, SUM(wait_time_seconds) AS total_wait_sec
+FROM active_sessions
+WHERE blocked_by_spid IS NOT NULL
+GROUP BY db_user, lock_type
+HAVING SUM(wait_time_seconds) > 30
+ORDER BY total_wait_sec DESC;""",
+        "hints": [
+            "Filter blocked sessions with WHERE blocked_by_spid IS NOT NULL.",
+            "Group by db_user, lock_type.",
+            "Use HAVING SUM(wait_time_seconds) > 30 to isolate severe contention."
+        ],
+        "hints_id": [
+            "Filter sesi yang terblokir dengan WHERE blocked_by_spid IS NOT NULL.",
+            "Kelompokkan dengan GROUP BY db_user, lock_type.",
+            "Gunakan klausa HAVING SUM(wait_time_seconds) > 30 untuk menyaring antrean kritis."
+        ],
+        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql"],
+    },
+    {
+        "slug": "tablespace-autoextend-exhaustion",
+        "title": "Datafile Autoextend & Disk Headroom Exhaustion",
+        "title_id": "Risiko Kehabisan Ruang Datafile & Autoextend",
+        "level": "Advanced",
+        "category": "Storage & Capacity Planning",
+        "category_id": "Penyimpanan & Kapasitas",
+        "dataset": "dba_ops",
+        "description": "Detect tablespaces at imminent risk of storage exhaustion: either autoextensible = 0 with used_mb >= 85% of allocated_mb (risk_level = 'CRITICAL_FIXED'), or autoextensible = 1 where allocated_mb >= 90% of max_mb (risk_level = 'NEAR_MAX_LIMIT'). Select tablespace_name, file_name, allocated_mb, max_mb, autoextensible, and calculated risk_level. Order by allocated_mb descending.",
+        "description_id": "Deteksi datafile yang terancam kehabisan ruang disk: autoextensible = 0 dengan used_mb >= 85% dari allocated_mb (risk_level = 'CRITICAL_FIXED'), atau autoextensible = 1 di mana allocated_mb >= 90% dari batas max_mb (risk_level = 'NEAR_MAX_LIMIT'). Tampilkan tablespace_name, file_name, allocated_mb, max_mb, autoextensible, dan risk_level. Urutkan dari allocated_mb terbesar.",
+        "expected_columns": ["tablespace_name", "file_name", "allocated_mb", "max_mb", "autoextensible", "risk_level"],
+        "solution_sql": """SELECT 
+  tablespace_name, 
+  file_name, 
+  allocated_mb, 
+  max_mb, 
+  autoextensible,
+  CASE 
+    WHEN autoextensible = 0 AND (used_mb * 1.0 / allocated_mb) >= 0.85 THEN 'CRITICAL_FIXED'
+    ELSE 'NEAR_MAX_LIMIT'
+  END AS risk_level
+FROM dba_tablespaces
+WHERE (autoextensible = 0 AND (used_mb * 1.0 / allocated_mb) >= 0.85)
+   OR (autoextensible = 1 AND allocated_mb >= max_mb * 0.90)
+ORDER BY allocated_mb DESC;""",
+        "starter_sql": """-- Klasifikasikan risiko datafile dengan klausul CASE WHEN:
+SELECT 
+  tablespace_name, 
+  file_name, 
+  allocated_mb, 
+  max_mb, 
+  autoextensible,
+  CASE 
+    WHEN autoextensible = 0 AND (used_mb * 1.0 / allocated_mb) >= 0.85 THEN 'CRITICAL_FIXED'
+    ELSE 'NEAR_MAX_LIMIT'
+  END AS risk_level
+FROM dba_tablespaces
+WHERE (autoextensible = 0 AND (used_mb * 1.0 / allocated_mb) >= 0.85)
+   OR (autoextensible = 1 AND allocated_mb >= max_mb * 0.90)
+ORDER BY allocated_mb DESC;""",
+        "hints": [
+            "Use a CASE expression to evaluate 'CRITICAL_FIXED' vs 'NEAR_MAX_LIMIT'.",
+            "Check condition (autoextensible = 0 AND used_mb/allocated_mb >= 0.85) OR (autoextensible = 1 AND allocated_mb >= max_mb * 0.90).",
+            "Order by allocated_mb DESC."
+        ],
+        "hints_id": [
+            "Gunakan ekspresi CASE untuk menentukan label 'CRITICAL_FIXED' atau 'NEAR_MAX_LIMIT'.",
+            "Periksa kondisi (autoextensible = 0 AND used_mb/allocated_mb >= 0.85) OR (autoextensible = 1 AND allocated_mb >= max_mb * 0.90).",
+            "Urutkan hasil dengan ORDER BY allocated_mb DESC."
+        ],
+        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql"],
+    },
 ]
 
 
@@ -372,46 +610,76 @@ PROFESSIONS = [
         "summary": "Architects, provisions, monitors, and safeguards enterprise database instances to ensure 24/7 uptime, high performance, and rapid disaster recovery.",
         "summary_id": "Merancang, mengelola, memantau, dan menjaga cluster database perusahaan untuk memastikan uptime 24/7, performa maksimal, dan pemulihan bencana instan.",
         "engines": ["PostgreSQL", "MySQL", "Oracle", "SQL Server"],
-        "recommended_tools": ["pmm", "pgbackrest", "xtrabackup", "prometheus", "dbeaver"],
+        "recommended_tools": [
+            "oem",
+            "ssms",
+            "pem",
+            "manageengine-db-manager",
+            "ibm-dmc",
+            "pmm",
+            "node-exporter",
+            "pgbackrest",
+            "xtrabackup",
+        ],
         "core_responsibilities": [
-            "Maintain database high availability (HA) and automated failover clusters (Patroni / Orchestrator)",
+            "Maintain database high availability (HA), mirroring, and automated failover clusters (AlwaysOn, Data Guard, Patroni)",
             "Design and test backup strategies (Full, Differential, Point-In-Time Recovery / PITR)",
-            "Monitor server resource consumption (Buffer cache hit ratio, lock waits, replication lag)",
+            "Monitor server resource consumption (Tablespace High Water Mark, buffer cache hit ratio, lock waits, replication lag)",
             "Perform major version upgrades with zero or near-zero maintenance downtime",
         ],
         "core_responsibilities_id": [
-            "Memelihara klaster ketersediaan tinggi (HA) dan failover otomatis (Patroni / Orchestrator)",
+            "Memelihara klaster ketersediaan tinggi (HA), mirroring, dan failover otomatis (AlwaysOn, Data Guard, Patroni)",
             "Merancang dan menguji strategi pencadangan (Full, Diferensial, PITR)",
-            "Memantau konsumsi sumber daya (Buffer cache hit ratio, lock wait, lag replikasi)",
+            "Memantau konsumsi sumber daya (High Water Mark tablespace, buffer cache hit ratio, lock wait, lag replikasi)",
             "Melakukan upgrade versi mayor dengan zero-downtime atau downtime minimal",
         ],
         "skills_progression": {
             "junior": [
                 "SQL DDL/DML syntax across multiple engines",
+                "Tablespace and datafile management (autoextend, HWM, storage allocation)",
                 "Logical backup & restore (pg_dump, mysqldump)",
                 "User management & privilege grants (least privilege)",
-                "Basic configuration tuning (memory limits, connection pools)",
             ],
             "mid": [
                 "Physical hot backup configuration (pgBackRest, XtraBackup)",
-                "Active-passive & streaming replication topology setup",
+                "Diagnosing blocking sessions, lock trees, and deadlock victims",
+                "Active-passive & streaming replication topology setup (AlwaysOn, Data Guard, Patroni)",
                 "Slow query log analysis and index defragmentation",
-                "Connection pooler deployment (PgBouncer, ProxySQL)",
             ],
             "senior": [
-                "Multi-region active-active cluster architecture",
+                "Multi-region active-active cluster architecture and zero-downtime failover",
                 "Automated chaos engineering & disaster recovery drills",
-                "Advanced performance telemetry via eBPF and kernel tuning",
+                "Advanced performance telemetry via ASH, AWR, Extended Events, and kernel tuning",
                 "Automated migration pipelines and database sharding",
             ],
         },
         "key_metrics": [
+            "Tablespace Capacity & Datafile Headroom (> 85% alert)",
             "Replication Lag (seconds / bytes behind master)",
             "Cache Hit Ratio (> 99% target)",
-            "Active Connection Utilization (< 80% pool capacity)",
-            "Lock Contention & Deadlock Frequency",
+            "Lock Contention & Root Blocker Waiting Duration",
         ],
         "runbooks": [
+            {
+                "name": "Root Blocking Session Emergency Resolution",
+                "name_id": "Penanganan Darurat Rantai Sesi Menggantung (Root Blocker)",
+                "steps": [
+                    "Query lock catalogs to identify the root blocker SPID (blocked_by_spid IS NULL)",
+                    "Inspect the root blocker query snippet and transaction start time",
+                    "Attempt graceful statement cancellation before hard killing the connection",
+                    "Terminate session if uncommitted transaction blocks business-critical traffic",
+                ],
+            },
+            {
+                "name": "Tablespace Storage Headroom Emergency Expansion",
+                "name_id": "Ekspansi Ruang Darurat Tablespace Kritis",
+                "steps": [
+                    "Check underlying OS mount filesystem space (`df -h`)",
+                    "Verify if tablespace datafiles are fixed-size or autoextensible",
+                    "Add new secondary datafile or resize existing datafile (`ALTER DATABASE DATAFILE ... RESIZE`)",
+                    "Schedule table segment shrink / VACUUM FULL to reclaim deleted block space",
+                ],
+            },
             {
                 "name": "Replication Lag Emergency Remediation",
                 "name_id": "Penanganan Darurat Lag Replikasi",
@@ -422,21 +690,12 @@ PROFESSIONS = [
                     "If gap exceeds SLA, reroute read traffic to healthy nodes",
                 ],
             },
-            {
-                "name": "Point-in-Time Recovery (PITR) Execution",
-                "name_id": "Eksekusi Point-in-Time Recovery (PITR)",
-                "steps": [
-                    "Isolate target restore node from production traffic",
-                    "Fetch latest consistent base backup from object storage",
-                    "Replay WAL / Binlog stream up to the exact target timestamp",
-                    "Verify data consistency and promote node as primary",
-                ],
-            },
         ],
         "recommended_challenges": [
+            "tablespace-capacity-alert",
+            "blocking-sessions-root-cause",
+            "tablespace-autoextend-exhaustion",
             "banking-priority-accounts",
-            "monthly-transfer-channels",
-            "cumulative-transaction-ledger",
         ],
     },
     {
@@ -581,46 +840,64 @@ PROFESSIONS = [
         "summary": "Applies software engineering disciplines to database operations, defining SLOs/SLIs, building automated telemetry pipelines, and orchestrating self-healing topologies.",
         "summary_id": "Menerapkan disiplin rekayasa perangkat lunak pada operasional database, merumuskan SLO/SLI, membangun telemetri otomatis, dan orkestrasi arsitektur self-healing.",
         "engines": ["PostgreSQL", "MySQL", "Oracle", "SQL Server"],
-        "recommended_tools": ["prometheus", "grafana", "pmm", "pgmustard"],
+        "recommended_tools": [
+            "prometheus",
+            "node-exporter",
+            "grafana",
+            "pem",
+            "manageengine-db-manager",
+            "pmm",
+            "pgmustard",
+        ],
         "core_responsibilities": [
             "Define and monitor Database Service Level Objectives (SLOs: 99.99% availability, p99 latency < 20ms)",
-            "Maintain Prometheus metric exporters and Grafana alert rule pipelines",
-            "Automate infrastructure provisioning via Infrastructure-as-Code (Terraform / Ansible)",
-            "Conduct automated disaster recovery and chaos engineering drills",
+            "Maintain Prometheus metric exporters (node_exporter, postgres_exporter, mysqld_exporter) and Grafana alert pipelines",
+            "Automate Kubernetes StatefulSet operators (CloudNativePG, Crunchy Data PGO, Percona Operators)",
+            "Conduct automated disaster recovery, database mirroring audits, and chaos engineering drills",
         ],
         "core_responsibilities_id": [
             "Menentukan dan memantau SLO database (Ketersediaan 99.99%, latensi p99 < 20ms)",
-            "Memelihara exporter metrik Prometheus dan pipeline aturan peringatan Grafana",
-            "Mengotomatiskan penyediaan infrastruktur melalui IaC (Terraform / Ansible)",
-            "Melakukan latihan pemulihan bencana otomatis dan pengujian chaos engineering",
+            "Memelihara exporter metrik Prometheus (node_exporter, postgres_exporter, mysqld_exporter) dan Grafana alert",
+            "Mengotomatiskan operator StatefulSet Kubernetes (CloudNativePG, Crunchy Data PGO, Percona Operators)",
+            "Melakukan latihan pemulihan bencana otomatis, audit mirroring database, dan chaos engineering",
         ],
         "skills_progression": {
             "junior": [
-                "Linux OS performance fundamentals (CPU, I/O wait, memory buffers, disk queues)",
+                "Linux OS performance fundamentals (CPU, I/O wait, memory buffers, disk queues, inode limits)",
                 "Configuring Prometheus scrape targets and node/database exporters",
-                "Basic containerization and orchestration for database sidecars",
+                "Basic containerization and orchestration for database sidecars (Docker volumes, /dev/shm sizing)",
                 "Incident triage and logging aggregation (Loki, Elasticsearch)",
             ],
             "mid": [
                 "SLO / Error Budget alerting strategies (multi-window burn rate alerts)",
+                "Kubernetes StatefulSet persistent volume claim management and pod anti-affinity rules",
                 "Kernel sysctl parameter tuning for heavy database I/O (`vm.dirty_ratio`, `swappiness`)",
                 "Automated snapshot verification and restore validation bots",
-                "Distributed tracing across application and database layers (OpenTelemetry)",
             ],
             "senior": [
                 "Autonomous self-healing cluster orchestration and split-brain prevention (etcd, Raft)",
                 "Global multi-cloud active replication topologies with automatic traffic steering",
                 "Capacity forecasting models using machine learning on Prometheus telemetry",
-                "Zero-downtime kernel live-patching and security automation",
+                "Zero-downtime Kubernetes database operator upgrades and automated failover validation",
             ],
         },
         "key_metrics": [
             "SLO Error Budget Burn Rate",
-            "Storage IOPS & Disk Queue Depth",
-            "Connection Pool Saturation Ratio",
-            "MTTR (Mean Time to Resolution) during Failovers (< 30s)",
+            "Storage IOPS & Disk Queue Depth (%util saturation)",
+            "Replication Lag in Seconds & Replay Queue Bytes",
+            "Kubernetes Pod Buffer Cache Hit Ratio & CPU Throttling Duration",
         ],
         "runbooks": [
+            {
+                "name": "Kubernetes Pod Buffer Cache & OOM Throttling Remediation",
+                "name_id": "Penanganan Degradasi Buffer Cache & Throttling Pod K8s",
+                "steps": [
+                    "Inspect pod memory usage vs cgroup limit to avoid immediate OOMKilled (ExitCode 137)",
+                    "Verify buffer cache hit ratio: if < 95%, scale pod memory request or tune shared_buffers",
+                    "Check /dev/shm size: ensure --shm-size or tmpfs volume is >= 1GB for parallel query IPC",
+                    "Verify node anti-affinity rules to prevent scheduling multiple cluster replicas on same worker node",
+                ],
+            },
             {
                 "name": "Automated Primary Failover Verification",
                 "name_id": "Verifikasi Failover Primary Otomatis",
@@ -633,8 +910,9 @@ PROFESSIONS = [
             },
         ],
         "recommended_challenges": [
-            "banking-priority-accounts",
-            "cumulative-transaction-ledger",
+            "replication-mirroring-lag-monitor",
+            "k8s-pod-buffer-cache-ratio",
+            "deadlock-contention-hotspot",
         ],
     },
     {

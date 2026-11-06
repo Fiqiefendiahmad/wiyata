@@ -321,6 +321,91 @@ INSERT INTO comments (post_id, author_name, content) VALUES
 (3, 'Maya', 'This saved me hours of query debugging today.');
 """
     },
+    "dba_ops": {
+        "name": "Enterprise DBA & Infrastructure Telemetry",
+        "description": "Telemetri operasional enterprise: tablespaces, blocking locks, cluster mirroring/replikasi, dan pod database Kubernetes",
+        "sql": """
+CREATE TABLE dba_tablespaces (
+    tablespace_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tablespace_name VARCHAR(64) NOT NULL,
+    file_name VARCHAR(255) NOT NULL,
+    allocated_mb REAL NOT NULL,
+    used_mb REAL NOT NULL,
+    max_mb REAL NOT NULL,
+    autoextensible BOOLEAN NOT NULL DEFAULT 1,
+    status VARCHAR(20) NOT NULL DEFAULT 'ONLINE'
+);
+
+CREATE TABLE active_sessions (
+    spid INTEGER PRIMARY KEY,
+    blocked_by_spid INTEGER REFERENCES active_sessions(spid),
+    db_user VARCHAR(64) NOT NULL,
+    client_host VARCHAR(100) NOT NULL,
+    wait_event VARCHAR(128) NOT NULL,
+    wait_time_seconds INTEGER NOT NULL DEFAULT 0,
+    lock_type VARCHAR(32) NOT NULL,
+    query_snippet TEXT NOT NULL
+);
+
+CREATE TABLE cluster_replicas (
+    replica_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    replica_name VARCHAR(64) NOT NULL,
+    replica_role VARCHAR(32) NOT NULL,
+    sync_state VARCHAR(32) NOT NULL,
+    lag_seconds REAL NOT NULL DEFAULT 0.0,
+    replay_queue_kb REAL NOT NULL DEFAULT 0.0,
+    network_latency_ms REAL NOT NULL DEFAULT 0.5,
+    status VARCHAR(20) NOT NULL DEFAULT 'HEALTHY'
+);
+
+CREATE TABLE k8s_db_pods (
+    pod_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    pod_name VARCHAR(128) NOT NULL,
+    node_name VARCHAR(64) NOT NULL,
+    db_engine VARCHAR(32) NOT NULL,
+    memory_limit_mb INTEGER NOT NULL,
+    memory_used_mb INTEGER NOT NULL,
+    buffer_cache_reads BIGINT NOT NULL,
+    disk_physical_reads BIGINT NOT NULL,
+    cpu_throttled_seconds REAL NOT NULL DEFAULT 0.0,
+    restart_count INTEGER NOT NULL DEFAULT 0
+);
+
+-- Seed Enterprise Tablespaces
+INSERT INTO dba_tablespaces (tablespace_name, file_name, allocated_mb, used_mb, max_mb, autoextensible, status) VALUES
+('USERS_DATA', '/u01/app/oracle/oradata/prod/users01.dbf', 10240.0, 9420.0, 32768.0, 1, 'ONLINE'),
+('FINANCE_TBS', '/var/lib/postgresql/17/data/tblspc/fin01.dat', 40960.0, 36800.0, 40960.0, 0, 'ONLINE'),
+('TEMP_TBS', '/var/opt/mssql/data/tempdb01.mdf', 20480.0, 4100.0, 65536.0, 1, 'ONLINE'),
+('INDEX_TBS', '/u01/app/oracle/oradata/prod/indx01.dbf', 16384.0, 14200.0, 16384.0, 0, 'ONLINE'),
+('AUDIT_ARCHIVE', '/mnt/disks/pg_audit/audit01.dat', 51200.0, 24500.0, 102400.0, 1, 'ONLINE'),
+('SYSTEM_TBS', '/u01/app/oracle/oradata/prod/system01.dbf', 8192.0, 7500.0, 8192.0, 1, 'ONLINE');
+
+-- Seed Active Sessions & Lock Blocker Tree
+INSERT INTO active_sessions (spid, blocked_by_spid, db_user, client_host, wait_event, wait_time_seconds, lock_type, query_snippet) VALUES
+(101, NULL, 'finance_app', '10.244.3.45', 'enq: TX - row lock contention', 0, 'EXCLUSIVE', 'UPDATE accounts SET balance = balance - 500000 WHERE id = 4410;'),
+(145, 101, 'portal_svc', '10.244.4.12', 'enq: TX - row lock contention', 48, 'EXCLUSIVE', 'UPDATE accounts SET balance = balance + 500000 WHERE id = 4410;'),
+(182, 101, 'batch_etl', '10.244.1.88', 'enq: TX - row lock contention', 125, 'EXCLUSIVE', 'UPDATE accounts SET status = "RECONCILED" WHERE id = 4410;'),
+(205, NULL, 'bi_reporting', '10.244.5.19', 'async_io_wait', 1, 'SHARED', 'SELECT customer_id, SUM(amount) FROM ledger GROUP BY customer_id;'),
+(220, 145, 'mobile_gateway', '10.244.6.30', 'enq: TX - row lock contention', 32, 'EXCLUSIVE', 'SELECT balance FROM accounts WHERE id = 4410 FOR UPDATE;'),
+(300, NULL, 'dba_admin', '10.244.0.5', 'idle', 0, 'NONE', 'SELECT spid, wait_event FROM active_sessions;');
+
+-- Seed Cluster Replicas & Mirroring
+INSERT INTO cluster_replicas (replica_name, replica_role, sync_state, lag_seconds, replay_queue_kb, network_latency_ms, status) VALUES
+('db-primary-0', 'PRIMARY', 'SYNCHRONIZED', 0.0, 0.0, 0.2, 'HEALTHY'),
+('db-sync-standby-1', 'SYNC_STANDBY', 'SYNCHRONIZED', 0.8, 120.0, 1.4, 'HEALTHY'),
+('db-dr-replica-2', 'ASYNC_STANDBY', 'STREAMING', 24.5, 12400.0, 18.5, 'DEGRADED'),
+('db-bi-analytics-3', 'READ_REPLICA', 'DESYNCHRONIZED', 185.0, 482000.0, 42.0, 'DESYNCHRONIZED'),
+('db-edge-cache-4', 'READ_REPLICA', 'STREAMING', 3.2, 450.0, 5.1, 'HEALTHY');
+
+-- Seed Kubernetes Database Pods & Cache Hit Ratio
+INSERT INTO k8s_db_pods (pod_name, node_name, db_engine, memory_limit_mb, memory_used_mb, buffer_cache_reads, disk_physical_reads, cpu_throttled_seconds, restart_count) VALUES
+('patroni-postgres-0', 'k8s-worker-nvme-01', 'PostgreSQL 17', 32768, 29400, 12500000, 320000, 0.0, 0),
+('patroni-postgres-1', 'k8s-worker-nvme-02', 'PostgreSQL 17', 32768, 31800, 8900000, 1450000, 14.8, 1),
+('innodb-cluster-mysql-0', 'k8s-worker-hdd-03', 'MySQL 11', 16384, 15900, 4500000, 850000, 26.2, 3),
+('oracle-pdb-finance-0', 'k8s-worker-baremetal-04', 'Oracle 23ai', 65536, 58200, 35000000, 700000, 0.0, 0),
+('mssql-alwayson-0', 'k8s-worker-nvme-05', 'SQL Server 2022', 49152, 46100, 22000000, 2400000, 18.5, 2);
+"""
+    },
     "blank": {
         "name": "Blank Database",
         "description": "Database kosong untuk eksperimen skema dan DDL bebas",

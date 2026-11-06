@@ -146,6 +146,66 @@ SEED_TOOLS = [
         "license_model": "Open Source",
         "supported_engines": ["PostgreSQL"],
     },
+    {
+        "category": "monitoring",
+        "category_name": "Monitoring & Observability",
+        "name": "Oracle Enterprise Manager (OEM)",
+        "slug": "oracle-enterprise-manager",
+        "vendor": "Oracle Corporation",
+        "summary": "Enterprise-grade complete lifecycle management, Active Session History (ASH), AWR diagnostics, and automated patching for Oracle Database and Exadata.",
+        "official_url": "https://www.oracle.com/enterprise-manager/",
+        "documentation_url": "https://docs.oracle.com/en/enterprise-manager/",
+        "license_model": "Commercial / Enterprise",
+        "supported_engines": ["Oracle"],
+    },
+    {
+        "category": "monitoring",
+        "category_name": "Monitoring & Observability",
+        "name": "ManageEngine Applications Manager",
+        "slug": "manageengine-db-manager",
+        "vendor": "Zoho Corporation",
+        "summary": "Full-stack enterprise database APM supporting Oracle, SQL Server, PostgreSQL, MySQL, and DB2 with anomaly detection and automated alert runbooks.",
+        "official_url": "https://www.manageengine.com/products/applications_manager/database-monitoring.html",
+        "documentation_url": "https://www.manageengine.com/products/applications_manager/help/",
+        "license_model": "Commercial",
+        "supported_engines": ["Oracle", "SQL Server", "PostgreSQL", "MySQL", "DB2"],
+    },
+    {
+        "category": "monitoring",
+        "category_name": "Monitoring & Observability",
+        "name": "IBM Db2 Data Management Console (DMC)",
+        "slug": "ibm-dmc",
+        "vendor": "IBM",
+        "summary": "Unified web console for IBM Db2 monitoring, lock contention visualization, statement cache metrics, and workload management (WLM).",
+        "official_url": "https://www.ibm.com/products/db2-data-management-console",
+        "documentation_url": "https://www.ibm.com/docs/en/db2-data-mgmt-console",
+        "license_model": "Enterprise / Included with Db2",
+        "supported_engines": ["IBM Db2"],
+    },
+    {
+        "category": "monitoring",
+        "category_name": "Monitoring & Observability",
+        "name": "EDB Postgres Enterprise Manager (PEM)",
+        "slug": "edb-pem",
+        "vendor": "EnterpriseDB",
+        "summary": "Comprehensive enterprise management and monitoring suite for PostgreSQL with SQL Profiler, capacity planning, and streaming replication topology monitors.",
+        "official_url": "https://www.enterprisedb.com/products/edb-postgres-enterprise-manager-pem",
+        "documentation_url": "https://www.enterprisedb.com/docs/pem/latest/",
+        "license_model": "Commercial / Enterprise",
+        "supported_engines": ["PostgreSQL"],
+    },
+    {
+        "category": "monitoring",
+        "category_name": "Monitoring & Observability",
+        "name": "Prometheus Node Exporter & Host Monitor",
+        "slug": "node-exporter",
+        "vendor": "Cloud Native Computing Foundation",
+        "summary": "Hardware and OS metric collector exposing host CPU steal/wait, disk IOPS queue depth, memory page faults, and filesystem inode exhaustion for DB hosts.",
+        "official_url": "https://github.com/prometheus/node_exporter",
+        "documentation_url": "https://prometheus.io/docs/guides/node-exporter/",
+        "license_model": "Open Source",
+        "supported_engines": ["Linux", "Host Server", "Universal"],
+    },
 
     # Backup & Migration
     {
@@ -582,6 +642,395 @@ Persentase pemanfaatan kapasitas sumber daya database.
 - **Buffer Cache Hit Ratio**: Harus bertahan di atas 99%.
 - **Utilisasi Koneksi**: Berikan peringatan jika `koneksi aktif / max_connections > 85%`.
 - **Replication Lag**: Berikan alert jika keterlambatan replikasi melebihi 30 detik.""",
+        },
+    },
+    {
+        "slug": "enterprise-monitoring-apps-oem-manageengine-dmc-ssms-pem",
+        "category_slug": "monitoring",
+        "engine": "Universal",
+        "en": {
+            "title": "Enterprise Database Monitoring Suites: OEM, ManageEngine, IBM DMC, SSMS, PEM & Server Telemetry",
+            "summary": "Deep architectural analysis of industry-standard database management and APM suites: OEM, ManageEngine, IBM DMC, SSMS, PEM, and Linux host server telemetry.",
+            "body": """### Enterprise Database APM & Monitoring Suites
+Modern enterprises manage heterogeneous database fleets spanning Oracle, SQL Server, PostgreSQL, MySQL, and IBM Db2. Dedicated monitoring suites provide deep internal instrumentation beyond basic black-box ping checks.
+
+---
+
+### 1. Oracle Enterprise Manager (OEM Cloud Control)
+The gold standard for mission-critical Oracle Exadata and Database fleets.
+- **Core Architecture**:
+  - **Oracle Management Agent (OMA)**: Light agent running on each database host collecting internal SGA/PGA metrics.
+  - **Oracle Management Service (OMS)**: WebLogic-based middleware orchestrating telemetry ingestion.
+  - **Oracle Management Repository (OMR)**: Dedicated Oracle database storing historical metrics and performance baselines.
+- **Key Capabilities**:
+  - **Active Session History (ASH)**: 1-second sample of non-idle sessions waiting on CPU or wait events.
+  - **Automatic Workload Repository (AWR)**: 60-minute automated snapshots of top SQL, system waits, and latch contention.
+  - **ADDM (Automatic Database Diagnostic Monitor)**: AI-driven diagnostic engine identifying performance bottlenecks and root causes.
+  - **Tablespace Capacity Alerts**: Threshold warnings for data file autoextend limits and high water mark expansion.
+
+---
+
+### 2. ManageEngine Applications Manager & OpManager
+Widely adopted enterprise APM for heterogeneous database environments.
+- **Architecture**:
+  - Centralized collector utilizing agentless JDBC/WMI/SSH or lightweight local monitoring agents.
+- **Key Capabilities**:
+  - **Multi-Engine Dashboard**: Unified monitoring across Oracle, SQL Server, PostgreSQL, MySQL, DB2, and SAP HANA.
+  - **Anomaly Detection**: Machine learning baselines triggering alerts when query latency or active connection count deviates from historic patterns.
+  - **Automated Remediation Runbooks**: Configurable webhooks to execute shell scripts, restart services, or notify PagerDuty/ServiceNow.
+
+---
+
+### 3. IBM Db2 Data Management Console (DMC)
+Unified browser-based console designed specifically for IBM Db2 on-premises and hybrid cloud.
+- **Core Features**:
+  - **Real-Time Lock & Blocker Graphs**: Interactive topology showing waiting transactions, lock escalations, and deadlocks.
+  - **Statement Cache Analysis**: Real-time inspection of dynamic and static SQL statements with execution count and CPU consumption.
+  - **Workload Management (WLM)**: Monitoring service classes, thresholds, and priority queuing to protect OLTP from rogue analytical queries.
+
+---
+
+### 4. SQL Server Management Studio (SSMS) & Diagnostic Tooling
+The native administrative and diagnostic cockpit for Microsoft SQL Server and Azure SQL.
+- **Key Monitoring Components**:
+  - **Activity Monitor**: Real-time pane displaying Processor Time, Waiting Tasks, Database I/O (MB/sec), and Batch Requests/sec.
+  - **Extended Events (XEvents)**: High-performance, lightweight event tracing replacing deprecated SQL Profiler with minimal CPU overhead.
+  - **Query Store**: Flight recorder inside the database capturing execution plan changes, runtime stats, and plan regression detection with one-click Plan Forcing.
+
+---
+
+### 5. EDB Postgres Enterprise Manager (PEM)
+Enterprise-grade management platform for high-scale PostgreSQL and EDB Postgres Advanced Server.
+- **Architecture**:
+  - **PEM Server**: Centralized PostgreSQL instance hosting monitoring metadata and alert definitions.
+  - **PEM Agent**: Deployed on database nodes to inspect Postgres server logs and collect low-level metrics.
+- **Key Features**:
+  - **Postgres Expert Rules**: Static and dynamic analyzer auditing security compliance and configuration parameters (`shared_buffers`, `work_mem`, `wal_buffers`).
+  - **SQL Profiler**: Integrated trace engine capturing problematic queries directly within PEM.
+  - **Streaming Replication Monitor**: Topology map showing primary and standby lag in bytes and time.
+
+---
+
+### 6. Host & Server Infrastructure Telemetry (Prometheus Node Exporter)
+Database performance is directly bounded by the host OS. A healthy DBA dashboard must monitor:
+- **Disk I/O Saturation (`%util` & IOPS)**: Sustained 100% disk utilization indicates disk queue bottleneck.
+- **CPU I/O Wait (`%iowait`)**: CPU idle cycles spent waiting on disk reads or synchronous WAL/Redo writes.
+- **Memory Paging / Swap Thrashing**: Paging database memory to swap destroys query latency; `vm.swappiness` should be tuned to 1 or 10.
+- **Filesystem Inodes (`df -i`)**: Databases creating thousands of temp files or WAL archives can fail with "Disk full" errors if inode capacity is exhausted, even with gigabytes of free disk space remaining.""",
+        },
+        "id": {
+            "title": "Aplikasi Monitoring Database Enterprise: OEM, ManageEngine, IBM DMC, SSMS, PEM & Telemetri Server",
+            "summary": "Analisis arsitektural mendalam aplikasi APM dan manajemen database standar industri: OEM, ManageEngine, IBM DMC, SSMS, PEM, dan telemetri server Linux.",
+            "body": """### Aplikasi Monitoring & APM Database Enterprise
+Perusahaan modern mengelola cluster database heterogen yang mencakup Oracle, SQL Server, PostgreSQL, MySQL, dan IBM Db2. Aplikasi pemantau khusus memberikan instrumentasi internal mendalam jauh melampaui sekadar ping uptime jaringan.
+
+---
+
+### 1. Oracle Enterprise Manager (OEM Cloud Control)
+Standar tertinggi untuk memantau cluster database Oracle Exadata dan database mission-critical.
+- **Arsitektur Inti**:
+  - **Oracle Management Agent (OMA)**: Agen ringan pada server database untuk membaca telemetri SGA/PGA secara real-time.
+  - **Oracle Management Service (OMS)**: Middleware berbasis WebLogic yang memproses dan menganalisis aliran metrik.
+  - **Oracle Management Repository (OMR)**: Database Oracle khusus untuk menyimpan riwayat metrik dan baseline performa.
+- **Fitur Kunci**:
+  - **Active Session History (ASH)**: Sampel 1-detik sesi aktif yang sedang menunggu antrean event atau CPU.
+  - **Automatic Workload Repository (AWR)**: Snapshot otomatis per 60 menit berisi kueri terberat, latensi I/O, dan latch contention.
+  - **ADDM**: Mesin diagnostik otomatis yang mengidentifikasi bottleneck dan akar masalah performa kueri.
+  - **Alert Kapasitas Tablespace**: Peringatan batas autoextend datafile dan High Water Mark (HWM).
+
+---
+
+### 2. ManageEngine Applications Manager & OpManager
+Solusi APM enterprise populer untuk monitoring database multi-vendor terpusat.
+- **Arsitektur**:
+  - Collector terpusat yang menggunakan koneksi agentless JDBC/WMI/SSH atau agent lokal.
+- **Fitur Kunci**:
+  - **Dashboard Terintegrasi**: Satu layar untuk memantau Oracle, SQL Server, PostgreSQL, MySQL, DB2, dan SAP HANA.
+  - **Deteksi Anomali Berbasis AI**: Mempelajari pola normal latensi dan koneksi aktif untuk membunyikan alert sebelum sistem tumbang.
+  - **Runbook Remediasi Otomatis**: Menjalankan skrip bash/powershell otomatis saat terjadi kegagalan layanan.
+
+---
+
+### 3. IBM Db2 Data Management Console (DMC)
+Konsol berbasis browser resmi untuk pengelolaan dan pemantauan IBM Db2 on-premise maupun cloud.
+- **Fitur Kunci**:
+  - **Grafik Antrean Lock & Blocker Real-Time**: Visualisasi interaktif rantai sesi yang terkunci dan terblokir.
+  - **Analisis Statement Cache**: Menampilkan kueri SQL dinamis/statis terberat beserta konsumsi CPU dan durasi eksekusi.
+  - **Workload Management (WLM)**: Mengatur kelas prioritas transaksi agar kueri analitik berat tidak melumpuhkan transaksi kasir/OLTP.
+
+---
+
+### 4. SQL Server Management Studio (SSMS) & Diagnostik
+Pusat kendali administratif dan diagnostik resmi Microsoft SQL Server dan Azure SQL.
+- **Komponen Diagnostik Utama**:
+  - **Activity Monitor**: Panel real-time menampilkan beban CPU, task yang menunggu antrean, volume I/O data file (MB/s), dan Batch Requests/sec.
+  - **Extended Events (XEvents)**: Mekanisme logging event berkecepatan tinggi yang menggantikan SQL Profiler lama tanpa membebani performa CPU server.
+  - **Query Store**: Kotak hitam internal database yang merekam histori perubahan query plan, mendeteksi regresi performa, dan menyediakan fitur Plan Forcing.
+
+---
+
+### 5. EDB Postgres Enterprise Manager (PEM)
+Platform manajemen enterprise khusus untuk database PostgreSQL dan EDB Postgres Advanced Server berskala besar.
+- **Arsitektur**:
+  - **PEM Server**: Instans PostgreSQL terpusat yang menyimpan metadata monitoring dan aturan alert.
+  - **PEM Agent**: Terpasang di server database untuk membaca log engine dan status sistem operasi.
+- **Fitur Kunci**:
+  - **Postgres Expert Rules**: Menganalisis konfigurasi database (`shared_buffers`, `work_mem`) dan memeriksa kepatuhan standar keamanan secara berkala.
+  - **SQL Profiler**: Melacak query bermasalah langsung dari antarmuka web.
+  - **Peta Replikasi Streaming**: Diagram topologi menampilkan lag replikasi antara primary dan standby dalam satuan byte dan detik.
+
+---
+
+### 6. Telemetri Infrastruktur & Host Server (Node Exporter)
+Performa database dibatasi langsung oleh stabilitas server fisik atau VM tempat database berjalan. Metrik wajib pada dashboard DBA:
+- **Saturasi Disk I/O (`%util` & IOPS)**: Utilisasi disk 100% secara kontinu menandakan antrean disk jenuh.
+- **CPU I/O Wait (`%iowait`)**: Siklus CPU terbuang sia-sia karena menunggu data dibaca dari disk atau ditulis ke WAL/Redo log.
+- **Memory Swap Thrashing**: Jika OS mulai memindahkan buffer pool database ke partisi Swap, latensi query akan melonjak drastis. Disarankan menyetel `vm.swappiness = 1`.
+- **Kapasitas Inode Filesystem (`df -i`)**: Jika direktori temporary atau arsip WAL menghabiskan inode, database akan gagal menulis data dengan galat 'Disk Full', meskipun sisa kapasitas gigabyte disk masih banyak.""",
+        },
+    },
+    {
+        "slug": "tablespaces-blocking-locks-and-mirroring-guide",
+        "category_slug": "architecture",
+        "engine": "Universal",
+        "en": {
+            "title": "Production Architecture: Tablespaces, Lock Blocking Trees & Database Mirroring",
+            "summary": "Mastering storage allocation in tablespaces, diagnosing root-cause blocking session trees, and architecting database mirroring & replication topologies.",
+            "body": """### Production Database Storage & Concurrency Architecture
+
+---
+
+### 1. Tablespaces & Physical Storage Hierarchy
+Relational databases decouple logical data structures from physical storage using Tablespaces:
+- **Logical to Physical Mapping**:
+  - **Database** → Contains multiple **Tablespaces**.
+  - **Tablespace** → Composed of one or more physical **Data Files** (`.dbf`, `.ibd`, `.mdf`).
+  - **Segment** → An individual table or index structure.
+  - **Extent** → A contiguous set of database pages/blocks (typically 64KB - 1MB).
+  - **Page / Block** → Smallest unit of I/O (8KB in PostgreSQL/SQL Server, 8KB/16KB in Oracle/MySQL).
+- **High Water Mark (HWM)**:
+  - In Oracle and transactional databases, the HWM indicates the highest block ever formatted for data.
+  - Massive `DELETE` statements do NOT lower the HWM; table scans continue reading empty blocks up to the HWM until an `ALTER TABLE ... SHRINK SPACE` or `VACUUM FULL` is executed.
+- **Autoextend Best Practices**:
+  - Never allow percentage-based autoextend (e.g., `AUTOEXTEND ON NEXT 10%`) as large files cause massive allocation pauses. Use fixed allocation steps (e.g., `NEXT 512M MAXSIZE 32G`).
+
+---
+
+### 2. Lock Blocking Chains & Deadlock Diagnostics
+Concurrency control mechanisms protect ACID properties but introduce blocking under contention:
+- **Lock Hierarchy**:
+  - **Shared Lock (S)**: Held during read operations; allows multiple readers.
+  - **Exclusive Lock (X)**: Held during write operations (`INSERT`, `UPDATE`, `DELETE`); blocks both readers and writers.
+  - **Intent Locks (IS, IX)**: Indicate locking intention at lower levels (row/page) to prevent table-level locks from acquiring conflicting permissions.
+- **The Blocker Tree**:
+  - When Session A locks Row 1, Session B waits for Row 1 while locking Row 2, and Session C waits for Row 2.
+  - **Root Blocker**: The head of the chain (Session A) is NOT waiting on any other session, but holds the lock blocking everyone downstream.
+  - **Diagnostic Queries**:
+    - **Oracle**: Query `v$session` checking `BLOCKING_SESSION`.
+    - **PostgreSQL**: Query `pg_locks` self-joined on `locktype`, `relation`, and `tuple`.
+    - **SQL Server**: Inspect `sys.dm_exec_requests` checking `blocking_session_id`.
+- **Deadlock Resolution**:
+  - A deadlock occurs when a cycle forms in the Wait-For Graph (Session A holds X and waits for Y; Session B holds Y and waits for X).
+  - The database deadlock detection engine identifies the cycle and kills one session (the "deadlock victim"), rolling back its transaction.
+
+---
+
+### 3. Database Mirroring & High Availability Topologies
+To protect against hardware and datacenter failures, databases synchronize transaction logs to standby instances:
+- **SQL Server AlwaysOn Availability Groups (formerly Database Mirroring)**:
+  - **Principal (Primary)**: Handles read-write client transactions.
+  - **Secondary (Mirror)**: Replays incoming transaction log records in memory and disk.
+  - **Synchronous Commit**: Primary waits for confirmation that the log block is written to disk on the secondary before returning commit success (Zero data loss, slight network latency penalty).
+  - **Asynchronous Commit**: Primary commits immediately without waiting (Maximum performance, minimal RPO data loss risk).
+- **Oracle Active Data Guard**:
+  - **Primary**: Transmits Redo Log buffers via Log Network Server (LNS).
+  - **Physical Standby**: Remote File Server (RFS) receives redo logs and applies them using Redo Apply (MRP).
+  - **Fast-Start Failover (FSFO)**: Automatically promotes the standby if the primary heartbeat drops.
+- **PostgreSQL Streaming Replication + Patroni**:
+  - Standby nodes connect via physical replication slots and stream WAL records continuously.
+  - **Patroni**: Utilizes an external consensus store (Consul, Etcd, or Raft) to manage automated leader election and split-brain prevention.""",
+        },
+        "id": {
+            "title": "Arsitektur Produksi: Tablespace, Antrean Blocking Lock & Mirroring Database",
+            "summary": "Memahami alokasi ruang pada tablespace, mendiagnosis akar masalah rantai blocking lock, dan merancang topologi mirroring database.",
+            "body": """### Arsitektur Penyimpanan & Konkurensi Database Produksi
+
+---
+
+### 1. Tablespace & Hirarki Penyimpanan Fisik
+Database enterprise memisahkan struktur data logis dari file fisik menggunakan konsep Tablespace:
+- **Pemetaan Logis ke Fisik**:
+  - **Database** → Terdiri dari beberapa **Tablespace**.
+  - **Tablespace** → Berisi satu atau lebih file data fisik di disk (`.dbf`, `.ibd`, `.mdf`).
+  - **Segment** → Satu struktur tabel atau indeks.
+  - **Extent** → Sekumpulan blok halaman disk yang berurutan (biasanya 64KB - 1MB).
+  - **Page / Block** → Unit I/O terkecil (8KB di PostgreSQL/SQL Server, 8KB/16KB di Oracle/MySQL).
+- **High Water Mark (HWM)**:
+  - Garis batas tertinggi blok data yang pernah diisi oleh database.
+  - Operasi `DELETE` massal TIDAK menurunkan HWM; pemindaian tabel (full table scan) akan tetap membaca blok-blok kosong tersebut sampai dilakukan `ALTER TABLE ... SHRINK SPACE` atau `VACUUM FULL`.
+- **Praktik Terbaik Autoextend**:
+  - Hindari penambahan ukuran berdasarkan persentase (`AUTOEXTEND ON NEXT 10%`) karena file besar akan memicu jeda I/O panjang saat alokasi. Gunakan penambahan tetap (misal: `NEXT 512M MAXSIZE 32G`).
+
+---
+
+### 2. Rantai Blocking Lock & Diagnostik Deadlock
+Kontrol konkurensi menjamin sifat ACID tetapi menimbulkan antrean (blocking) saat terjadi perebutan baris yang sama:
+- **Hirarki Kunci (Locks)**:
+  - **Shared Lock (S)**: Dimiliki saat query baca (`SELECT`); mengizinkan banyak pembaca sekaligus.
+  - **Exclusive Lock (X)**: Dimiliki saat operasi tulis (`INSERT`, `UPDATE`, `DELETE`); mengunci pembaca dan penulis lain.
+  - **Intent Locks (IS, IX)**: Mengindikasikan niat penguncian di level baris/halaman agar tabel tidak dikunci secara eksklusif oleh proses lain.
+- **Rantai Antrean (Blocker Tree)**:
+  - Saat Sesi A mengunci Baris 1, Sesi B menunggu Baris 1 sambil memegang Baris 2, dan Sesi C menunggu Baris 2.
+  - **Root Blocker**: Sesi kepala (Sesi A) tidak menunggu siapa pun, namun menjadi penyebab seluruh sesi di belakangnya macet.
+  - **Kueri Diagnostik**:
+    - **Oracle**: Cek view `v$session` pada kolom `BLOCKING_SESSION`.
+    - **PostgreSQL**: Kueri `pg_locks` yang dihubungkan ke `pg_stat_activity`.
+    - **SQL Server**: Periksa `sys.dm_exec_requests` pada kolom `blocking_session_id`.
+- **Penyelesaian Deadlock**:
+  - Deadlock terjadi saat terbentuk siklus saling tunggu (Sesi A memegang X dan menunggu Y; Sesi B memegang Y dan menunggu X).
+  - Mesin database secara otomatis mendeteksi siklus ini dan mematikan salah satu transaksi (Deadlock Victim) lalu melakukan rollback agar sistem kembali berjalan normal.
+
+---
+
+### 3. Mirroring & Topologi High Availability (HA)
+Untuk melindungi data dari kegagalan server fisik atau bencana pusat data, transaksi disinkronkan ke replika standby:
+- **SQL Server AlwaysOn Availability Groups (Database Mirroring)**:
+  - **Principal**: Memproses transaksi baca dan tulis dari aplikasi.
+  - **Secondary (Mirror)**: Menerima dan menuliskan catatan transaksi (transaction log) ke disk replika.
+  - **Synchronous Commit**: Transaksi di primary baru dianggap sukses setelah standby mengonfirmasi catatan tersimpan di disk (Jaminan Zero Data Loss, RPO = 0).
+  - **Asynchronous Commit**: Transaksi di primary langsung di-commit tanpa menunggu standby (Performa maksimal, sedikit risiko data tertinggal jika primary tiba-tiba padam).
+- **Oracle Active Data Guard**:
+  - **Primary**: Mengirim Redo Log buffer secara langsung melalui proses LNS (Log Network Server).
+  - **Standby Fisik**: Menerima redo log dan mengaplikasikannya ke data file menggunakan proses MRP (Managed Recovery Process).
+  - **Fast-Start Failover (FSFO)**: Mengalihkan peran standby menjadi primary secara otomatis saat sinyal heartbeat terputus.
+- **PostgreSQL Streaming Replication + Patroni**:
+  - Standby terhubung melalui physical replication slot dan mereplikasi data WAL secara streaming kontinu.
+  - **Patroni**: Menggunakan konsensus terdistribusi (Etcd, Consul, atau Raft) untuk memilih leader baru secara otomatis tanpa risiko split-brain.""",
+        },
+    },
+    {
+        "slug": "kubernetes-and-docker-for-enterprise-databases",
+        "category_slug": "architecture",
+        "engine": "Universal",
+        "en": {
+            "title": "Containerized Databases: Kubernetes StatefulSets, DB Operators & Docker Runtime Optimization",
+            "summary": "Production guide for running stateful databases on Kubernetes and Docker: StatefulSets, StorageClasses, CloudNativePG/CrunchyData operators, shared memory IPC, and cgroup limits.",
+            "body": """### Running Stateful Databases on Containers: Kubernetes & Docker
+
+---
+
+### 1. Kubernetes for Databases: StatefulSets vs Deployments
+Stateless web applications use `Deployments`, but relational databases require `StatefulSets`:
+- **Stable Network Identity**: Pods receive predictable hostnames (`postgres-cluster-0`, `postgres-cluster-1`). Standby nodes always know the exact hostname of the primary node.
+- **Ordered Deployment and Scaling**: Pod `db-0` must be healthy and running before `db-1` is launched, preventing concurrent initialization conflicts.
+- **Persistent Storage Binding**: Each pod template specifies a `volumeClaimTemplates` which dynamically provisions an independent PersistentVolume (PV) that stays attached even if the pod restarts on another worker node.
+
+---
+
+### 2. Kubernetes StorageClasses & I/O Performance
+Storage layer selection determines database transactions per second (TPS):
+- **Local NVMe SSDs (Local Persistent Volumes)**:
+  - Delivers direct hardware I/O performance (sub-millisecond latency, zero network hops).
+  - Requires database-level replication (Patroni, InnoDB Cluster) to protect against local node disk failure.
+- **Network Block Storage (AWS EBS gp3/io2, Ceph, GCP pd-ssd)**:
+  - Allows easy pod migration across worker nodes.
+  - Suffers from network latency penalties and IOPS bursting limits; must be provisioned with guaranteed provisioned IOPS.
+
+---
+
+### 3. Kubernetes Database Operators (The Modern Standard)
+Never deploy raw database YAML manifests in production. Use battle-tested Kubernetes Database Operators:
+- **CloudNativePG & Crunchy Data PGO (PostgreSQL)**:
+  - Automated continuous WAL archiving to S3/MinIO/GCS.
+  - Point-In-Time Recovery (PITR) to any second in history.
+  - Automated failover within 5 seconds with zero human intervention.
+  - Seamless rolling minor version upgrades (`17.0` to `17.1`).
+- **Percona Kubernetes Operator for MySQL / MongoDB**:
+  - Automated ProxySQL load balancing for read-write query splitting.
+  - Automatic backup scheduling and physical restore verification.
+
+---
+
+### 4. Pod Anti-Affinity & Resource Protections
+- **Pod Anti-Affinity**:
+  - Always enforce `topologyKey: kubernetes.io/hostname` to ensure the Primary and Standby pods are NEVER scheduled on the same physical Kubernetes worker node.
+- **cgroup Limits & OOM Killer**:
+  - In Kubernetes, if a container exceeds `resources.limits.memory`, the Linux kernel OOM Killer immediately terminates the pod (`ExitCode 137`).
+  - Always set DB buffer caches (`shared_buffers`, `innodb_buffer_pool_size`) to at most 60-70% of the container memory limit, leaving 30% headroom for OS threads, query work memory, and connection pools.
+
+---
+
+### 5. Docker Runtime Tuning for Relational Databases
+When running databases in Docker containers (local development or standalone VMs):
+- **Shared Memory Sizing (`/dev/shm`)**:
+  - The default Docker shared memory size is only **64 MB**.
+  - PostgreSQL parallel queries, hash joins, and IPC rely on shared memory. Running analytical queries in standard Docker causes immediate crashes with `could not resize shared memory segment`.
+  - **Fix**: Always specify `--shm-size=1g` (or mount a `tmpfs` volume to `/dev/shm`).
+- **Storage: Named Volumes vs Bind Mounts**:
+  - **Named Volumes**: Docker manages files inside `/var/lib/docker/volumes/` with native Linux filesystem performance.
+  - **Bind Mounts**: Mounting host directories is convenient for backups, but on macOS/Windows it incurs massive filesystem translation virtualization penalties.
+- **Avoid Ephemeral Layer Writes**:
+  - Never write database files to the container's overlay2 copy-on-write root filesystem; it causes severe I/O degradation and data loss when containers are recreated.""",
+        },
+        "id": {
+            "title": "Database Kontainer: Kubernetes StatefulSet, Operator Database & Optimasi Runtime Docker",
+            "summary": "Panduan produksi menjalankan database stateful di Kubernetes dan Docker: StatefulSet, StorageClass, operator CloudNativePG/CrunchyData, memori bersama IPC, dan proteksi cgroup.",
+            "body": """### Menjalankan Database Stateful di Kontainer: Kubernetes & Docker
+
+---
+
+### 1. Kubernetes untuk Database: StatefulSet vs Deployment
+Aplikasi web stateless cocok menggunakan `Deployment`, namun database relasional menuntut `StatefulSet`:
+- **Identitas Jaringan yang Stabil**: Pod memiliki nama host yang konsisten (`postgres-cluster-0`, `postgres-cluster-1`). Node standby selalu tahu alamat primary tanpa bergantung pada IP dinamis.
+- **Urutan Deployment & Scaling**: Pod `db-0` harus dipastikan aktif dan sehat sebelum `db-1` dibuat, mencegah konflik inisialisasi skema bersamaan.
+- **Pengikatan Disk Persisten**: Setiap pod memiliki `volumeClaimTemplates` yang membuat PersistentVolume (PV) unik dan tetap terikat meskipun pod berpindah node fisik.
+
+---
+
+### 2. StorageClass Kubernetes & Performa I/O
+Pemilihan media penyimpanan menentukan throughput transaksi (TPS) database:
+- **Local NVMe SSD (Local Persistent Volume)**:
+  - Menyediakan performa baca-tulis perangkat keras langsung tanpa latensi jaringan (sub-millisecond).
+  - Membutuhkan replikasi level database (Patroni, InnoDB Cluster) untuk mencegah kehilangan data jika disk fisik server rusak.
+- **Network Block Storage (Ceph, AWS EBS gp3, GCP pd-ssd)**:
+  - Mempermudah pemindahan pod antar worker node jika satu server mati.
+  - Menimbulkan penalti latensi jaringan; wajib dikonfigurasi dengan batas IOPS terjamin.
+
+---
+
+### 3. Operator Database Kubernetes (Standar Produksi)
+Jangan pernah men-deploy database produksi menggunakan file YAML raw biasa. Gunakan Operator Database:
+- **CloudNativePG & Crunchy Data PGO (PostgreSQL)**:
+  - Pengarsipan otomatis file WAL ke object storage S3/GCS.
+  - Point-In-Time Recovery (PITR) untuk mengembalikan database ke detik tertentu.
+  - Failover otomatis dalam 5 detik saat primary padam tanpa campur tangan manusia.
+  - Upgrade versi minor bergulir (rolling update) tanpa downtime.
+- **Percona Kubernetes Operator untuk MySQL / MongoDB**:
+  - Integrasi ProxySQL otomatis untuk memisahkan kueri baca dan tulis.
+  - Penjadwalan backup rutin dan verifikasi restorasi otomatis.
+
+---
+
+### 4. Pod Anti-Affinity & Pencegahan OOM Killer
+- **Pod Anti-Affinity**:
+  - Wajib menyetel aturan `topologyKey: kubernetes.io/hostname` agar pod Primary dan Secondary TIDAK PERNAH dijadwalkan pada server fisik yang sama.
+- **Batas Memori cgroup & OOM Killer**:
+  - Jika kontainer melampaui `resources.limits.memory`, kernel Linux akan mengeksekusi OOM Killer yang mematikan database seketika (`ExitCode 137`).
+  - Setel alokasi buffer cache (`shared_buffers`, `innodb_buffer_pool_size`) maksimal 60-70% dari batas memori kontainer, sisakan 30% untuk memori koneksi dan operasi sorting kueri.
+
+---
+
+### 5. Optimasi Runtime Docker untuk Database
+Saat menjalankan database menggunakan Docker container:
+- **Kapasitas Shared Memory (`/dev/shm`)**:
+  - Default shared memory Docker hanya sebesar **64 MB**.
+  - Operasi paralel kueri PostgreSQL dan hash join bergantung pada shared memory. Menjalankan kueri analitik berat pada Docker standar akan langsung memicu crash galat `could not resize shared memory segment`.
+  - **Solusi**: Selalu jalankan kontainer dengan flag `--shm-size=1g` (atau pasang volume tmpfs di `/dev/shm`).
+- **Penyimpanan: Named Volume vs Bind Mount**:
+  - **Named Volume**: Dikelola langsung oleh Docker di `/var/lib/docker/volumes/` dengan performa I/O Linux native.
+  - **Bind Mount**: Menghubungkan folder host langsung ke container; sangat lambat jika dijalankan pada host macOS/Windows karena lapisan virtualisasi filesystem.
+- **Hindari Layer Ephemeral Kontainer**:
+  - Jangan pernah menyimpan data database di layer root overlay2 kontainer karena kinerjanya sangat lambat dan data akan lenyap seketika saat kontainer di-recreate.""",
         },
     },
 ]
