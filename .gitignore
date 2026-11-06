@@ -34,4 +34,5 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
-backend/sandbox_storage/*.db
+backend/sandbox_storage/*
+!backend/sandbox_storage/.gitkeep
