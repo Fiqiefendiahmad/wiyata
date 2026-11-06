@@ -17,6 +17,7 @@ from app.adapters.postgres import PostgresAdapter
 from app.adapters.mysql import MySQLAdapter
 from app.adapters.oracle import OracleAdapter
 from app.adapters.mssql import MSSQLAdapter
+from app.adapters.db2 import Db2Adapter
 from app.config import settings
 from app.deps import get_db
 from app.models.sandbox import Sandbox
@@ -93,6 +94,10 @@ def _get_adapter(engine: str, storage_ref: str) -> DatabaseAdapter:
         adapter = MSSQLAdapter()
         adapter.connect({"path": storage_ref})
         return adapter
+    elif engine == "db2":
+        adapter = Db2Adapter()
+        adapter.connect({"path": storage_ref})
+        return adapter
     else:
         adapter = SQLiteAdapter()
         adapter.connect({"path": storage_ref})
@@ -140,6 +145,11 @@ async def create_sandbox(
         db_path = STORAGE_DIR / f"{sandbox_id}.db"
         storage_ref = str(db_path)
         engine_version = body.engine_version or "2022 (Transpiled)"
+        _init_sqlite_db(db_path, template_slug)
+    elif engine == "db2":
+        db_path = STORAGE_DIR / f"{sandbox_id}.db"
+        storage_ref = str(db_path)
+        engine_version = body.engine_version or "11.5 (Transpiled)"
         _init_sqlite_db(db_path, template_slug)
     else:
         # Default to SQLite

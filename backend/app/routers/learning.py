@@ -11,6 +11,7 @@ import pymysql
 from app.adapters.sqlite import SQLiteAdapter
 from app.adapters.oracle import OracleAdapter
 from app.adapters.mssql import MSSQLAdapter
+from app.adapters.db2 import Db2Adapter
 from app.config import settings
 from app.templates.datasets import TEMPLATES
 import sqlglot
@@ -46,7 +47,7 @@ ORDER BY stock ASC;""",
             "Gunakan klausul WHERE dengan kondisi 'stock < 35'.",
             "Urutkan baris hasil akhir menggunakan 'ORDER BY stock ASC'."
         ],
-        "supported_engines": ["sqlite", "postgres", "mysql"],
+        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql", "db2"],
     },
     {
         "slug": "academic-grade-a",
@@ -80,7 +81,7 @@ FROM enrollments e
             "Lakukan JOIN ke courses pada e.course_id = c.id.",
             "Tambahkan filter WHERE e.grade = 'A' dan gunakan alias kolom AS student_name dan AS course_title."
         ],
-        "supported_engines": ["sqlite", "postgres", "mysql"],
+        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql", "db2"],
     },
     {
         "slug": "banking-priority-accounts",
@@ -114,7 +115,7 @@ JOIN customers c ON a.customer_id = c.customer_id
             "Gunakan dua filter pada WHERE: a.status = 'ACTIVE' AND a.balance > 30000000.0.",
             "Urutkan dengan ORDER BY a.balance DESC."
         ],
-        "supported_engines": ["sqlite", "postgres", "mysql"],
+        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql", "db2"],
     },
     {
         "slug": "top-spending-customers",
@@ -149,7 +150,7 @@ GROUP BY c.id, c.first_name, c.city;""",
             "Kelompokkan dengan GROUP BY c.id, c.first_name, c.city.",
             "Gunakan ORDER BY total_spent DESC dan LIMIT 5."
         ],
-        "supported_engines": ["sqlite", "postgres", "mysql"],
+        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql", "db2"],
     },
     {
         "slug": "high-volume-authors",
@@ -183,7 +184,7 @@ GROUP BY a.id, a.username;""",
             "Filter kelompok hasil agregasi menggunakan HAVING COUNT(p.id) > 1.",
             "Urutkan hasil dengan ORDER BY total_views DESC."
         ],
-        "supported_engines": ["sqlite", "postgres", "mysql"],
+        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql", "db2"],
     },
     {
         "slug": "monthly-transfer-channels",
@@ -215,7 +216,7 @@ ORDER BY total_volume DESC;""",
             "Filter dengan WHERE transaction_type = 'TRANSFER'.",
             "Kelompokkan berdasarkan channel dan hitung SUM(amount) serta AVG(fee)."
         ],
-        "supported_engines": ["sqlite", "postgres", "mysql"],
+        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql", "db2"],
     },
     {
         "slug": "dormant-customers-anti-join",
@@ -249,7 +250,7 @@ ORDER BY c.id ASC;""",
             "Saring baris yang tidak memiliki pasangan pesanan dengan WHERE o.id IS NULL.",
             "Urutkan dengan ORDER BY c.id ASC."
         ],
-        "supported_engines": ["sqlite", "postgres", "mysql"],
+        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql", "db2"],
     },
     {
         "slug": "cumulative-transaction-ledger",
@@ -281,7 +282,7 @@ ORDER BY transaction_id ASC;""",
             "Beri alias AS running_total.",
             "Pastikan query luar diurutkan dengan ORDER BY transaction_id ASC."
         ],
-        "supported_engines": ["sqlite", "postgres", "mysql"],
+        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql", "db2"],
     },
     {
         "slug": "product-price-category-rank",
@@ -313,7 +314,7 @@ ORDER BY category_id ASC, price_rank ASC;""",
             "Urutkan dalam jendela kategori dengan ORDER BY price DESC.",
             "Pengurutan luar harus berupa ORDER BY category_id ASC, price_rank ASC."
         ],
-        "supported_engines": ["sqlite", "postgres", "mysql"],
+        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql", "db2"],
     },
     {
         "slug": "category-revenue-cte",
@@ -357,7 +358,7 @@ ORDER BY cs.total_revenue DESC;""",
             "Hitung total pendapatan dengan SUM(oi.quantity * oi.unit_price).",
             "Hubungkan CTE dengan tabel categories pada cs.category_id = c.id dan urutkan dari total_revenue terbesar."
         ],
-        "supported_engines": ["sqlite", "postgres", "mysql"],
+        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql", "db2"],
     },
     {
         "slug": "tablespace-capacity-alert",
@@ -390,7 +391,7 @@ ORDER BY used_percent DESC;""",
             "Filter kondisi menggunakan WHERE (used_mb * 100.0) / allocated_mb >= 80.0.",
             "Urutkan hasil dengan ORDER BY used_percent DESC."
         ],
-        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql"],
+        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql", "db2"],
     },
     {
         "slug": "blocking-sessions-root-cause",
@@ -429,7 +430,7 @@ WHERE s.blocked_by_spid IS NULL
             "Filter tabel induk dengan kondisi blocked_by_spid IS NULL AND spid IN (subquery).",
             "Gunakan klausa DISTINCT untuk menghindari duplikasi SPID root."
         ],
-        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql"],
+        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql", "db2"],
     },
     {
         "slug": "replication-mirroring-lag-monitor",
@@ -463,7 +464,7 @@ ORDER BY lag_seconds DESC;""",
             "Gabungkan kondisi dengan operator OR: lag_seconds > 10.0 OR replay_queue_kb > 500.0 OR sync_state = 'DESYNCHRONIZED'.",
             "Urutkan hasil kueri dengan ORDER BY lag_seconds DESC."
         ],
-        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql"],
+        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql", "db2"],
     },
     {
         "slug": "k8s-pod-buffer-cache-ratio",
@@ -507,7 +508,7 @@ ORDER BY cache_hit_pct ASC;""",
             "Bulatkan ke 2 tempat desimal menggunakan fungsi ROUND(..., 2).",
             "Urutkan dengan ORDER BY cache_hit_pct ASC agar pod bermasalah tampil paling atas."
         ],
-        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql"],
+        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql", "db2"],
     },
     {
         "slug": "deadlock-contention-hotspot",
@@ -543,7 +544,7 @@ ORDER BY total_wait_sec DESC;""",
             "Kelompokkan dengan GROUP BY db_user, lock_type.",
             "Gunakan klausa HAVING SUM(wait_time_seconds) > 30 untuk menyaring antrean kritis."
         ],
-        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql"],
+        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql", "db2"],
     },
     {
         "slug": "tablespace-autoextend-exhaustion",
@@ -595,7 +596,7 @@ ORDER BY allocated_mb DESC;""",
             "Periksa kondisi (autoextensible = 0 AND used_mb/allocated_mb >= 0.85) OR (autoextensible = 1 AND allocated_mb >= max_mb * 0.90).",
             "Urutkan hasil dengan ORDER BY allocated_mb DESC."
         ],
-        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql"],
+        "supported_engines": ["sqlite", "postgres", "mysql", "oracle", "mssql", "db2"],
     },
 ]
 
@@ -1221,6 +1222,32 @@ async def submit_exercise(slug: str, body: ChallengeSubmitRequest) -> ChallengeS
 
             adapter = MSSQLAdapter()
             adapter._conn = conn
+            start_time = time.perf_counter()
+            user_res = adapter.execute(body.query, max_rows=100, read_only=True)
+            elapsed_ms = round((time.perf_counter() - start_time) * 1000, 2)
+            conn.close()
+            if not user_res.get("success"):
+                ref_columns, ref_rows, user_cols, user_rows, elapsed_ms, err_msg = ref_columns, ref_rows, [], [], elapsed_ms, user_res.get("error")
+            else:
+                ref_columns, ref_rows, user_cols, user_rows, elapsed_ms, err_msg = ref_columns, ref_rows, user_res.get("columns", []), user_res.get("rows", []), elapsed_ms, None
+        elif engine == "db2":
+            conn = sqlite3.connect(":memory:")
+            conn.row_factory = sqlite3.Row
+            seed_sql = TEMPLATES.get(dataset_slug, TEMPLATES["ecommerce"])["sql"]
+            conn.executescript(seed_sql)
+            cur_ref = conn.execute(challenge["solution_sql"])
+            ref_columns = [d[0] for d in cur_ref.description]
+            ref_rows = [list(r) for r in cur_ref.fetchall()]
+
+            adapter = Db2Adapter()
+            adapter._conn = conn
+            try:
+                adapter._conn.execute(
+                    "CREATE VIEW IF NOT EXISTS sysibm_sysdummy1 AS SELECT 'Y' AS IBMREQD;"
+                )
+                adapter._conn.commit()
+            except Exception:
+                pass
             start_time = time.perf_counter()
             user_res = adapter.execute(body.query, max_rows=100, read_only=True)
             elapsed_ms = round((time.perf_counter() - start_time) * 1000, 2)

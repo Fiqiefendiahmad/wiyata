@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 
 class SandboxCreate(BaseModel):
-    engine: str = Field(default="sqlite", pattern="^(sqlite|postgres|mysql|oracle|mssql)$")
+    engine: str = Field(default="sqlite", pattern="^(sqlite|postgres|mysql|oracle|mssql|db2)$")
     engine_version: str | None = None
     template_slug: str | None = "ecommerce"
 

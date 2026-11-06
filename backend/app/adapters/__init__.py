@@ -3,6 +3,7 @@ from app.adapters.postgres import PostgresAdapter
 from app.adapters.mysql import MySQLAdapter
 from app.adapters.oracle import OracleAdapter
 from app.adapters.mssql import MSSQLAdapter
+from app.adapters.db2 import Db2Adapter
 
 ADAPTER_REGISTRY: dict[str, type] = {
     "sqlite": SQLiteAdapter,
@@ -10,6 +11,7 @@ ADAPTER_REGISTRY: dict[str, type] = {
     "mysql": MySQLAdapter,
     "oracle": OracleAdapter,
     "mssql": MSSQLAdapter,
+    "db2": Db2Adapter,
 }
 
 __all__ = [
@@ -19,4 +21,5 @@ __all__ = [
     "MySQLAdapter",
     "OracleAdapter",
     "MSSQLAdapter",
+    "Db2Adapter",
 ]

@@ -202,7 +202,7 @@ export function QueryWorkbench({
   };
 
   const [activeEngine, setActiveEngine] = useState<
-    "sqlite" | "postgres" | "mysql" | "oracle" | "mssql"
+    "sqlite" | "postgres" | "mysql" | "oracle" | "mssql" | "db2"
   >("sqlite");
 
   // Initialize or fetch sandbox schema
@@ -216,7 +216,7 @@ export function QueryWorkbench({
 
   const createSandbox = async (
     templateSlug: string,
-    engineChoice?: "sqlite" | "postgres" | "mysql" | "oracle" | "mssql"
+    engineChoice?: "sqlite" | "postgres" | "mysql" | "oracle" | "mssql" | "db2"
   ) => {
     const engineToUse = engineChoice || activeEngine;
     setSchemaStatus("loading");
@@ -240,7 +240,7 @@ export function QueryWorkbench({
   };
 
   const handleEngineChange = (
-    engine: "sqlite" | "postgres" | "mysql" | "oracle" | "mssql"
+    engine: "sqlite" | "postgres" | "mysql" | "oracle" | "mssql" | "db2"
   ) => {
     setActiveEngine(engine);
     createSandbox(activeTemplate, engine);
@@ -425,6 +425,8 @@ export function QueryWorkbench({
       explainSql = `EXPLAIN PLAN FOR ${query.trim()};`;
     } else if (activeEngine === "mssql") {
       explainSql = `SET SHOWPLAN_TEXT ON; ${query.trim()};`;
+    } else if (activeEngine === "db2") {
+      explainSql = `EXPLAIN PLAN FOR ${query.trim()};`;
     }
 
     try {
@@ -552,6 +554,8 @@ export function QueryWorkbench({
                 ? "Oracle 23ai (SQLGlot AST Transpilation Sandbox)"
                 : activeEngine === "mssql"
                 ? "SQL Server 2022 (T-SQL AST Transpilation Sandbox)"
+                : activeEngine === "db2"
+                ? "IBM Db2 11.5 (ANSI / SQLGlot AST Transpilation Sandbox)"
                 : "SQLite 3.45.0 (Isolated Native Sandbox)"
             }
             className="rounded-lg bg-slate-900 px-2.5 py-1 border border-slate-700/80 text-[#F2B84B] font-bold"
@@ -564,6 +568,8 @@ export function QueryWorkbench({
               ? "Oracle 23ai (Transpiled)"
               : activeEngine === "mssql"
               ? "SQL Server 2022 (Transpiled)"
+              : activeEngine === "db2"
+              ? "IBM Db2 11.5 (Transpiled)"
               : "SQLite 3.45"}
           </span>
           <span className="hidden sm:inline-block rounded-lg bg-slate-900/60 px-2 py-1 border border-slate-800 text-slate-400 capitalize">
@@ -621,6 +627,12 @@ export function QueryWorkbench({
                 name: "SQL Server",
                 badge: "2022",
                 type: isId ? "Emulasi AST Transpiled T-SQL" : "T-SQL AST Transpiled",
+              },
+              {
+                id: "db2" as const,
+                name: "IBM Db2",
+                badge: "11.5",
+                type: isId ? "Emulasi AST Transpiled ANSI/Db2" : "ANSI/Db2 AST Transpiled",
               },
             ].map((eng) => (
               <button
@@ -949,6 +961,7 @@ export function QueryWorkbench({
                 <option value="duckdb">DuckDB</option>
                 <option value="oracle">Oracle</option>
                 <option value="tsql">SQL Server (T-SQL)</option>
+                <option value="db2">IBM Db2</option>
               </select>
               <button
                 onClick={handleTranspile}

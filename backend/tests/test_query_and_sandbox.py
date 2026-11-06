@@ -160,10 +160,37 @@ async def test_multi_engine_sandboxes() -> None:
         assert schema_ms.status_code == 200
         assert any(t["name"] == "accounts" for t in schema_ms.json())
 
+        # 6. IBM Db2 sandbox (ANSI / Transpiled Emulation)
+        sb_db2 = await client.post("/api/v1/sandboxes", json={"engine": "db2", "template_slug": "banking"})
+        assert sb_db2.status_code == 201
+        db2_id = sb_db2.json()["id"]
+
+        exec_db2 = await client.post(
+            f"/api/v1/sandboxes/{db2_id}/execute",
+            json={"query": "SELECT balance FROM accounts FETCH FIRST 2 ROWS ONLY WITH UR;", "read_only": True},
+        )
+        assert exec_db2.status_code == 200
+        assert exec_db2.json()["success"] is True
+        assert len(exec_db2.json()["rows"]) == 2
+
+        # Test SYSIBM.SYSDUMMY1 compatibility
+        exec_dummy = await client.post(
+            f"/api/v1/sandboxes/{db2_id}/execute",
+            json={"query": "SELECT 'HELLO DB2' AS GREETING FROM SYSIBM.SYSDUMMY1;", "read_only": True},
+        )
+        assert exec_dummy.status_code == 200
+        assert exec_dummy.json()["success"] is True
+        assert exec_dummy.json()["rows"][0][0] == "HELLO DB2"
+
+        schema_db2 = await client.get(f"/api/v1/sandboxes/{db2_id}/schema")
+        assert schema_db2.status_code == 200
+        assert any(t["name"] == "ACCOUNTS" for t in schema_db2.json())
+
         # Clean up
         await client.delete(f"/api/v1/sandboxes/{lite_id}")
         await client.delete(f"/api/v1/sandboxes/{pg_id}")
         await client.delete(f"/api/v1/sandboxes/{my_id}")
         await client.delete(f"/api/v1/sandboxes/{ora_id}")
         await client.delete(f"/api/v1/sandboxes/{ms_id}")
+        await client.delete(f"/api/v1/sandboxes/{db2_id}")
 

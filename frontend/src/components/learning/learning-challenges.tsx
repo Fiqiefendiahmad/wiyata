@@ -103,7 +103,7 @@ export function LearningChallenges({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [result, setResult] = useState<VerificationResult | null>(null);
   const [activeEngine, setActiveEngine] = useState<
-    "sqlite" | "postgres" | "mysql" | "oracle" | "mssql"
+    "sqlite" | "postgres" | "mysql" | "oracle" | "mssql" | "db2"
   >("sqlite");
 
   // Filtering & Search
@@ -596,7 +596,7 @@ export function LearningChallenges({
                           : "text-slate-400 hover:text-white"
                       }`}
                     >
-                      MySQL 11
+                      MariaDB 11.3
                     </button>
                     <button
                       onClick={() => setActiveEngine("oracle")}
@@ -617,6 +617,16 @@ export function LearningChallenges({
                       }`}
                     >
                       SQL Server
+                    </button>
+                    <button
+                      onClick={() => setActiveEngine("db2")}
+                      className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+                        activeEngine === "db2"
+                          ? "bg-[#F2B84B] text-[#071A3A] shadow-xs"
+                          : "text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      IBM Db2
                     </button>
                   </div>
                 </div>

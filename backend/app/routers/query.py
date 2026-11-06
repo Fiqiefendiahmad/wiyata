@@ -1,3 +1,4 @@
+import re
 from typing import Any
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
@@ -78,17 +79,35 @@ async def explain_query_in_plain_language(body: QueryExplainNaturalRequest) -> d
 @router.post("/convert")
 async def convert_query(body: QueryConvertRequest) -> dict:
     try:
+        source_is_db2 = body.source_dialect.lower() == "db2"
+        target_is_db2 = body.target_dialect.lower() == "db2"
+
+        src = "postgres" if source_is_db2 else body.source_dialect
+        tgt = "postgres" if target_is_db2 else body.target_dialect
+
+        query_in = body.query
+        if source_is_db2:
+            query_in = re.sub(r"\bFETCH\s+FIRST\s+(\d+)\s+ROWS?\s+ONLY\b", r"LIMIT \1", query_in, flags=re.IGNORECASE)
+            query_in = re.sub(r"\s+WITH\s+(UR|CS|RS|RR)\s*;?\s*$", ";", query_in, flags=re.IGNORECASE).rstrip(";")
+            query_in = re.sub(r"\bSYSIBM\.SYSDUMMY1\b", "sysdummy1", query_in, flags=re.IGNORECASE)
+
         result = sqlglot.transpile(
-            body.query,
-            read=body.source_dialect,
-            write=body.target_dialect,
+            query_in,
+            read=src,
+            write=tgt,
             pretty=True,
         )
+        converted_sql = result[0] if result else ""
+
+        if target_is_db2:
+            converted_sql = re.sub(r"\bLIMIT\s+(\d+)\b", r"FETCH FIRST \1 ROWS ONLY", converted_sql, flags=re.IGNORECASE)
+            converted_sql = re.sub(r"\bsysdummy1\b", "SYSIBM.SYSDUMMY1", converted_sql, flags=re.IGNORECASE)
+
         return {
             "status": "success",
             "source_dialect": body.source_dialect,
             "target_dialect": body.target_dialect,
-            "query": result[0] if result else "",
+            "query": converted_sql,
             "warnings": [
                 "Verify semantic equivalence before running in production. Some dialect features may differ."
             ],
@@ -100,9 +119,17 @@ async def convert_query(body: QueryConvertRequest) -> dict:
 @router.post("/validate")
 async def validate_query(body: QueryValidateRequest) -> dict:
     try:
+        engine_is_db2 = body.engine.lower() == "db2"
+        read_engine = "postgres" if engine_is_db2 else body.engine
+        query_in = body.query
+        if engine_is_db2:
+            query_in = re.sub(r"\bFETCH\s+FIRST\s+(\d+)\s+ROWS?\s+ONLY\b", r"LIMIT \1", query_in, flags=re.IGNORECASE)
+            query_in = re.sub(r"\s+WITH\s+(UR|CS|RS|RR)\s*;?\s*$", ";", query_in, flags=re.IGNORECASE).rstrip(";")
+            query_in = re.sub(r"\bSYSIBM\.SYSDUMMY1\b", "sysdummy1", query_in, flags=re.IGNORECASE)
+
         sqlglot.parse(
-            body.query,
-            read=body.engine,
+            query_in,
+            read=read_engine,
             error_level=sqlglot.ErrorLevel.RAISE,
         )
         return {"valid": True, "engine": body.engine, "parser": "sqlglot"}
@@ -113,15 +140,26 @@ async def validate_query(body: QueryValidateRequest) -> dict:
 @router.post("/format")
 async def format_query(body: QueryFormatRequest) -> dict:
     try:
+        dialect_is_db2 = body.dialect.lower() == "db2"
+        read_dialect = "postgres" if dialect_is_db2 else body.dialect
+        query_in = body.query
+        if dialect_is_db2:
+            query_in = re.sub(r"\bFETCH\s+FIRST\s+(\d+)\s+ROWS?\s+ONLY\b", r"LIMIT \1", query_in, flags=re.IGNORECASE)
+            query_in = re.sub(r"\s+WITH\s+(UR|CS|RS|RR)\s*;?\s*$", ";", query_in, flags=re.IGNORECASE).rstrip(";")
+
         formatted = sqlglot.transpile(
-            body.query,
-            read=body.dialect,
-            write=body.dialect,
+            query_in,
+            read=read_dialect,
+            write=read_dialect,
             pretty=True,
         )
+        out_sql = formatted[0] if formatted else body.query
+        if dialect_is_db2:
+            out_sql = re.sub(r"\bLIMIT\s+(\d+)\b", r"FETCH FIRST \1 ROWS ONLY", out_sql, flags=re.IGNORECASE)
+
         return {
             "status": "success",
-            "query": formatted[0] if formatted else body.query,
+            "query": out_sql,
         }
     except Exception as exc:
         return {"status": "error", "error": str(exc)}

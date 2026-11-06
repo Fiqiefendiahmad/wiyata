@@ -238,6 +238,48 @@ Query Store merekam riwayat eksekusi kueri, rencana eksekusi (execution plan), d
 - **Extended Events**: Sistem pelacakan event terintegrasi langsung pada kernel SQL Server dengan overhead sangat rendah (< 1% CPU).`,
   },
   {
+    slug: "ibm-db2-11-5-hadr-tablespaces-wlm",
+    title: "IBM Db2 11.5 Architecture: HADR Replication, Tablespaces & Workload Manager",
+    titleId: "Arsitektur IBM Db2 11.5: Replikasi HADR, Tablespace & Workload Manager (WLM)",
+    category: "Architecture",
+    engine: "IBM Db2",
+    readTime: "7 min read",
+    summary:
+      "Enterprise deep dive into IBM Db2 11.5: High Availability Disaster Recovery (HADR), SMS/DMS tablespace management, and Workload Manager (WLM) prioritization.",
+    summaryId:
+      "Panduan arsitektur enterprise IBM Db2 11.5: Replikasi High Availability Disaster Recovery (HADR), alokasi tablespace SMS/DMS, dan Workload Manager (WLM).",
+    body: `### Core Storage Architecture: Tablespaces & Bufferpools
+IBM Db2 structures relational persistence across decoupled logical layers:
+- **Bufferpools**: Dedicated memory regions caching 4KB, 8KB, 16KB, or 32KB pages from disk.
+- **SMS (System-Managed Space)**: Operating system directories where files expand automatically (often used for temp tables).
+- **DMS (Database-Managed Space) & Automatic Storage**: Raw containers or dynamic filesystem paths allocated directly by Db2 with pre-allocated extents for high OLTP throughput.
+
+### 1. High Availability Disaster Recovery (HADR)
+HADR provides real-time transaction replication between Primary and Standby databases:
+- **Sync Modes**: \`SYNC\` (zero data loss), \`NEARSYNC\` (low latency), \`ASYNC\` (network friendly), and \`SUPERASYNC\` (WAN tolerance without impacting Primary write throughput).
+- **Read on Standby (RoS)**: Offloads read-only analytics queries to Standby nodes while the Primary processes high-concurrency writes.
+
+### 2. Workload Manager (WLM) & Resource Governance
+Db2 Workload Manager allows DBAs to enforce service level agreements (SLAs):
+- Categorizes database requests into service classes (e.g., Fast OLTP vs. Heavy Analytical Reporting).
+- Restricts runaway queries from monopolizing CPU cores or memory bufferpools using thresholds and execution timeouts.`,
+    bodyId: `### Arsitektur Penyimpanan IBM Db2: Tablespace & Bufferpool
+IBM Db2 memisahkan penyimpanan data dalam lapisan logis yang terstruktur:
+- **Bufferpool**: Alokasi RAM khusus yang men-cache halaman berukuran 4KB, 8KB, 16KB, atau 32KB dari disk.
+- **SMS (System-Managed Space)**: Direktori filesystem sistem operasi yang ukurannya bertambah dinamis.
+- **DMS (Database-Managed Space) & Automatic Storage**: Kontainer penyimpanan terkelola dengan alokasi extent berurutan untuk memaksimalkan throughput transaksi tinggi (OLTP).
+
+### 1. High Availability Disaster Recovery (HADR)
+HADR mereplikasi log transaksi secara real-time dari database Primary ke Standby:
+- **Mode Sinkronisasi**: \`SYNC\` (jaminan zero data loss), \`NEARSYNC\` (latensi rendah), \`ASYNC\`, dan \`SUPERASYNC\` (tahan latensi WAN).
+- **Read on Standby (RoS)**: Mengalihkan kueri pelaporan analitik ke server Standby sehingga server Primary tetap optimal memproses transaksi tulis.
+
+### 2. Workload Manager (WLM) & Regulasi Resource
+Db2 Workload Manager mengelompokkan kueri ke dalam kelas layanan (Service Class):
+- Memisahkan prioritas kueri OLTP kasir/perbankan dengan pelaporan analitik bulanan.
+- Mencegah kueri berat yang tidak efisien menghabiskan kapasitas CPU atau RAM melalui ambang batas (thresholds) otomatis.`,
+  },
+  {
     slug: "database-monitoring-golden-signals",
     title: "Database Observability Guide: The 4 Golden Signals, Exporters & PMM Runbooks",
     titleId: "Panduan Observabilitas Database: 4 Golden Signals, Exporter & Runbook PMM",
@@ -471,6 +513,7 @@ export function KnowledgeCenter({ language, onOpenLab }: KnowledgeCenterProps) {
               { id: "mysql", label: "MySQL" },
               { id: "oracle", label: "Oracle" },
               { id: "sql server", label: "SQL Server" },
+              { id: "ibm db2", label: "IBM Db2" },
               { id: "sqlite", label: "SQLite" },
               { id: "universal", label: isId ? "Infrastruktur & APM" : "Infra & APM" },
             ].map((chip) => (

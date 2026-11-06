@@ -13,7 +13,7 @@ interface SqlEditorProps {
   onExecute?: () => void;
   readOnly?: boolean;
   language?: "en" | "id";
-  engine?: "sqlite" | "postgres" | "mysql" | "oracle" | "mssql";
+  engine?: "sqlite" | "postgres" | "mysql" | "oracle" | "mssql" | "db2";
 }
 
 const COMMON_SQL_KEYWORDS = [
@@ -188,11 +188,13 @@ export function SqlEditor({
             {engine === "postgres"
               ? "PostgreSQL 17"
               : engine === "mysql"
-              ? "MySQL 11"
+              ? "MariaDB 11.3 (MySQL)"
               : engine === "oracle"
               ? "Oracle 23ai"
               : engine === "mssql"
               ? "SQL Server 2022"
+              : engine === "db2"
+              ? "IBM Db2 11.5"
               : "SQLite 3.45"}
           </span>
           {readOnly && (
