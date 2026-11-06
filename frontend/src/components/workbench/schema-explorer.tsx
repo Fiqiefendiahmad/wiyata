@@ -27,6 +27,7 @@ import {
   Info,
   ExternalLink,
   ShieldAlert,
+  X,
 } from "lucide-react";
 import { api } from "@/lib/api";
 
@@ -147,6 +148,7 @@ export function SchemaExplorer({
   const [selectedTable, setSelectedTable] = useState<string | null>(initialSelectedTable || null);
   const [searchTerm, setSearchTerm] = useState("");
   const [copiedCol, setCopiedCol] = useState<string | null>(null);
+  const [showMobileTableList, setShowMobileTableList] = useState(false);
 
   // Data Preview State
   const [previewData, setPreviewData] = useState<any | null>(null);
@@ -196,12 +198,21 @@ export function SchemaExplorer({
     }
   }, [initialSelectedTable]);
 
+  // Set responsive scale for ERD on mobile viewport
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      setErdScale(0.65);
+      setErdPan({ x: 16, y: 16 });
+    }
+  }, []);
+
   // Compute default node layout for ERD once tables are loaded
   useEffect(() => {
     if (!metadata || metadata.tables.length === 0) return;
     const positions: Record<string, { x: number; y: number }> = {};
     const colsCount = metadata.tables.length > 4 ? 3 : 2;
-    const spacingX = 340;
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+    const spacingX = isMobile ? 300 : 340;
     const spacingY = 280;
 
     metadata.tables.forEach((tbl, idx) => {
@@ -212,7 +223,7 @@ export function SchemaExplorer({
         const col = idx % colsCount;
         const row = Math.floor(idx / colsCount);
         positions[tbl.name] = {
-          x: 40 + col * spacingX,
+          x: (isMobile ? 16 : 40) + col * spacingX,
           y: 40 + row * spacingY,
         };
       }
@@ -282,7 +293,25 @@ export function SchemaExplorer({
     setTimeout(() => setCopiedCol(null), 2000);
   };
 
-  // ERD Drag & Pan Handlers
+  // Auto-fit viewport helper
+  const handleAutoFit = () => {
+    if (!erdContainerRef.current) {
+      setErdScale(1);
+      setErdPan({ x: 0, y: 0 });
+      return;
+    }
+    const containerWidth = erdContainerRef.current.clientWidth || 360;
+    const isMobile = containerWidth < 768;
+    if (isMobile) {
+      setErdScale(0.65);
+      setErdPan({ x: 16, y: 16 });
+    } else {
+      setErdScale(1);
+      setErdPan({ x: 20, y: 20 });
+    }
+  };
+
+  // ERD Drag & Pan Handlers (Mouse)
   const handleMouseDownErd = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest(".erd-node")) return;
     setIsPanning(true);
@@ -316,6 +345,50 @@ export function SchemaExplorer({
       x: e.clientX - pos.x * erdScale - erdPan.x,
       y: e.clientY - pos.y * erdScale - erdPan.y,
     });
+  };
+
+  // ERD Drag & Pan Handlers (Touch)
+  const handleTouchStartErd = (e: React.TouchEvent) => {
+    if ((e.target as HTMLElement).closest(".erd-node")) return;
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      setIsPanning(true);
+      setPanStart({ x: touch.clientX - erdPan.x, y: touch.clientY - erdPan.y });
+    }
+  };
+
+  const handleTouchMoveErd = (e: React.TouchEvent) => {
+    if (isPanning && e.touches.length === 1) {
+      const touch = e.touches[0];
+      setErdPan({ x: touch.clientX - panStart.x, y: touch.clientY - panStart.y });
+    } else if (draggingNode && e.touches.length === 1) {
+      const touch = e.touches[0];
+      setNodePositions((prev) => ({
+        ...prev,
+        [draggingNode]: {
+          x: Math.max(10, (touch.clientX - dragOffset.x - erdPan.x) / erdScale),
+          y: Math.max(10, (touch.clientY - dragOffset.y - erdPan.y) / erdScale),
+        },
+      }));
+    }
+  };
+
+  const handleTouchEndErd = () => {
+    setIsPanning(false);
+    setDraggingNode(null);
+  };
+
+  const startTouchDragNode = (tableName: string, e: React.TouchEvent) => {
+    e.stopPropagation();
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      setDraggingNode(tableName);
+      const pos = nodePositions[tableName] || { x: 0, y: 0 };
+      setDragOffset({
+        x: touch.clientX - pos.x * erdScale - erdPan.x,
+        y: touch.clientY - pos.y * erdScale - erdPan.y,
+      });
+    }
   };
 
   return (
@@ -433,15 +506,64 @@ export function SchemaExplorer({
               </button>
             </div>
           )}
+
+          {/* Mobile active table badge & drawer trigger */}
+          <div className="flex md:hidden items-center gap-1.5 shrink-0">
+            <button
+              onClick={() => setShowMobileTableList(true)}
+              className="flex items-center gap-1 rounded-lg bg-[#10264A] border border-[#F2B84B]/40 px-2 py-1 text-xs font-mono font-bold text-[#F2B84B] shrink-0"
+              title={isId ? "Pilih tabel lain" : "Select table"}
+            >
+              <TableIcon className="h-3 w-3" />
+              <span className="max-w-[100px] truncate">{selectedTable || (isId ? "Tabel" : "Table")}</span>
+              <ChevronDown className="h-3 w-3 text-slate-400 shrink-0" />
+            </button>
+            {selectedTable && (
+              <button
+                onClick={() => handleGenerateSelect(selectedTable)}
+                title={isId ? "Buka di Editor" : "Open in Editor"}
+                className="rounded-lg bg-slate-800 p-1 text-[#F2B84B] border border-slate-700"
+              >
+                <Code2 className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
       {/* 2. MAIN BODY AREA */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Mobile Backdrop when drawer is open */}
+        {showMobileTableList && (
+          <div
+            onClick={() => setShowMobileTableList(false)}
+            className="md:hidden fixed inset-0 bg-black/60 z-20 backdrop-blur-xs transition-opacity"
+          />
+        )}
+
         {/* Sidebar: Schema Navigation Tree */}
-        <aside className="w-64 sm:w-72 flex-none border-r border-slate-800 bg-[#071A3A]/95 flex flex-col overflow-hidden">
-          {/* Search box */}
-          <div className="p-3 border-b border-slate-800 bg-[#10264A]/30">
+        <aside
+          className={`${
+            showMobileTableList
+              ? "flex fixed inset-y-0 left-0 z-30 w-72 shadow-2xl"
+              : "hidden md:flex relative w-64 sm:w-72"
+          } flex-none border-r border-slate-800 bg-[#071A3A]/98 flex flex-col overflow-hidden transition-all`}
+        >
+          {/* Search box & Mobile close header */}
+          <div className="p-3 border-b border-slate-800 bg-[#10264A]/30 flex flex-col gap-2">
+            <div className="flex items-center justify-between md:hidden pb-1 border-b border-slate-800/60">
+              <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                <TableIcon className="h-3.5 w-3.5 text-[#F2B84B]" />
+                <span>{isId ? "Daftar Tabel" : "Tables"}</span>
+              </span>
+              <button
+                onClick={() => setShowMobileTableList(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
               <input
@@ -475,7 +597,10 @@ export function SchemaExplorer({
                 return (
                   <div
                     key={tbl.name}
-                    onClick={() => setSelectedTable(tbl.name)}
+                    onClick={() => {
+                      setSelectedTable(tbl.name);
+                      setShowMobileTableList(false);
+                    }}
                     className={`flex items-center justify-between px-3 py-2 rounded-xl border text-xs cursor-pointer transition-all ${
                       isSelected
                         ? "bg-[#10264A] border-[#F2B84B] text-white shadow-sm ring-1 ring-[#F2B84B]/30"
@@ -699,41 +824,61 @@ export function SchemaExplorer({
           {activeTab === "erd" && (
             <div className="flex-1 flex flex-col overflow-hidden relative">
               {/* ERD Control Strip */}
-              <div className="flex items-center justify-between border-b border-slate-800 bg-[#09172e] px-4 py-2 z-10">
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="text-slate-400">{isId ? "Legenda Relasi:" : "Relationship Legend:"}</span>
-                  <span className="flex items-center gap-1 rounded bg-emerald-950/60 border border-emerald-600/50 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
-                    <span className="inline-block w-2.5 h-0.5 bg-emerald-400 mr-0.5"></span>
-                    {isId ? "Kunci Tamu Terdeklarasi (FK Resmi)" : "Declared Foreign Key"}
+              <div className="flex items-center justify-between gap-2 border-b border-slate-800 bg-[#09172e] px-3 sm:px-4 py-2 z-10">
+                <div className="flex items-center gap-1.5 sm:gap-2 text-xs overflow-x-auto no-scrollbar py-0.5">
+                  <span className="text-slate-400 text-[11px] font-medium shrink-0">
+                    {isId ? "Relasi:" : "Relations:"}
                   </span>
-                  <span className="flex items-center gap-1 rounded bg-amber-950/60 border border-amber-600/50 px-2 py-0.5 text-[10px] font-bold text-amber-300">
+                  <span
+                    title={isId ? "Kunci Tamu Terdeklarasi (FK Resmi)" : "Declared Foreign Key"}
+                    className="flex items-center gap-1 rounded-md bg-emerald-950/60 border border-emerald-600/50 px-2 py-0.5 text-[10px] font-bold text-emerald-300 shrink-0"
+                  >
+                    <span className="inline-block w-2.5 h-0.5 bg-emerald-400 mr-0.5"></span>
+                    <span className="hidden sm:inline">{isId ? "Kunci Tamu Terdeklarasi (FK)" : "Declared FK"}</span>
+                    <span className="sm:hidden">{isId ? "FK Resmi" : "FK"}</span>
+                  </span>
+                  <span
+                    title={isId ? "Inferensi Penamaan (Diduga Relasi)" : "Inferred by Name Convention"}
+                    className="flex items-center gap-1 rounded-md bg-amber-950/60 border border-amber-600/50 px-2 py-0.5 text-[10px] font-bold text-amber-300 shrink-0"
+                  >
                     <span className="inline-block w-2.5 h-0.5 border-t border-dashed border-amber-400 mr-0.5"></span>
-                    {isId ? "Inferensi Penamaan (Diduga Relasi)" : "Inferred by Name Convention"}
+                    <span className="hidden sm:inline">{isId ? "Inferensi Penamaan" : "Inferred Convention"}</span>
+                    <span className="sm:hidden">{isId ? "Inferensi" : "Inferred"}</span>
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 shrink-0">
+                  {/* Table Drawer Button on Mobile */}
                   <button
-                    onClick={() => setErdScale((s) => Math.min(2.0, s + 0.1))}
-                    title={isId ? "Perbesar" : "Zoom in"}
-                    className="rounded-lg bg-slate-800 hover:bg-slate-700 p-1.5 text-slate-300 transition-colors"
+                    onClick={() => setShowMobileTableList(true)}
+                    title={isId ? "Pilih Tabel" : "Select Table"}
+                    className="md:hidden flex items-center gap-1 rounded-lg bg-slate-800 hover:bg-slate-700 px-2 py-1.5 text-[11px] font-semibold text-[#F2B84B] border border-slate-700 transition-colors"
+                  >
+                    <TableIcon className="h-3.5 w-3.5" />
+                    <span>{isId ? "Tabel" : "Tables"}</span>
+                  </button>
+
+                  <button
+                    onClick={() => setErdScale((s) => Math.min(2.0, Number((s + 0.1).toFixed(2))))}
+                    title={isId ? "Perbesar (+10%)" : "Zoom in"}
+                    className="rounded-lg bg-slate-800 hover:bg-slate-700 p-1.5 sm:p-2 text-slate-300 transition-colors active:scale-95"
+                    aria-label="Zoom in"
                   >
                     <ZoomIn className="h-3.5 w-3.5" />
                   </button>
                   <button
-                    onClick={() => setErdScale((s) => Math.max(0.4, s - 0.1))}
-                    title={isId ? "Perkecil" : "Zoom out"}
-                    className="rounded-lg bg-slate-800 hover:bg-slate-700 p-1.5 text-slate-300 transition-colors"
+                    onClick={() => setErdScale((s) => Math.max(0.3, Number((s - 0.1).toFixed(2))))}
+                    title={isId ? "Perkecil (-10%)" : "Zoom out"}
+                    className="rounded-lg bg-slate-800 hover:bg-slate-700 p-1.5 sm:p-2 text-slate-300 transition-colors active:scale-95"
+                    aria-label="Zoom out"
                   >
                     <ZoomOut className="h-3.5 w-3.5" />
                   </button>
                   <button
-                    onClick={() => {
-                      setErdScale(1);
-                      setErdPan({ x: 0, y: 0 });
-                    }}
+                    onClick={handleAutoFit}
                     title={isId ? "Pusatkan tampilan" : "Fit to screen"}
-                    className="rounded-lg bg-slate-800 hover:bg-slate-700 p-1.5 text-slate-300 transition-colors"
+                    className="rounded-lg bg-slate-800 hover:bg-slate-700 p-1.5 sm:p-2 text-slate-300 transition-colors active:scale-95"
+                    aria-label="Fit to screen"
                   >
                     <Maximize2 className="h-3.5 w-3.5" />
                   </button>
@@ -746,7 +891,10 @@ export function SchemaExplorer({
                 onMouseDown={handleMouseDownErd}
                 onMouseMove={handleMouseMoveErd}
                 onMouseUp={handleMouseUpErd}
-                className="flex-1 w-full h-full overflow-hidden relative cursor-grab active:cursor-grabbing bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px]"
+                onTouchStart={handleTouchStartErd}
+                onTouchMove={handleTouchMoveErd}
+                onTouchEnd={handleTouchEndErd}
+                className="flex-1 w-full h-full overflow-hidden relative cursor-grab active:cursor-grabbing bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px] touch-none select-none min-h-[360px]"
               >
                 <div
                   style={{
@@ -838,12 +986,13 @@ export function SchemaExplorer({
                       <div
                         key={tbl.name}
                         onMouseDown={(e) => startDragNode(tbl.name, e)}
+                        onTouchStart={(e) => startTouchDragNode(tbl.name, e)}
                         onClick={() => setSelectedTable(tbl.name)}
                         style={{
                           transform: `translate(${pos.x}px, ${pos.y}px)`,
                           width: "280px",
                         }}
-                        className={`erd-node absolute rounded-xl border bg-[#0d203f]/95 shadow-2xl overflow-hidden cursor-move transition-shadow z-10 ${
+                        className={`erd-node absolute rounded-xl border bg-[#0d203f]/95 shadow-2xl overflow-hidden cursor-move transition-shadow z-10 touch-none ${
                           isSelected
                             ? "border-[#F2B84B] ring-2 ring-[#F2B84B]/40"
                             : "border-slate-700/80 hover:border-slate-600"
