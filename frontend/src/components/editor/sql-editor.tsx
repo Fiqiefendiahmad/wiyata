@@ -183,6 +183,11 @@ export function SqlEditor({
         <span className="flex items-center gap-1.5">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
           <span>SQLite 3</span>
+          {readOnly && (
+            <span className="rounded bg-slate-800 px-1.5 py-0.2 text-[9px] text-amber-400 border border-amber-800/60 font-sans">
+              {isId ? "Hanya Baca (Read Only)" : "Read Only (Hanya Baca)"}
+            </span>
+          )}
         </span>
         <div className="flex items-center gap-3">
           <span>{lineCount} {isId ? "baris" : "lines"}</span>

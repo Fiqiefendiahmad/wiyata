@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Header } from "@/components/layout/header";
 import { QueryWorkbench } from "@/components/workbench/query-workbench";
 import { LearningChallenges } from "@/components/learning/learning-challenges";
@@ -16,6 +16,25 @@ export default function Home() {
   const [sandboxId, setSandboxId] = useState<string | null>(null);
   const [sandboxStatus, setSandboxStatus] = useState<string>("Ready");
   const [isResetting, setIsResetting] = useState<boolean>(false);
+
+  // Sync language with localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("wiyata_lang");
+      if (saved === "en" || saved === "id") {
+        setLanguage(saved);
+      }
+    } catch {
+      // localStorage may be unavailable in some environments
+    }
+  }, []);
+
+  const handleLanguageChange = (lang: "en" | "id") => {
+    setLanguage(lang);
+    try {
+      localStorage.setItem("wiyata_lang", lang);
+    } catch {}
+  };
 
   // Cross-component state injection
   const [labInitialQuery, setLabInitialQuery] = useState<string | undefined>(
@@ -53,7 +72,7 @@ export default function Home() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         language={language}
-        setLanguage={setLanguage}
+        setLanguage={handleLanguageChange}
         sandboxStatus={sandboxStatus}
         onResetSandbox={handleResetSandbox}
         isResetting={isResetting}
