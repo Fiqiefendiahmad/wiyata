@@ -494,7 +494,7 @@ export function LearningChallenges({
 
             {/* Collapsible Dataset Schema Drawer */}
             {showSchemaDrawer && (
-              <div className="border-b border-slate-800 bg-[#071329] p-3 sm:p-4 overflow-x-auto max-h-64 overflow-y-auto">
+              <div className="border-b border-slate-800 bg-[#071329] p-3 sm:p-4 max-h-64 overflow-y-auto w-full">
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-xs font-bold text-[#F2B84B] flex items-center gap-1.5">
                     <Table className="h-3.5 w-3.5" />

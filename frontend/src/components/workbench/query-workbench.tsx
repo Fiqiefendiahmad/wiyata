@@ -496,39 +496,18 @@ export function QueryWorkbench({
           </span>
         </button>
 
-        {/* Quick Engine Switcher Pills on Mobile */}
-        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar touch-scroll">
-          {(["sqlite", "postgres", "mysql"] as const).map((eng) => (
-            <button
-              key={eng}
-              onClick={() => handleEngineChange(eng)}
-              className={`rounded-md px-2 py-1 text-[10px] font-bold uppercase transition-colors min-h-[32px] ${
-                activeEngine === eng
-                  ? "bg-[#F2B84B] text-[#071A3A]"
-                  : "bg-slate-800 text-slate-400 border border-slate-700"
-              }`}
-            >
-              {eng === "postgres" ? "PG 17" : eng === "mysql" ? "MySQL" : "SQLite"}
-            </button>
-          ))}
-
-          {templates.slice(0, 2).map((tpl) => (
-            <button
-              key={tpl.slug}
-              onClick={() => handleTemplateChange(tpl.slug)}
-              className={`rounded-md px-2 py-1 text-[10px] font-semibold whitespace-nowrap transition-colors min-h-[32px] ${
-                activeTemplate === tpl.slug
-                  ? "bg-slate-700 text-white border border-slate-600"
-                  : "bg-slate-900/60 text-slate-400 border border-slate-800"
-              }`}
-            >
-              {tpl.slug === "banking"
-                ? "🏦 Bank"
-                : isId
-                ? "Toko"
-                : "Store"}
-            </button>
-          ))}
+        {/* Active Engine & Template Indicator (Static, No Horizontal Scroll) */}
+        <div className="flex items-center gap-1.5 text-[11px] font-mono text-slate-300 shrink-0">
+          <span className="rounded-lg bg-slate-900 px-2.5 py-1 border border-slate-700/80 text-[#F2B84B] font-bold">
+            {activeEngine === "postgres"
+              ? "PostgreSQL 17"
+              : activeEngine === "mysql"
+              ? "MySQL 11"
+              : "SQLite 3.45"}
+          </span>
+          <span className="hidden sm:inline-block rounded-lg bg-slate-900/60 px-2 py-1 border border-slate-800 text-slate-400 capitalize">
+            {activeTemplate}
+          </span>
         </div>
       </div>
 
