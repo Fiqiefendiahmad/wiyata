@@ -185,7 +185,7 @@ export function SqlEditor({
           <span>SQLite 3</span>
           {readOnly && (
             <span className="rounded bg-slate-800 px-1.5 py-0.2 text-[9px] text-amber-400 border border-amber-800/60 font-sans">
-              {isId ? "Hanya Baca (Read Only)" : "Read Only (Hanya Baca)"}
+              {isId ? "Hanya Baca" : "Read Only"}
             </span>
           )}
         </span>

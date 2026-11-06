@@ -17,15 +17,28 @@ export default function Home() {
   const [sandboxStatus, setSandboxStatus] = useState<string>("Ready");
   const [isResetting, setIsResetting] = useState<boolean>(false);
 
-  // Sync language with localStorage
+  // Sync language with localStorage or follow browser language on initial launch
   useEffect(() => {
     try {
       const saved = localStorage.getItem("wiyata_lang");
       if (saved === "en" || saved === "id") {
         setLanguage(saved);
+        return;
+      }
+
+      // Initial launch: detect browser language
+      const browserLang =
+        (typeof navigator !== "undefined" &&
+          (navigator.language || (navigator.languages && navigator.languages[0]))) ||
+        "";
+
+      if (browserLang.toLowerCase().startsWith("id")) {
+        setLanguage("id");
+      } else {
+        setLanguage("en");
       }
     } catch {
-      // localStorage may be unavailable in some environments
+      // Fallback: keep default
     }
   }, []);
 

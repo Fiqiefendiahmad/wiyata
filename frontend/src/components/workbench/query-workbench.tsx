@@ -783,8 +783,8 @@ export function QueryWorkbench({
                     ? "Mode Modifikasi (DML/DDL): Perubahan data diizinkan"
                     : "Modification Mode (DML/DDL): Data modifications permitted"
                   : isId
-                  ? "Mode Keamanan: Hanya Baca (Read Only)"
-                  : "Safety Mode: Read Only (Hanya Baca)"
+                  ? "Mode Keamanan: Hanya Baca"
+                  : "Safety Mode: Read Only"
               }
               className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-mono transition-colors border min-h-[42px] ${
                 allowDdl
@@ -796,17 +796,11 @@ export function QueryWorkbench({
                 <>
                   <ShieldAlert className="h-4 w-4" />
                   <span>DML/DDL</span>
-                  <span className="text-[10px] opacity-75 font-sans">
-                    ({isId ? "Modifikasi" : "Modify"})
-                  </span>
                 </>
               ) : (
                 <>
                   <ShieldCheck className="h-4 w-4" />
                   <span>{isId ? "Hanya Baca" : "Read Only"}</span>
-                  <span className="text-[10px] opacity-75 font-sans">
-                    ({isId ? "Read Only" : "Hanya Baca"})
-                  </span>
                 </>
               )}
             </button>
