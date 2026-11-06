@@ -188,27 +188,39 @@ export function QueryWorkbench({
       .catch((err) => console.error("Failed to load queries:", err));
   };
 
+  const [activeEngine, setActiveEngine] = useState<"sqlite" | "postgres" | "mysql">("sqlite");
+
   // Initialize or fetch sandbox schema
   useEffect(() => {
     if (!sandboxId) {
-      createSandbox(activeTemplate);
+      createSandbox(activeTemplate, activeEngine);
     } else {
       loadSchema(sandboxId);
     }
   }, [sandboxId]);
 
-  const createSandbox = async (templateSlug: string) => {
+  const createSandbox = async (
+    templateSlug: string,
+    engineChoice?: "sqlite" | "postgres" | "mysql"
+  ) => {
+    const engineToUse = engineChoice || activeEngine;
     try {
       const res = await api.post("/sandboxes", {
-        engine: "sqlite",
+        engine: engineToUse,
         template_slug: templateSlug,
       });
       onSandboxChange(res.data.id);
       setActiveTemplate(templateSlug);
+      setActiveEngine(engineToUse);
       loadSchema(res.data.id);
     } catch (err: any) {
       console.error("Error creating sandbox:", err);
     }
+  };
+
+  const handleEngineChange = (engine: "sqlite" | "postgres" | "mysql") => {
+    setActiveEngine(engine);
+    createSandbox(activeTemplate, engine);
   };
 
   const loadSchema = async (id: string) => {
@@ -222,7 +234,7 @@ export function QueryWorkbench({
 
   const handleTemplateChange = (slug: string) => {
     setActiveTemplate(slug);
-    createSandbox(slug);
+    createSandbox(slug, activeEngine);
     if (slug === "banking") {
       setQuery(DEFAULT_BANKING_SQL);
       setExpandedTables({ accounts: true, customers: true, transactions: true });
@@ -364,9 +376,16 @@ export function QueryWorkbench({
     setIsRunning(true);
     setActiveOutputTab("explain");
 
+    let explainSql = `EXPLAIN QUERY PLAN ${query.trim()}`;
+    if (activeEngine === "postgres") {
+      explainSql = `EXPLAIN (ANALYZE, BUFFERS, VERBOSE) ${query.trim()};`;
+    } else if (activeEngine === "mysql") {
+      explainSql = `EXPLAIN ${query.trim()};`;
+    }
+
     try {
       const res = await api.post(`/sandboxes/${sandboxId}/execute`, {
-        query: `EXPLAIN QUERY PLAN ${query.trim()}`,
+        query: explainSql,
         confirmed: false,
         read_only: true,
       });
@@ -477,31 +496,37 @@ export function QueryWorkbench({
           </span>
         </button>
 
-        {/* Quick Template Switcher Pills on Mobile */}
+        {/* Quick Engine Switcher Pills on Mobile */}
         <div className="flex items-center gap-1 overflow-x-auto no-scrollbar touch-scroll">
-          {templates.slice(0, 3).map((tpl) => (
+          {(["sqlite", "postgres", "mysql"] as const).map((eng) => (
+            <button
+              key={eng}
+              onClick={() => handleEngineChange(eng)}
+              className={`rounded-md px-2 py-1 text-[10px] font-bold uppercase transition-colors min-h-[32px] ${
+                activeEngine === eng
+                  ? "bg-[#F2B84B] text-[#071A3A]"
+                  : "bg-slate-800 text-slate-400 border border-slate-700"
+              }`}
+            >
+              {eng === "postgres" ? "PG 17" : eng === "mysql" ? "MySQL" : "SQLite"}
+            </button>
+          ))}
+
+          {templates.slice(0, 2).map((tpl) => (
             <button
               key={tpl.slug}
               onClick={() => handleTemplateChange(tpl.slug)}
-              className={`rounded-full px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap transition-colors min-h-[32px] ${
+              className={`rounded-md px-2 py-1 text-[10px] font-semibold whitespace-nowrap transition-colors min-h-[32px] ${
                 activeTemplate === tpl.slug
-                  ? "bg-[#F2B84B] text-[#071A3A]"
-                  : "bg-slate-900 text-slate-400 border border-slate-800"
+                  ? "bg-slate-700 text-white border border-slate-600"
+                  : "bg-slate-900/60 text-slate-400 border border-slate-800"
               }`}
             >
               {tpl.slug === "banking"
-                ? isId
-                  ? "🏦 Bank"
-                  : "🏦 Bank"
-                : tpl.slug === "ecommerce"
-                ? isId
-                  ? "Toko"
-                  : "Store"
-                : tpl.slug === "school"
-                ? isId
-                  ? "Kampus"
-                  : "Academy"
-                : tpl.name.split(" ")[0]}
+                ? "🏦 Bank"
+                : isId
+                ? "Toko"
+                : "Store"}
             </button>
           ))}
         </div>
@@ -513,10 +538,37 @@ export function QueryWorkbench({
           showMobileSidebar ? "flex" : "hidden"
         } lg:flex w-full lg:w-72 flex-col border-b lg:border-b-0 lg:border-r border-slate-800 bg-[#071A3A]/98 text-slate-200 z-30 max-h-[70vh] lg:max-h-none overflow-y-auto no-scrollbar touch-scroll`}
       >
+        {/* Engine Switcher (SQLite / PostgreSQL / MySQL) */}
+        <div className="border-b border-slate-800 p-3 bg-[#10264A]/30">
+          <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block mb-1.5">
+            {isId ? "Mesin Database Sandbox" : "Sandbox Database Engine"}
+          </label>
+          <div className="grid grid-cols-3 gap-1.5">
+            {[
+              { id: "sqlite" as const, name: "SQLite", badge: "3.45" },
+              { id: "postgres" as const, name: "Postgres", badge: "17" },
+              { id: "mysql" as const, name: "MySQL", badge: "11" },
+            ].map((eng) => (
+              <button
+                key={eng.id}
+                onClick={() => handleEngineChange(eng.id)}
+                className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg text-xs font-semibold transition-all border min-h-[44px] active:scale-95 ${
+                  activeEngine === eng.id
+                    ? "bg-[#10264A] text-[#F2B84B] border-[#F2B84B] shadow-sm ring-1 ring-[#F2B84B]/40"
+                    : "bg-slate-900/60 text-slate-400 hover:text-slate-200 border-slate-800"
+                }`}
+              >
+                <span className="text-[11px] font-bold">{eng.name}</span>
+                <span className="text-[9px] opacity-75 font-mono">{eng.badge}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Template Selector */}
         <div className="border-b border-slate-800 p-3">
           <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-            {isId ? "Database Sandbox Aktif" : "Active Database Sandbox"}
+            {isId ? "Dataset Sandbox Aktif" : "Active Sandbox Dataset"}
           </label>
           <div className="mt-2 grid grid-cols-1 xs:grid-cols-2 gap-1.5">
             {templates.map((tpl) => (
@@ -814,6 +866,7 @@ export function QueryWorkbench({
             onChange={setQuery}
             onExecute={handleRunQuery}
             language={language}
+            engine={activeEngine}
           />
         </div>
 
@@ -1074,6 +1127,13 @@ export function QueryWorkbench({
                     onChange={() => {}}
                     readOnly={true}
                     language={language}
+                    engine={
+                      transpileTarget === "postgres"
+                        ? "postgres"
+                        : transpileTarget === "mysql"
+                        ? "mysql"
+                        : "sqlite"
+                    }
                   />
                 </div>
               </div>

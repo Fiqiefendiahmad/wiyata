@@ -1,4 +1,4 @@
-"""Sample dataset schemas and seed data for learning sandboxes."""
+"""Sample dataset schemas and seed data for learning sandboxes across SQLite, PostgreSQL, and MySQL."""
 
 TEMPLATES = {
     "banking": {
@@ -7,45 +7,45 @@ TEMPLATES = {
         "sql": """
 CREATE TABLE branches (
     branch_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    branch_code TEXT UNIQUE NOT NULL,
-    branch_name TEXT NOT NULL,
-    city TEXT NOT NULL,
+    branch_code VARCHAR(64) UNIQUE NOT NULL,
+    branch_name VARCHAR(255) NOT NULL,
+    city VARCHAR(100) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE customers (
     customer_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    cif_number TEXT UNIQUE NOT NULL,
-    full_name TEXT NOT NULL,
-    nik TEXT UNIQUE NOT NULL,
-    phone_number TEXT NOT NULL,
+    cif_number VARCHAR(64) UNIQUE NOT NULL,
+    full_name VARCHAR(255) NOT NULL,
+    nik VARCHAR(32) UNIQUE NOT NULL,
+    phone_number VARCHAR(32) NOT NULL,
     address TEXT,
-    city TEXT DEFAULT 'Jakarta',
-    kyc_status TEXT CHECK(kyc_status IN ('VERIFIED', 'PENDING', 'REJECTED')) DEFAULT 'VERIFIED',
+    city VARCHAR(100) DEFAULT 'Jakarta',
+    kyc_status VARCHAR(20) DEFAULT 'VERIFIED',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE accounts (
-    account_number TEXT PRIMARY KEY,
+    account_number VARCHAR(64) PRIMARY KEY,
     customer_id INTEGER NOT NULL REFERENCES customers(customer_id),
     branch_id INTEGER NOT NULL REFERENCES branches(branch_id),
-    account_type TEXT CHECK(account_type IN ('SAVINGS', 'CHECKING', 'TIME_DEPOSIT')) DEFAULT 'SAVINGS',
-    currency TEXT DEFAULT 'IDR',
+    account_type VARCHAR(32) DEFAULT 'SAVINGS',
+    currency VARCHAR(8) DEFAULT 'IDR',
     balance REAL NOT NULL DEFAULT 0.0,
-    status TEXT CHECK(status IN ('ACTIVE', 'DORMANT', 'FROZEN', 'CLOSED')) DEFAULT 'ACTIVE',
+    status VARCHAR(20) DEFAULT 'ACTIVE',
     opened_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE transactions (
     transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    reference_no TEXT UNIQUE NOT NULL,
-    from_account_number TEXT NOT NULL REFERENCES accounts(account_number),
-    to_account_number TEXT REFERENCES accounts(account_number),
-    transaction_type TEXT CHECK(transaction_type IN ('TRANSFER', 'DEPOSIT', 'WITHDRAWAL', 'QRIS', 'BILL_PAYMENT', 'INTEREST')) NOT NULL,
+    reference_no VARCHAR(64) UNIQUE NOT NULL,
+    from_account_number VARCHAR(64) NOT NULL REFERENCES accounts(account_number),
+    to_account_number VARCHAR(64) REFERENCES accounts(account_number),
+    transaction_type VARCHAR(32) NOT NULL,
     amount REAL NOT NULL,
     fee REAL DEFAULT 0.0,
-    channel TEXT CHECK(channel IN ('MOBILE_BANKING', 'ATM', 'INTERNET_BANKING', 'TELLER', 'EDC', 'QRIS')) DEFAULT 'MOBILE_BANKING',
-    status TEXT CHECK(status IN ('SUCCESS', 'PENDING', 'FAILED')) DEFAULT 'SUCCESS',
+    channel VARCHAR(32) DEFAULT 'MOBILE_BANKING',
+    status VARCHAR(20) DEFAULT 'SUCCESS',
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -53,12 +53,12 @@ CREATE TABLE transactions (
 CREATE TABLE loans (
     loan_id INTEGER PRIMARY KEY AUTOINCREMENT,
     customer_id INTEGER NOT NULL REFERENCES customers(customer_id),
-    loan_type TEXT CHECK(loan_type IN ('MORTGAGE', 'AUTO_LOAN', 'PERSONAL_LOAN', 'SME_LOAN')) NOT NULL,
+    loan_type VARCHAR(32) NOT NULL,
     principal_amount REAL NOT NULL,
     interest_rate_pct REAL NOT NULL DEFAULT 7.5,
     tenor_months INTEGER NOT NULL,
     monthly_installment REAL NOT NULL,
-    status TEXT CHECK(status IN ('ACTIVE', 'APPROVED', 'DISBURSED', 'PAID_OFF', 'DEFAULT')) DEFAULT 'ACTIVE',
+    status VARCHAR(20) DEFAULT 'ACTIVE',
     disbursed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -108,24 +108,24 @@ INSERT INTO loans (customer_id, loan_type, principal_amount, interest_rate_pct, 
         "sql": """
 CREATE TABLE customers (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    first_name TEXT NOT NULL,
-    last_name TEXT NOT NULL,
-    email TEXT UNIQUE NOT NULL,
-    city TEXT,
-    country TEXT DEFAULT 'Indonesia',
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    city VARCHAR(100),
+    country VARCHAR(100) DEFAULT 'Indonesia',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE categories (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL UNIQUE,
     description TEXT
 );
 
 CREATE TABLE products (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     category_id INTEGER REFERENCES categories(id),
-    name TEXT NOT NULL,
+    name VARCHAR(255) NOT NULL,
     price REAL NOT NULL,
     stock INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -135,7 +135,7 @@ CREATE TABLE orders (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     customer_id INTEGER NOT NULL REFERENCES customers(id),
     order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status TEXT CHECK(status IN ('pending', 'completed', 'cancelled')) DEFAULT 'completed',
+    status VARCHAR(20) DEFAULT 'completed',
     total_amount REAL NOT NULL DEFAULT 0
 );
 
@@ -198,28 +198,28 @@ INSERT INTO order_items (order_id, product_id, quantity, unit_price) VALUES
         "sql": """
 CREATE TABLE departments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE
+    name VARCHAR(100) NOT NULL UNIQUE
 );
 
 CREATE TABLE instructors (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
+    name VARCHAR(255) NOT NULL,
     department_id INTEGER REFERENCES departments(id),
-    email TEXT UNIQUE NOT NULL
+    email VARCHAR(255) UNIQUE NOT NULL
 );
 
 CREATE TABLE students (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    email TEXT UNIQUE NOT NULL,
-    major TEXT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    major VARCHAR(100) NOT NULL,
     admission_year INTEGER NOT NULL
 );
 
 CREATE TABLE courses (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT NOT NULL,
-    code TEXT UNIQUE NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    code VARCHAR(32) UNIQUE NOT NULL,
     credits INTEGER NOT NULL,
     instructor_id INTEGER REFERENCES instructors(id)
 );
@@ -228,8 +228,8 @@ CREATE TABLE enrollments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     student_id INTEGER REFERENCES students(id),
     course_id INTEGER REFERENCES courses(id),
-    grade TEXT CHECK(grade IN ('A', 'B', 'C', 'D', 'F', 'IP')),
-    semester TEXT NOT NULL
+    grade VARCHAR(8),
+    semester VARCHAR(32) NOT NULL
 );
 
 INSERT INTO departments (name) VALUES ('Computer Science'), ('Information Systems'), ('Data Science');
@@ -267,7 +267,7 @@ INSERT INTO enrollments (student_id, course_id, grade, semester) VALUES
         "sql": """
 CREATE TABLE authors (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE NOT NULL,
+    username VARCHAR(64) UNIQUE NOT NULL,
     bio TEXT,
     joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -275,17 +275,17 @@ CREATE TABLE authors (
 CREATE TABLE posts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     author_id INTEGER REFERENCES authors(id),
-    title TEXT NOT NULL,
-    slug TEXT UNIQUE NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    slug VARCHAR(128) UNIQUE NOT NULL,
     content TEXT NOT NULL,
     views INTEGER DEFAULT 0,
-    published BOOLEAN DEFAULT 1,
+    published BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE tags (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT UNIQUE NOT NULL
+    name VARCHAR(64) UNIQUE NOT NULL
 );
 
 CREATE TABLE post_tags (
@@ -297,7 +297,7 @@ CREATE TABLE post_tags (
 CREATE TABLE comments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     post_id INTEGER REFERENCES posts(id),
-    author_name TEXT NOT NULL,
+    author_name VARCHAR(100) NOT NULL,
     content TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -323,7 +323,7 @@ INSERT INTO comments (post_id, author_name, content) VALUES
     },
     "blank": {
         "name": "Blank Database",
-        "description": "Database SQLite kosong untuk eksperimen skema dan DDL bebas",
+        "description": "Database kosong untuk eksperimen skema dan DDL bebas",
         "sql": "-- Clean sandbox\n"
     }
 }

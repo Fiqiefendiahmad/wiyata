@@ -80,3 +80,54 @@ async def test_list_tools_and_knowledge() -> None:
         articles_res = await client.get("/api/v1/knowledge/articles?language=id")
         assert articles_res.status_code == 200
         assert len(articles_res.json()) >= 1
+
+
+@pytest.mark.asyncio
+async def test_multi_engine_sandboxes() -> None:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        # 1. SQLite sandbox
+        sb_lite = await client.post("/api/v1/sandboxes", json={"engine": "sqlite", "template_slug": "banking"})
+        assert sb_lite.status_code == 201
+        lite_id = sb_lite.json()["id"]
+
+        exec_lite = await client.post(
+            f"/api/v1/sandboxes/{lite_id}/execute",
+            json={"query": "SELECT COUNT(*) AS total FROM accounts;", "read_only": True},
+        )
+        assert exec_lite.status_code == 200
+        assert exec_lite.json()["success"] is True
+        assert exec_lite.json()["rows"][0][0] == 6
+
+        # 2. PostgreSQL sandbox
+        sb_pg = await client.post("/api/v1/sandboxes", json={"engine": "postgres", "template_slug": "banking"})
+        assert sb_pg.status_code == 201
+        pg_id = sb_pg.json()["id"]
+
+        exec_pg = await client.post(
+            f"/api/v1/sandboxes/{pg_id}/execute",
+            json={"query": "SELECT COUNT(*) AS total FROM accounts;", "read_only": True},
+        )
+        assert exec_pg.status_code == 200
+        assert exec_pg.json()["success"] is True
+        assert exec_pg.json()["rows"][0][0] == 6
+
+        # 3. MySQL sandbox
+        sb_my = await client.post("/api/v1/sandboxes", json={"engine": "mysql", "template_slug": "banking"})
+        assert sb_my.status_code == 201
+        my_id = sb_my.json()["id"]
+
+        exec_my = await client.post(
+            f"/api/v1/sandboxes/{my_id}/execute",
+            json={"query": "SELECT COUNT(*) AS total FROM accounts;", "read_only": True},
+        )
+        assert exec_my.status_code == 200
+        assert exec_my.json()["success"] is True
+        assert exec_my.json()["rows"][0][0] == 6
+
+        # Clean up
+        await client.delete(f"/api/v1/sandboxes/{lite_id}")
+        await client.delete(f"/api/v1/sandboxes/{pg_id}")
+        await client.delete(f"/api/v1/sandboxes/{my_id}")
+

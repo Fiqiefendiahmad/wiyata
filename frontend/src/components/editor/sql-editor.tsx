@@ -13,6 +13,7 @@ interface SqlEditorProps {
   onExecute?: () => void;
   readOnly?: boolean;
   language?: "en" | "id";
+  engine?: "sqlite" | "postgres" | "mysql";
 }
 
 const COMMON_SQL_KEYWORDS = [
@@ -31,6 +32,7 @@ export function SqlEditor({
   onExecute,
   readOnly = false,
   language = "id",
+  engine = "sqlite",
 }: SqlEditorProps) {
   const isId = language === "id";
   const [mounted, setMounted] = useState(false);
@@ -182,7 +184,13 @@ export function SqlEditor({
       <div className="flex items-center justify-between border-t border-slate-800 bg-[#10264A]/40 px-3 py-1 text-[10px] font-mono text-slate-500 shrink-0">
         <span className="flex items-center gap-1.5">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-          <span>SQLite 3</span>
+          <span className="font-semibold text-slate-300">
+            {engine === "postgres"
+              ? "PostgreSQL 17"
+              : engine === "mysql"
+              ? "MySQL 11"
+              : "SQLite 3.45"}
+          </span>
           {readOnly && (
             <span className="rounded bg-slate-800 px-1.5 py-0.2 text-[9px] text-amber-400 border border-amber-800/60 font-sans">
               {isId ? "Hanya Baca" : "Read Only"}
