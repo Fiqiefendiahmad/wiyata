@@ -1215,7 +1215,7 @@ export function QueryWorkbench({
                 }`}
               >
                 <TableIcon className="h-3.5 w-3.5" />
-                <span>{isId ? "Hasil Data" : "Data Results"}</span>
+                <span>{isId ? "Hasil Eksekusi Sandbox" : "Sandbox Results"}</span>
               </button>
 
               <button
@@ -1227,7 +1227,7 @@ export function QueryWorkbench({
                 }`}
               >
                 <Sparkles className="h-3.5 w-3.5 text-[#F2B84B]" />
-                <span>{isId ? "Alur Logika" : "Logic Flow"}</span>
+                <span>{isId ? "Penjelasan Logika (AI)" : "Logic Explanation (AI)"}</span>
               </button>
 
               <button
@@ -1239,7 +1239,7 @@ export function QueryWorkbench({
                 }`}
               >
                 <Lightbulb className="h-3.5 w-3.5 text-amber-400" />
-                <span>{isId ? "Audit Risiko" : "Risk Audit"}</span>
+                <span>{isId ? "Audit Risiko & Anti-Pattern (AST)" : "Risk & Anti-Pattern (AST)"}</span>
               </button>
 
               <button
@@ -1251,7 +1251,7 @@ export function QueryWorkbench({
                 }`}
               >
                 <ArrowRightLeft className="h-3.5 w-3.5" />
-                <span>{isId ? "Transpilasi Dialek" : "Dialect Transpile"}</span>
+                <span>{isId ? "Konversi Dialek (SQLGlot)" : "Dialect Transpile (SQLGlot)"}</span>
               </button>
 
               <button
@@ -1263,7 +1263,7 @@ export function QueryWorkbench({
                 }`}
               >
                 <Layers className="h-3.5 w-3.5" />
-                <span>{isId ? "Rencana Eksekusi" : "Execution Plan"}</span>
+                <span>{isId ? "Rencana Eksekusi (EXPLAIN Mesin)" : "Execution Plan (Native EXPLAIN)"}</span>
               </button>
             </div>
 

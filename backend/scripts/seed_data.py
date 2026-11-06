@@ -1076,6 +1076,348 @@ Saat menjalankan database menggunakan Docker container:
   - Jangan pernah menyimpan data database di layer root overlay2 kontainer karena kinerjanya sangat lambat dan data akan lenyap seketika saat kontainer di-recreate.""",
         },
     },
+    {
+        "slug": "mongodb-architecture-wiredtiger-sharding",
+        "category_slug": "nosql",
+        "engine": "MongoDB",
+        "en": {
+            "title": "MongoDB Architecture: WiredTiger Engine, Replica Sets, and Sharding",
+            "summary": "Deep dive into MongoDB WiredTiger cache evictions, write concerns, Raft-like replica set elections, and distributed sharded cluster balancing.",
+            "body": """### MongoDB Core Architecture
+MongoDB is a distributed document database using BSON (Binary JSON) serialization.
+
+### 1. The WiredTiger Storage Engine
+Since MongoDB 3.2, WiredTiger is the default storage engine providing document-level concurrency control and compression.
+- **Cache Sizing**: Defaults to `50% of (RAM - 1 GB)` or 256 MB, whichever is greater.
+- **Checkpoints**: WiredTiger writes checkpoints to disk every 60 seconds or when 2 GB of dirty data accumulates.
+- **Eviction Server**: Background threads continuously evict clean and dirty pages when memory usage exceeds configured thresholds (`eviction_target`: 80%, `eviction_trigger`: 95%).
+
+### 2. High Availability: Replica Sets
+A replica set consists of one Primary node and multiple Secondary nodes.
+- **Election Protocol**: Modified Raft-like consensus algorithm. When heartbeats to the Primary fail for 10 seconds (`electionTimeoutMillis`), eligible Secondaries initiate an election.
+- **Oplog (Operations Log)**: Capped collection in the `local` database recording write operations as idempotent transitions. Secondaries continuously tail the Primary oplog.
+- **Write Concerns**:
+  - `w: 1`: Acknowledged by Primary only (fast, risk of rollback on crash).
+  - `w: "majority"`: Committed to a majority of replica set members before acknowledging client.
+
+### 3. Horizontal Scalability: Sharded Clusters
+For datasets exceeding single-node capacity:
+- **mongos**: Stateless query routers that parse queries and direct operations to appropriate shards.
+- **Config Replica Set**: Stores cluster metadata and routing table mappings for chunk ranges.
+- **Shard**: Each shard is a standalone replica set containing a partition of the total dataset.
+- **Balancer**: Background process that migrates data chunks across shards to ensure uniform distribution."""
+        },
+        "id": {
+            "title": "Arsitektur MongoDB: WiredTiger Engine, Replica Set, dan Sharding",
+            "summary": "Analisis mendalam mesin penyimpanan WiredTiger MongoDB, write concerns, pemilihan replica set, dan partisi klaster sharding terdistribusi.",
+            "body": """### Arsitektur Inti MongoDB
+MongoDB adalah database dokumen terdistribusi yang menyimpan data dalam format serialisasi BSON (Binary JSON).
+
+### 1. Mesin Penyimpanan WiredTiger
+WiredTiger menyediakan kontrol konkurensi tingkat dokumen (document-level concurrency) dan kompresi data native (Snappy/zlib).
+- **Alokasi Cache**: Default ke `50% dari (RAM - 1 GB)`.
+- **Checkpointing**: Menulis checkpoint ke disk setiap 60 detik atau saat data kotor mencapai 2 GB.
+- **Thread Eviction**: Membersihkan halaman data dari memori RAM secara otomatis saat mencapai ambang batas batas 80%.
+
+### 2. Ketersediaan Tinggi: Replica Set
+Klaster high-availability terdiri dari satu node Primary dan beberapa node Secondary.
+- **Protokol Pemilihan**: Berbasis algoritma Raft. Jika heartbeat ke Primary terputus selama 10 detik, node Secondary memulai pemilihan pemimpin baru.
+- **Oplog**: Koleksi khusus berkapasitas tetap (capped collection) di database `local` yang mencatat log mutasi secara idempoten untuk direplikasi ke node Secondary.
+- **Jaminan Write Concern**:
+  - `w: 1`: Client mendapat konfirmasi begitu Primary menyimpan operasi.
+  - `w: "majority"`: Konfirmasi hanya dikirim jika mayoritas node telah menyimpan log mutasi.
+
+### 3. Skalabilitas Horizontal: Sharded Cluster
+- **mongos**: Router kueri tanpa status (stateless) yang memetakan kueri client ke shard yang sesuai.
+- **Config Replica Set**: Menyimpan katalog metadata dan batas rentang chunk (routing table).
+- **Shard**: Masing-masing shard merupakan replica set mandiri yang menyimpan subset data.
+- **Balancer**: Proses latar belakang yang menyeimbangkan chunk antar shard secara otomatis."""
+        }
+    },
+    {
+        "slug": "redis-internals-persistence-cluster",
+        "category_slug": "nosql",
+        "engine": "Redis",
+        "en": {
+            "title": "Redis Architecture & Internals: In-Memory Data Structures, Persistence, and Cluster",
+            "summary": "Understanding Redis single-threaded event loop, RDB vs AOF persistence trade-offs, Sentinel failovers, and 16,384-slot Cluster partitioning.",
+            "body": """### Redis Architecture Overview
+Redis is an in-memory key-value data structure store designed for sub-millisecond latency.
+
+### 1. The Single-Threaded Event Loop
+Redis utilizes an asynchronous non-blocking event-driven loop (`ae.c` using `epoll` on Linux) to process incoming commands sequentially:
+- Eliminates CPU context switching and lock contention overhead.
+- Redis 6.0+ introduced multi-threaded I/O for socket reading and writing while keeping command execution single-threaded.
+
+### 2. Dual Persistence Architecture
+- **RDB (Redis Database Snapshotting)**:
+  - Point-in-time binary snapshot created via `BGSAVE` using Linux `fork()` copy-on-write.
+  - Minimal impact on client throughput; ultra-fast recovery time.
+  - Downside: Data between the last snapshot and a crash is lost.
+- **AOF (Append Only File)**:
+  - Logs every write command sequentially.
+  - Fsync policy configurable via `appendfsync`: `always` (slowest, safest), `everysec` (recommended default), or `no`.
+  - Automatic background rewrite (`BGREWRITEAOF`) compacts log commands into minimal instructions.
+
+### 3. High Availability: Redis Sentinel
+- Three or more Sentinel instances monitor master and replica health.
+- Performs automatic failover using Raft-inspired quorum election if master misses heartbeats (`down-after-milliseconds`).
+
+### 4. Horizontal Partitioning: Redis Cluster
+- Total keyspace is partitioned into exactly **16,384 hash slots**.
+- Slot assignment formula: `HASH_SLOT = CRC16(key) MOD 16384`.
+- Hash tags (`{user100}:profile`) guarantee related keys map to the identical slot for multi-key atomicity.
+- Clients receive `MOVED` or `ASK` redirects when querying nodes that do not own the requested slot."""
+        },
+        "id": {
+            "title": "Arsitektur & Internal Redis: Struktur Data Memori, Persistensi RDB/AOF, dan Klaster",
+            "summary": "Memahami event loop single-threaded Redis, kompromi persistensi RDB vs AOF, failover otomatis Sentinel, dan partisi 16.384 slot Redis Cluster.",
+            "body": """### Ikhtisar Arsitektur Redis
+Redis adalah penyimpanan struktur data dalam memori (in-memory key-value store) yang dirancang untuk latensi sub-milidetik.
+
+### 1. Event Loop Single-Threaded
+Redis menggunakan event loop asinkron non-blocking (`ae.c` dengan `epoll` di Linux):
+- Meniadakan overhead context switching CPU dan perebutan kunci (lock contention).
+- Sejak versi 6.0, I/O jaringan (socket read/write) didukung multi-threading, namun eksekusi perintah tetap bersifat single-threaded dan atomik.
+
+### 2. Arsitektur Persistensi Ganda
+- **RDB (Snapshotting)**:
+  - Snapshot biner pada titik waktu tertentu dibuat via perintah `BGSAVE` dengan memanfaatkan Linux `fork()` copy-on-write.
+  - Waktu pemulihan (recovery) sangat kilat. Kekurangan: ada potensi kehilangan data beberapa menit terakhir jika terjadi crash mendadak.
+- **AOF (Append Only File)**:
+  - Mencatat setiap perintah mutasi penulisan secara sekuensial.
+  - Kebijakan `appendfsync everysec` memberikan kompromi terbaik antara durabilitas dan kecepatan.
+  - `BGREWRITEAOF` memadatkan log riwayat perintah lama agar ukuran file tidak membengkak.
+
+### 3. Ketersediaan Tinggi: Redis Sentinel
+- Minimal 3 node Sentinel memantau kesehatan node Master dan Replica.
+- Melakukan failover otomatis dan mempromosikan Replica menjadi Master jika Master gagal merespons heartbeat sesuai batas kuorum.
+
+### 4. Partisi Horizontal: Redis Cluster
+- Ruang kunci dibagi rata menjadi **16.384 hash slot**.
+- Rumus kalkulasi slot: `CRC16(key) MOD 16384`.
+- Menggunakan hash tag (`{user:101}:orders`) untuk memastikan kumpulan kunci terkait berada pada slot yang sama.
+- Client menerima redirect `MOVED` jika node yang dituju tidak memegang slot data tersebut."""
+        }
+    },
+    {
+        "slug": "cassandra-lsm-architecture-ring",
+        "category_slug": "nosql",
+        "engine": "Apache Cassandra",
+        "en": {
+            "title": "Apache Cassandra Architecture: LSM-Tree Storage, Ring Topology, and Tunable Consistency",
+            "summary": "Mastering Cassandra masterless architecture, Memtable/SSTable compaction, Bloom filters, and tunable CAP theorem consistency levels.",
+            "body": """### Apache Cassandra Core Architecture
+Cassandra is a distributed NoSQL wide-column database based on Amazon Dynamo and Google Bigtable design principles.
+
+### 1. Masterless Peer-to-Peer Ring
+Every node in the cluster is architecturally identical; there is no primary/replica hierarchy or single point of failure (SPOF).
+- **Gossip Protocol**: Nodes continuously exchange node state and cluster topology every second.
+- **Partitioners**: `Murmur3Partitioner` maps partition keys to 64-bit integer tokens spanning `-2^63` to `+2^63 - 1` across the ring.
+
+### 2. Log-Structured Merge (LSM) Storage Engine
+Writes are append-only and extremely high-throughput because they avoid in-place random disk I/O:
+1. **CommitLog**: Sequential append on disk for crash durability.
+2. **Memtable**: In-memory sorted skiplist write buffer.
+3. **SSTables (Sorted String Tables)**: Once Memtable is full, flushed sequentially to immutable on-disk SSTables.
+4. **Compaction**: Background merge of overlapping SSTables discarding tombstones (deleted rows) and consolidating latest values.
+
+### 3. Read Path Optimization
+Because data blocks are immutable across multiple SSTables, Cassandra uses:
+- **Bloom Filters**: Probabilistic bit arrays in RAM verifying with zero disk I/O if an SSTable definitely does not contain a partition key.
+- **Partition Summary & Index**: Quickly locates the partition offset within the SSTable data file.
+
+### 4. Tunable Consistency (CAP Theorem)
+Cassandra allows client queries to tune consistency per transaction:
+- **Write Consistency**: `ONE`, `QUORUM`, `LOCAL_QUORUM`, `ALL`.
+- **Formula for Strong Consistency**: If `R + W > N` (where `R` = Read Consistency nodes, `W` = Write Consistency nodes, `N` = Replication Factor), the client is mathematically guaranteed to read the latest committed update."""
+        },
+        "id": {
+            "title": "Arsitektur Apache Cassandra: Penyimpanan LSM-Tree, Topologi Ring, dan Konsistensi Fleksibel",
+            "summary": "Menguasai arsitektur masterless Cassandra, komparasi pemadatan Memtable/SSTable, filter Bloom, dan tingkat konsistensi CAP theorem yang dapat dikonfigurasi.",
+            "body": """### Arsitektur Inti Apache Cassandra
+Cassandra adalah database terdistribusi wide-column yang menggabungkan prinsip Amazon Dynamo (distribusi masterless) dan Google Bigtable (penyimpanan LSM).
+
+### 1. Topologi Ring Masterless P2P
+Semua node dalam klaster memiliki peran yang setara tanpa adanya node master (eliminasi Single Point of Failure):
+- **Gossip Protocol**: Node saling bertukar informasi kesehatan dan topologi setiap detik.
+- **Partitioner**: `Murmur3Partitioner` memetakan partition key ke rentang token bilangan bulat 64-bit (`-2^63` hingga `+2^63 - 1`).
+
+### 2. Alur Tulis LSM-Tree (Log-Structured Merge)
+Operasi penulisan Cassandra tidak pernah melakukan penulisan acak (random I/O), melainkan sekuensial cepat:
+1. **CommitLog**: Dicatat secara berurutan ke disk untuk ketahanan data saat crash.
+2. **Memtable**: Disimpan pada memori RAM dalam struktur sorted skiplist.
+3. **SSTables**: Ketika Memtable penuh, data di-flush secara sekuensial menjadi file SSTable permanen yang immutable (tidak dapat diubah).
+4. **Kompaksi (Compaction)**: Proses penggabungan file SSTable untuk membersihkan tombstone (data terhapus) dan mengonsolidasikan versi terbaru.
+
+### 3. Optimasi Alur Pembacaan
+- **Bloom Filter**: Struktur data probabilistik di RAM yang menentukan apakah sebuah SSTable pasti tidak memiliki kunci yang dicari tanpa perlu membaca disk.
+- **Partition Summary & Index**: Mempercepat pencarian offset baris pada file SSTable.
+
+### 4. Konsistensi yang Dapat Dikonfigurasi (Tunable Consistency)
+Client dapat menentukan tingkat konsistensi per kueri:
+- Pilihan: `ONE`, `QUORUM`, `LOCAL_QUORUM`, `ALL`.
+- **Prinsip Konsistensi Kuat**: Jika `R + W > N` (di mana R adalah node baca, W node tulis, dan N replication factor), client dipastikan selalu membaca data terbaru."""
+        }
+    },
+    {
+        "slug": "cockroachdb-distributed-sql-raft",
+        "category_slug": "distributed-sql",
+        "engine": "CockroachDB & YugabyteDB",
+        "en": {
+            "title": "CockroachDB & YugabyteDB: Distributed SQL, Multi-Raft Consensus, and HLC",
+            "summary": "How next-generation distributed SQL databases provide full ACID serializability, Raft range replication, and Hybrid Logical Clocks.",
+            "body": """### Distributed SQL Paradigm
+Distributed SQL combines the relational guarantees, schemas, and ACID transactions of traditional RDBMS with the horizontal scale and high availability of NoSQL.
+
+### 1. Multi-Raft Consensus & Range Sharding
+The entire keyspace is divided into continuous **64 MB ranges**:
+- Each range is replicated across multiple nodes (typically 3 or 5 replicas) forming an independent Raft consensus group.
+- **Leaseholder**: One replica is elected leaseholder to coordinate client read and write operations, bypassing consensus round-trips for read-only queries.
+- When ranges exceed 64 MB, CockroachDB splits the range into two 32 MB ranges and rebalances them across cluster nodes automatically.
+
+### 2. Hybrid Logical Clocks (HLC)
+Without relying on expensive proprietary atomic GPS hardware (like Google Spanner TrueTime):
+- CockroachDB implements **Hybrid Logical Clocks (HLC)** combining physical wall clock time with Lamport logical counters.
+- Clocks across cluster nodes must remain synchronized within a configurable maximum offset (`--max-offset`, typically 500ms). Nodes self-evict if NTP drift exceeds this threshold.
+
+### 3. Lock-Free Distributed Transactions & MVCC
+- Transactions write uncommitted row mutations as **inline intent records** pointing to a centralized transaction record in the range.
+- If a concurrent transaction reads an intent, it checks the transaction status: if committed, it reads the value; if aborted, it ignores it; if pending, it waits or triggers priority resolution."""
+        },
+        "id": {
+            "title": "CockroachDB & YugabyteDB: SQL Terdistribusi, Konsensus Multi-Raft, dan HLC",
+            "summary": "Bagaimana database Distributed SQL modern menghadirkan serializability ACID penuh, replikasi range berbasis Multi-Raft, dan Hybrid Logical Clocks (HLC).",
+            "body": """### Paradigma Distributed SQL
+Distributed SQL menggabungkan keandalan relasional, skema SQL, dan transaksi ACID penuh dengan skalabilitas horizontal otomatis tanpa sharding manual.
+
+### 1. Konsensus Multi-Raft & Partisi Range
+Seluruh ruang data dibagi menjadi rentang byte berurutan berukuran **64 MB (Ranges)**:
+- Setiap range direplikasi ke beberapa node (biasanya 3 atau 5 salinan) menggunakan grup konsensus Raft independen.
+- **Leaseholder**: Salah satu replika ditunjuk sebagai koordinator kueri baca/tulis langsung untuk meniadakan latency konsensus pada pembacaan lokal.
+- Ketika data melampaui 64 MB, sistem membagi range menjadi dua (range split) dan memindahkannya ke node lain yang memiliki kapasitas luang (auto-rebalancing).
+
+### 2. Hybrid Logical Clocks (HLC)
+- Menghadirkan pengurutan transaksi konsisten tanpa memerlukan jam atomik GPS mahal (seperti Google Spanner TrueTime).
+- HLC menggabungkan waktu fisik sistem operasi (physical wall clock) dengan pencacah logis Lamport (logical counter).
+- Toleransi selisih jam antar server dibatasi ketat (`--max-offset` maksimal 500ms); node akan mengisolasi diri jika NTP drift melampaui batas aman.
+
+### 3. Transaksi ACID Terdistribusi Tanpa Kunci Berat
+- Transaksi menulis mutasi sementara sebagai **intent record** yang mengacu pada status transaksi induk.
+- Transaksi lain yang membaca intent record dapat langsung mengevaluasi status commit secara non-blocking tanpa memicu lock berkepanjangan."""
+        }
+    },
+    {
+        "slug": "snowflake-cloud-data-warehouse-internals",
+        "category_slug": "analytics",
+        "engine": "Snowflake",
+        "en": {
+            "title": "Snowflake Architecture: Multi-Cluster Shared Data, Micro-Partitions, and Zero-Copy Cloning",
+            "summary": "An architectural exploration of Snowflake tri-layer separation of storage, compute virtual warehouses, and cloud services metadata.",
+            "body": """### Snowflake Tri-Layer Architecture
+Snowflake decouples storage and compute completely through its multi-cluster shared data model.
+
+### 1. The Three Independent Layers
+1. **Centralized Storage Layer**:
+   - Resides on scalable cloud object storage (Amazon S3, Azure Blob, or Google Cloud Storage).
+   - Data is stored in proprietary columnar compressed files called **Micro-Partitions** (50 to 500 MB uncompressed).
+   - Micro-partitions are completely immutable; mutations create new partitions.
+2. **Virtual Warehouse (Compute) Layer**:
+   - Independent compute clusters of EC2/GCP instances executing query processing.
+   - Warehouses can be resized (X-Small to 6X-Large) in seconds or auto-suspended when idle to minimize cloud cost.
+   - Nodes feature local NVMe SSD caching for frequently queried micro-partitions.
+3. **Cloud Services Layer**:
+   - The brain of Snowflake managing authentication, transaction coordination, ACID metadata, query optimization, and access control.
+
+### 2. Automatic Micro-Partitioning & Pruning
+- Snowflake automatically partitions data based on natural ingestion order without requiring manual index creation or partitioning schemes.
+- The Cloud Services layer records min/max metadata for every column across all micro-partitions.
+- Query optimizer eliminates irrelevant micro-partitions during compilation (**partition pruning**), reading only required storage blocks.
+
+### 3. Zero-Copy Cloning & Time Travel
+- Cloning a 50-terabyte table takes seconds and zero storage cost because it only duplicates Cloud Services metadata pointers.
+- Storage costs only accrue when cloned tables diverge via new mutations."""
+        },
+        "id": {
+            "title": "Arsitektur Snowflake: Multi-Cluster Shared Data, Micro-Partition, dan Zero-Copy Cloning",
+            "summary": "Eksplorasi arsitektur pemisahan tiga lapis Snowflake: penyimpanan data terpusat, komputasi virtual warehouse, dan layanan metadata cloud.",
+            "body": """### Arsitektur Tiga Lapis Snowflake
+Snowflake memisahkan kapasitas penyimpanan (storage) dan pemrosesan komputasi (compute) secara total.
+
+### 1. Tiga Lapisan Mandiri
+1. **Centralized Storage Layer**:
+   - Menggunakan penyimpanan cloud object storage berskala masif (AWS S3, Azure Blob, atau GCP Cloud Storage).
+   - Data disimpan dalam format kolumnar terkompresi yang disebut **Micro-Partition** (ukuran 50 - 500 MB). File bersifat immutable (tidak dapat ditimpa).
+2. **Virtual Warehouse (Compute) Layer**:
+   - Klaster komputasi mandiri (tersedia ukuran X-Small hingga 6X-Large) yang dapat di-scale up atau di-suspend seketika saat idle untuk menghemat biaya.
+   - Setiap node komputasi memiliki cache NVMe SSD lokal untuk kueri berulang.
+3. **Cloud Services Layer**:
+   - Lapisan koordinator pusat yang mengelola autentikasi, metadata transaksi ACID, optimasi eksekusi kueri, dan keamanan.
+
+### 2. Micro-Partitioning & Pruning Otomatis
+- Data dipartisi otomatis tanpa perlu membuat index manual atau menentukan skema partisi statis.
+- Lapisan metadata mencatat nilai minimum dan maksimum dari setiap kolom pada setiap micro-partition.
+- Saat kueri dijalankan, optimizer langsung mengabaikan partition yang tidak relevan (**partition pruning**) sehingga meminimalisir pembacaan data.
+
+### 3. Zero-Copy Cloning & Time Travel
+- Duplikasi tabel data berukuran puluhan terabyte selesai dalam hitungan detik tanpa biaya disk tambahan karena hanya menduplikasi pointer metadata.
+- Biaya penyimpanan tambahan hanya dihitung jika terjadi perubahan data baru pada tabel hasil kloning."""
+        }
+    },
+    {
+        "slug": "clickhouse-duckdb-columnar-vectorized",
+        "category_slug": "analytics",
+        "engine": "ClickHouse & DuckDB",
+        "en": {
+            "title": "ClickHouse & DuckDB: Column-Oriented Storage and Vectorized Query Execution",
+            "summary": "High-performance analytical engines demystified: MergeTree storage family, SIMD vectorized processing, and embedded columnar analytics with DuckDB.",
+            "body": """### Columnar Analytical Engines
+Unlike OLTP row-based engines, columnar databases store entire columns contiguous on disk, maximizing aggregation speed and compression ratios.
+
+### 1. Column-Oriented Storage Layout
+- When running `SELECT AVG(revenue) FROM orders`, row-oriented databases must read every column into memory.
+- Columnar engines read strictly the `revenue` column file, slashing disk I/O by 90-95%.
+- Identical data types stored together achieve immense compression ratios using algorithms like LZ4, ZSTD, Gorilla, and DoubleDelta.
+
+### 2. SIMD Vectorized Execution
+- Traditional query engines process tuples one at a time using the Volcano iterator model (`next()`).
+- ClickHouse and DuckDB operate on vectors of data (arrays of 1024 or 2048 values) in tight CPU loops.
+- Employs CPU **SIMD (Single Instruction, Multiple Data)** registers (AVX-512, NEON) to compute arithmetic aggregations across multiple values in a single clock cycle.
+
+### 3. ClickHouse MergeTree Engine
+- Data is written in immutable parts.
+- Background threads continuously merge smaller parts into larger sorted parts while updating sparse primary key indexes.
+- Specialized variants: `ReplacingMergeTree` (deduplication), `AggregatingMergeTree` (pre-aggregated rollups).
+
+### 4. DuckDB: The SQLite of Analytics
+- Zero-dependency embedded analytical engine running directly inside the host process memory space (Python, Node.js, Go).
+- Directly queries remote Parquet, Arrow, and CSV files with zero copy overhead."""
+        },
+        "id": {
+            "title": "Arsitektur ClickHouse & DuckDB: Penyimpanan Kolumnar dan Eksekusi Kueri Tervektorisasi (SIMD)",
+            "summary": "Membedah mesin analitik performa tinggi: arsitektur MergeTree, eksekusi tervektorisasi SIMD pada CPU, dan analisis kolumnar embedded dengan DuckDB.",
+            "body": """### Mesin Analitik Berorientasi Kolom
+Tidak seperti database transaksional (OLTP) yang menyimpan data per baris, database analitik menyimpan data per kolom secara berurutan pada disk.
+
+### 1. Format Penyimpanan Kolumnar
+- Pada kueri agregasi seperti `SELECT AVG(revenue) FROM orders`, database baris harus memuat seluruh kolom ke memori.
+- Database kolumnar hanya membaca file kolom `revenue`, memangkas kebutuhan I/O disk hingga 90-95%.
+- Data dengan tipe serupa yang tersusun berdampingan menghasilkan rasio kompresi tinggi melalui algoritma seperti LZ4, ZSTD, Gorilla, dan DoubleDelta.
+
+### 2. Eksekusi Tervektorisasi (SIMD)
+- Model iterator tradisional memproses satu baris data per panggilan fungsi (`next()`).
+- ClickHouse dan DuckDB memproses data dalam bentuk vektor (vektor 1024 atau 2048 nilai) dalam satu putaran loop CPU yang ketat.
+- Memanfaatkan register **SIMD (Single Instruction, Multiple Data)** modern (AVX-512 / ARM NEON) untuk mengeksekusi operasi aritmatika pada banyak nilai sekaligus dalam 1 siklus clock CPU.
+
+### 3. Mesin MergeTree ClickHouse
+- Data ditulis dalam bagian-bagian (parts) immutable.
+- Thread latar belakang menggabungkan (merge) part-part kecil menjadi part besar yang terurut sambil memperbarui sparse primary key index.
+
+### 4. DuckDB: 'SQLite' untuk Kueri Analitik
+- Mesin analitik embedded tanpa ketergantungan eksternal yang berjalan langsung di dalam memori proses aplikasi (Python, Node.js).
+- Mampu mengeksekusi kueri analitik langsung di atas file Parquet, Arrow, dan CSV secara efisien tanpa memerlukan server database terpisah."""
+        }
+    }
 ]
 
 

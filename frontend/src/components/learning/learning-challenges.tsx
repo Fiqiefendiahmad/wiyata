@@ -27,7 +27,7 @@ interface Exercise {
   slug: string;
   title: string;
   title_id: string;
-  level: "Beginner" | "Intermediate" | "Advanced";
+  level: "Beginner" | "Intermediate" | "Advanced" | "Professional";
   category: string;
   category_id: string;
   dataset: string;
@@ -87,6 +87,11 @@ const LEVEL_LOCALES: Record<string, { en: string; id: string; badge: string }> =
     en: "Advanced",
     id: "Lanjutan",
     badge: "border-rose-600/60 bg-rose-950/40 text-rose-400",
+  },
+  Professional: {
+    en: "Professional",
+    id: "Profesional",
+    badge: "border-purple-600/60 bg-purple-950/40 text-purple-400",
   },
 };
 
@@ -350,6 +355,7 @@ export function LearningChallenges({
               <option value="Beginner">{isId ? "Pemula" : "Beginner"}</option>
               <option value="Intermediate">{isId ? "Menengah" : "Intermediate"}</option>
               <option value="Advanced">{isId ? "Lanjutan" : "Advanced"}</option>
+              <option value="Professional">{isId ? "Profesional" : "Professional"}</option>
             </select>
 
             <select

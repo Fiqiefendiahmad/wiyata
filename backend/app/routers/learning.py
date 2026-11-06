@@ -37,8 +37,8 @@ ORDER BY stock ASC;""",
         "starter_sql": """-- Tulis kueri penyaringan produk dengan stok < 35:
 SELECT name, price, stock
 FROM products
-WHERE stock < 35
-ORDER BY stock ASC;""",
+-- Lengkapi klausul WHERE (stock < 35) dan pengurutan ORDER BY:
+""",
         "hints": [
             "Use the WHERE clause with condition 'stock < 35'.",
             "Sort the final rows using 'ORDER BY stock ASC'."
@@ -66,10 +66,11 @@ JOIN students s ON e.student_id = s.id
 JOIN courses c ON e.course_id = c.id
 WHERE e.grade = 'A'
 ORDER BY s.name ASC;""",
-        "starter_sql": """-- Hubungkan tabel enrollments, students, dan courses:
+        "starter_sql": """-- Hubungkan tabel enrollments, students, dan courses untuk nilai 'A':
 SELECT s.name AS student_name, c.title AS course_title, e.grade
 FROM enrollments e
--- Lengkapi JOIN dan kondisi WHERE:
+-- Lengkapi JOIN ke students (on e.student_id = s.id) dan courses (on e.course_id = c.id)
+-- serta klausul WHERE dan ORDER BY:
 """,
         "hints": [
             "JOIN enrollments to students on e.student_id = s.id.",
@@ -99,11 +100,12 @@ FROM accounts a
 JOIN customers c ON a.customer_id = c.customer_id
 WHERE a.status = 'ACTIVE' AND a.balance > 30000000.0
 ORDER BY a.balance DESC;""",
-        "starter_sql": """-- Tulis query nasabah prioritas:
+        "starter_sql": """-- Tulis query nasabah prioritas (status 'ACTIVE' dan saldo > 30.000.000):
 SELECT c.full_name, a.account_number, a.account_type, a.balance
 FROM accounts a
-JOIN customers c ON a.customer_id = c.customer_id
--- Lengkapi filter WHERE dan pengurutan ORDER BY:
+-- Lengkapi JOIN ke customers pada customer_id
+-- dan saring dengan WHERE status = 'ACTIVE' AND balance > 30000000.0
+-- urutkan dengan ORDER BY balance DESC:
 """,
         "hints": [
             "Join accounts and customers using customer_id.",
@@ -135,11 +137,14 @@ WHERE o.status = 'completed'
 GROUP BY c.id, c.first_name, c.city
 ORDER BY total_spent DESC
 LIMIT 5;""",
-        "starter_sql": """SELECT c.first_name, c.city, SUM(o.total_amount) AS total_spent
+        "starter_sql": """-- Hitung total belanja 5 pelanggan teratas dengan pesanan 'completed':
+SELECT c.first_name, c.city, -- Hitung SUM(o.total_amount) AS total_spent
 FROM customers c
 JOIN orders o ON c.id = o.customer_id
--- Tambahkan WHERE, GROUP BY, ORDER BY, dan LIMIT:
-GROUP BY c.id, c.first_name, c.city;""",
+-- Lengkapi filter WHERE o.status = 'completed'
+-- kelompokkan dengan GROUP BY c.id, c.first_name, c.city
+-- urutkan dengan ORDER BY total_spent DESC LIMIT 5:
+""",
         "hints": [
             "Filter only completed orders with WHERE o.status = 'completed'.",
             "Group by customer id and name columns.",
@@ -169,11 +174,15 @@ JOIN posts p ON a.id = p.author_id
 GROUP BY a.id, a.username
 HAVING COUNT(p.id) > 1
 ORDER BY total_views DESC;""",
-        "starter_sql": """-- Gunakan COUNT, SUM, GROUP BY dan HAVING:
-SELECT a.username, COUNT(p.id) AS post_count, SUM(p.views) AS total_views
+        "starter_sql": """-- Cari penulis dengan lebih dari 1 artikel:
+SELECT a.username,
+       -- Hitung COUNT(p.id) AS post_count dan SUM(p.views) AS total_views:
 FROM authors a
 JOIN posts p ON a.id = p.author_id
-GROUP BY a.id, a.username;""",
+-- Lengkapi GROUP BY a.id, a.username
+-- saring kelompok dengan HAVING COUNT(p.id) > 1
+-- dan urutkan dengan ORDER BY total_views DESC:
+""",
         "hints": [
             "Use COUNT(p.id) for post count and SUM(p.views) for total views.",
             "Filter grouped results using HAVING COUNT(p.id) > 1.",
@@ -203,11 +212,13 @@ WHERE transaction_type = 'TRANSFER'
 GROUP BY channel
 ORDER BY total_volume DESC;""",
         "starter_sql": """-- Analisis transfer per channel perbankan:
-SELECT channel, SUM(amount) AS total_volume, AVG(fee) AS avg_fee
+SELECT channel,
+       -- Hitung SUM(amount) AS total_volume dan AVG(fee) AS avg_fee:
 FROM transactions
-WHERE transaction_type = 'TRANSFER'
-GROUP BY channel
-ORDER BY total_volume DESC;""",
+-- Lengkapi filter WHERE transaction_type = 'TRANSFER'
+-- kelompokkan dengan GROUP BY channel
+-- urutkan dengan ORDER BY total_volume DESC:
+""",
         "hints": [
             "Filter WHERE transaction_type = 'TRANSFER'.",
             "Group by channel and calculate SUM(amount) AS total_volume and AVG(fee) AS avg_fee."
@@ -237,9 +248,10 @@ ORDER BY c.id ASC;""",
         "starter_sql": """-- Tulis query Anti-Join menggunakan LEFT JOIN dan WHERE ... IS NULL:
 SELECT c.id, c.first_name, c.last_name, c.email
 FROM customers c
-LEFT JOIN orders o ON c.id = o.customer_id
-WHERE o.id IS NULL
-ORDER BY c.id ASC;""",
+-- Lengkapi LEFT JOIN ke tabel orders (on c.id = o.customer_id)
+-- saring baris yang belum pernah berbelanja dengan WHERE o.id IS NULL
+-- urutkan dengan ORDER BY c.id ASC:
+""",
         "hints": [
             "Use a LEFT JOIN from customers to orders.",
             "Filter for unmatched records using WHERE o.id IS NULL.",
@@ -269,9 +281,10 @@ FROM transactions
 ORDER BY transaction_id ASC;""",
         "starter_sql": """-- Terapkan Window Function SUM(...) OVER (ORDER BY ...):
 SELECT transaction_id, reference_no, amount,
-       SUM(amount) OVER (ORDER BY transaction_id ASC) AS running_total
+       -- Lengkapi Window Function SUM(...) OVER (ORDER BY transaction_id ASC) AS running_total:
 FROM transactions
-ORDER BY transaction_id ASC;""",
+ORDER BY transaction_id ASC;
+""",
         "hints": [
             "Use the window aggregate syntax: SUM(amount) OVER (ORDER BY transaction_id ASC).",
             "Assign alias AS running_total.",
@@ -301,9 +314,10 @@ FROM products
 ORDER BY category_id ASC, price_rank ASC;""",
         "starter_sql": """-- Terapkan DENSE_RANK() OVER (PARTITION BY ... ORDER BY ...):
 SELECT category_id, name, price,
-       DENSE_RANK() OVER (PARTITION BY category_id ORDER BY price DESC) AS price_rank
+       -- Lengkapi DENSE_RANK() OVER (PARTITION BY category_id ORDER BY price DESC) AS price_rank:
 FROM products
-ORDER BY category_id ASC, price_rank ASC;""",
+-- Lengkapi ORDER BY category_id ASC, price_rank ASC:
+""",
         "hints": [
             "Partition the ranking window using PARTITION BY category_id.",
             "Order within each category window using ORDER BY price DESC.",
@@ -337,17 +351,17 @@ SELECT c.name AS category_name, cs.total_revenue
 FROM category_sales cs
 JOIN categories c ON cs.category_id = c.id
 ORDER BY cs.total_revenue DESC;""",
-        "starter_sql": """-- Definisikan CTE category_sales lalu gabungkan dengan categories:
+        "starter_sql": """-- Definisikan CTE category_sales lalu gabungkan dengan tabel categories:
 WITH category_sales AS (
-    SELECT p.category_id, SUM(oi.quantity * oi.unit_price) AS total_revenue
+    SELECT p.category_id, -- Hitung SUM(oi.quantity * oi.unit_price) AS total_revenue
     FROM order_items oi
     JOIN products p ON oi.product_id = p.id
     GROUP BY p.category_id
 )
 SELECT c.name AS category_name, cs.total_revenue
 FROM category_sales cs
-JOIN categories c ON cs.category_id = c.id
-ORDER BY cs.total_revenue DESC;""",
+-- Lengkapi JOIN ke tabel categories dan ORDER BY total_revenue DESC:
+""",
         "hints": [
             "Define the CTE with: WITH category_sales AS (SELECT ... GROUP BY p.category_id).",
             "Calculate revenue as SUM(oi.quantity * oi.unit_price).",
@@ -377,10 +391,11 @@ WHERE (used_mb * 100.0) / allocated_mb >= 80.0
 ORDER BY used_percent DESC;""",
         "starter_sql": """-- Deteksi tablespace dengan utilisasi >= 80.0%:
 SELECT tablespace_name, allocated_mb, used_mb,
-       ROUND((used_mb * 100.0) / allocated_mb, 1) AS used_percent
+       -- Hitung used_percent: ROUND((used_mb * 100.0) / allocated_mb, 1) AS used_percent
 FROM dba_tablespaces
-WHERE (used_mb * 100.0) / allocated_mb >= 80.0
-ORDER BY used_percent DESC;""",
+-- Lengkapi filter WHERE (used_mb * 100.0) / allocated_mb >= 80.0
+-- urutkan dengan ORDER BY used_percent DESC:
+""",
         "hints": [
             "Compute the percentage with ROUND((used_mb * 100.0) / allocated_mb, 1).",
             "Filter using WHERE (used_mb * 100.0) / allocated_mb >= 80.0.",
@@ -417,8 +432,7 @@ SELECT DISTINCT s.spid, s.db_user, s.lock_type, s.wait_time_seconds, s.query_sni
 FROM active_sessions s
 WHERE s.blocked_by_spid IS NULL
   AND s.spid IN (
-    -- Subquery sesi yang sedang memblokir:
-    SELECT blocked_by_spid FROM active_sessions WHERE blocked_by_spid IS NOT NULL
+    -- Tulis subquery untuk mengambil blocked_by_spid dari active_sessions di mana blocked_by_spid IS NOT NULL:
   );""",
         "hints": [
             "Use a subquery to find all blocked_by_spid values that are NOT NULL.",
@@ -452,10 +466,10 @@ ORDER BY lag_seconds DESC;""",
         "starter_sql": """-- Cari replika cluster dengan lag tinggi atau status desynchronized:
 SELECT replica_name, replica_role, sync_state, lag_seconds, replay_queue_kb
 FROM cluster_replicas
-WHERE lag_seconds > 10.0 
-   OR replay_queue_kb > 500.0 
-   OR sync_state = 'DESYNCHRONIZED'
-ORDER BY lag_seconds DESC;""",
+-- Lengkapi filter WHERE dengan kondisi OR:
+-- lag_seconds > 10.0 ATAU replay_queue_kb > 500.0 ATAU sync_state = 'DESYNCHRONIZED'
+-- urutkan dengan ORDER BY lag_seconds DESC:
+""",
         "hints": [
             "Combine the conditions using OR: lag_seconds > 10.0 OR replay_queue_kb > 500.0 OR sync_state = 'DESYNCHRONIZED'.",
             "Order results by lag_seconds DESC."
@@ -493,11 +507,11 @@ SELECT
   node_name, 
   db_engine, 
   memory_used_mb, 
-  ROUND(((buffer_cache_reads - disk_physical_reads) * 100.0) / buffer_cache_reads, 2) AS cache_hit_pct
+  -- Hitung cache_hit_pct: ROUND(((buffer_cache_reads - disk_physical_reads) * 100.0) / buffer_cache_reads, 2) AS cache_hit_pct
 FROM k8s_db_pods
-WHERE (((buffer_cache_reads - disk_physical_reads) * 100.0) / buffer_cache_reads) < 95.0
-   OR cpu_throttled_seconds > 10.0
-ORDER BY cache_hit_pct ASC;""",
+-- Lengkapi filter WHERE (hitung persentase < 95.0 ATAU cpu_throttled_seconds > 10.0)
+-- urutkan dengan ORDER BY cache_hit_pct ASC:
+""",
         "hints": [
             "Formula for hit ratio: ((buffer_cache_reads - disk_physical_reads) * 100.0) / buffer_cache_reads.",
             "Round to 2 decimal places using ROUND(..., 2).",
@@ -528,12 +542,14 @@ GROUP BY db_user, lock_type
 HAVING SUM(wait_time_seconds) > 30
 ORDER BY total_wait_sec DESC;""",
         "starter_sql": """-- Agregasi durasi tunggu lock yang menggantung:
-SELECT db_user, lock_type, COUNT(*) AS blocked_count, SUM(wait_time_seconds) AS total_wait_sec
+SELECT db_user, lock_type,
+       -- Hitung COUNT(*) AS blocked_count dan SUM(wait_time_seconds) AS total_wait_sec:
 FROM active_sessions
 WHERE blocked_by_spid IS NOT NULL
-GROUP BY db_user, lock_type
-HAVING SUM(wait_time_seconds) > 30
-ORDER BY total_wait_sec DESC;""",
+-- Lengkapi GROUP BY db_user, lock_type
+-- saring dengan HAVING SUM(wait_time_seconds) > 30
+-- urutkan dengan ORDER BY total_wait_sec DESC:
+""",
         "hints": [
             "Filter blocked sessions with WHERE blocked_by_spid IS NOT NULL.",
             "Group by db_user, lock_type.",
@@ -571,21 +587,18 @@ FROM dba_tablespaces
 WHERE (autoextensible = 0 AND (used_mb * 1.0 / allocated_mb) >= 0.85)
    OR (autoextensible = 1 AND allocated_mb >= max_mb * 0.90)
 ORDER BY allocated_mb DESC;""",
-        "starter_sql": """-- Klasifikasikan risiko datafile dengan klausul CASE WHEN:
+        "starter_sql": """-- Klasifikasikan risiko kepenuhan datafile dengan klausul CASE WHEN:
 SELECT 
   tablespace_name, 
   file_name, 
   allocated_mb, 
   max_mb, 
   autoextensible,
-  CASE 
-    WHEN autoextensible = 0 AND (used_mb * 1.0 / allocated_mb) >= 0.85 THEN 'CRITICAL_FIXED'
-    ELSE 'NEAR_MAX_LIMIT'
-  END AS risk_level
+  -- Tulis ekspresi CASE WHEN: autoextensible = 0 AND (used_mb * 1.0 / allocated_mb) >= 0.85 THEN 'CRITICAL_FIXED' ELSE 'NEAR_MAX_LIMIT' END AS risk_level
 FROM dba_tablespaces
-WHERE (autoextensible = 0 AND (used_mb * 1.0 / allocated_mb) >= 0.85)
-   OR (autoextensible = 1 AND allocated_mb >= max_mb * 0.90)
-ORDER BY allocated_mb DESC;""",
+-- Lengkapi filter WHERE dengan kondisi OR untuk kedua kasus risiko
+-- urutkan dengan ORDER BY allocated_mb DESC:
+""",
         "hints": [
             "Use a CASE expression to evaluate 'CRITICAL_FIXED' vs 'NEAR_MAX_LIMIT'.",
             "Check condition (autoextensible = 0 AND used_mb/allocated_mb >= 0.85) OR (autoextensible = 1 AND allocated_mb >= max_mb * 0.90).",
@@ -598,67 +611,175 @@ ORDER BY allocated_mb DESC;""",
         ],
         "supported_engines": ["postgres", "mysql", "oracle", "mssql", "db2", "sqlite"],
     },
+    {
+        "slug": "concurrency-serializable-anomaly",
+        "title": "High-Value Transaction Ledger Concurrency Audit",
+        "title_id": "Audit Konkurensi Buku Kas Transaksi Bernilai Tinggi",
+        "level": "Professional",
+        "category": "Transactions & ACID",
+        "category_id": "Transaksi & ACID",
+        "dataset": "banking",
+        "description": "Audit high-throughput banking accounts where multiple transactions exceed 5,000,000 IDR. Select a.account_number, a.account_type, a.balance, COUNT(t.transaction_id) AS high_val_count, and SUM(t.amount) AS total_high_val_amount for transactions where t.amount >= 5000000.0. Group by account, include only accounts with strictly more than 1 high-value transaction, ordered by total_high_val_amount descending.",
+        "description_id": "Audit rekening perbankan bertrafik tinggi di mana terjadi beberapa transaksi bernilai >= 5.000.000 IDR. Tampilkan account_number, account_type, balance, high_val_count (COUNT), dan total_high_val_amount (SUM) untuk transaksi bernilai >= 5.000.000 IDR. Saring hanya rekening dengan lebih dari 1 transaksi besar, diurutkan dari total nominal terbesar.",
+        "expected_columns": ["account_number", "account_type", "balance", "high_val_count", "total_high_val_amount"],
+        "solution_sql": """SELECT a.account_number, a.account_type, a.balance, COUNT(t.transaction_id) AS high_val_count, SUM(t.amount) AS total_high_val_amount
+FROM accounts a
+JOIN transactions t ON a.account_number = t.from_account_number
+WHERE t.amount >= 5000000.0
+GROUP BY a.account_number, a.account_type, a.balance
+HAVING COUNT(t.transaction_id) > 1
+ORDER BY total_high_val_amount DESC;""",
+        "starter_sql": """-- Audit transaksi bernilai besar (>= 5.000.000 IDR) per rekening:
+SELECT a.account_number, a.account_type, a.balance,
+       -- Hitung COUNT(t.transaction_id) AS high_val_count
+       -- dan SUM(t.amount) AS total_high_val_amount:
+FROM accounts a
+JOIN transactions t ON a.account_number = t.from_account_number
+-- Lengkapi filter WHERE t.amount >= 5000000.0
+-- kelompokkan dengan GROUP BY a.account_number, a.account_type, a.balance
+-- saring dengan HAVING COUNT(t.transaction_id) > 1
+-- urutkan dengan ORDER BY total_high_val_amount DESC:
+""",
+        "hints": [
+            "Join accounts and transactions on a.account_number = t.from_account_number.",
+            "Filter transactions with WHERE t.amount >= 5000000.0.",
+            "Group by a.account_number, a.account_type, a.balance and filter HAVING COUNT(t.transaction_id) > 1.",
+            "Sort with ORDER BY total_high_val_amount DESC."
+        ],
+        "hints_id": [
+            "Hubungkan accounts dan transactions pada a.account_number = t.from_account_number.",
+            "Filter transaksi besar dengan WHERE t.amount >= 5000000.0.",
+            "Kelompokkan per rekening dan filter dengan HAVING COUNT(t.transaction_id) > 1.",
+            "Urutkan dengan ORDER BY total_high_val_amount DESC."
+        ],
+        "supported_engines": ["postgres", "mysql", "oracle", "mssql", "db2", "sqlite"],
+    },
 ]
 
 
 PROFESSIONS = [
     {
-        "id": "dba",
-        "title": "Database Administrator (DBA)",
-        "title_id": "Administrator Basis Data (DBA)",
+        "id": "sql-developer",
+        "title": "SQL Developer & Query Engineer",
+        "title_id": "Pengembang SQL & Insinyur Kueri",
+        "category": "Application Engineering",
+        "category_id": "Rekayasa Aplikasi",
+        "summary": "Authors high-performance analytical and transactional queries, designs indexed views, eliminates ORM query bottlenecks, and constructs robust business logic in modern SQL.",
+        "summary_id": "Merancang kueri transaksional dan analitis berkecepatan tinggi, optimasi indeks, eliminasi bottleneck ORM, dan membangun logika bisnis tangguh dalam dialek SQL modern.",
+        "engines": ["PostgreSQL", "MySQL", "Oracle", "SQL Server", "SQLite"],
+        "recommended_tools": ["dbeaver", "datagrip", "flyway", "liquibase"],
+        "core_responsibilities": [
+            "Write sargable queries that leverage composite, covering, and partial indexes",
+            "Eliminate N+1 database amplification anti-patterns in backend ORMs (Hibernate, Prisma, SQLAlchemy)",
+            "Construct complex data pipelines using Common Table Expressions (CTEs) and Window Functions",
+            "Maintain version-controlled database schema migration scripts"
+        ],
+        "core_responsibilities_id": [
+            "Menulis kueri sargable yang memanfaatkan indeks komposit, covering, dan parsial",
+            "Mengatasi masalah kueri N+1 pada ORM backend (Hibernate, Prisma, SQLAlchemy)",
+            "Membangun pipeline transformasi data dengan Common Table Expressions (CTEs) dan Window Functions",
+            "Mengelola skrip migrasi skema database terversi secara konsisten"
+        ],
+        "skills_progression": {
+            "junior": [
+                "ANSI SQL DDL/DML, multi-table joins, aggregations, and subqueries",
+                "Understanding primary, foreign, and unique key constraint enforcement",
+                "Basic EXPLAIN plan interpretation (Seq Scan vs Index Scan)",
+                "Writing idempotent migration scripts using Flyway / Liquibase"
+            ],
+            "mid": [
+                "Window functions (ROW_NUMBER, DENSE_RANK, LAG/LEAD, running totals)",
+                "Recursive CTEs for hierarchical tree traversal and graph queries",
+                "Index optimization: B-Tree index selectivity, covering indexes (INCLUDE clause)",
+                "Transactions and locking: dirty reads, non-repeatable reads, phantom reads"
+            ],
+            "senior": [
+                "Advanced Cost-Based Optimizer mechanics and statistics calibration",
+                "Partition pruning strategies across range, list, and hash partitioning",
+                "Cross-engine dialect porting and transpilation (Postgres to Oracle / T-SQL)",
+                "Automated SQL query linting and CI/CD quality gate enforcement"
+            ]
+        },
+        "key_metrics": [
+            "Query Latency p95 and p99 (< 20ms target)",
+            "Index Scan vs Sequential Scan Ratio (> 95% indexed)",
+            "ORM Query Multiplication Factor (Queries per HTTP request <= 2)",
+            "Execution Plan Cost and Temp Spill to Disk (0 bytes)"
+        ],
+        "runbooks": [
+            {
+                "name": "Slow Query Plan Diagnostics & Index Tuning",
+                "name_id": "Diagnostik Rencana Eksekusi Kueri Lambat & Penalaan Indeks",
+                "steps": [
+                    "Run EXPLAIN (ANALYZE, BUFFERS) or SET STATISTICS IO ON to inspect page reads",
+                    "Identify predicates causing Full Table Scan (e.g. function wrapping column: UPPER(email))",
+                    "Rewrite predicate to be sargable or introduce an expression/functional index",
+                    "Verify buffer read count drops by at least 90%"
+                ]
+            }
+        ],
+        "recommended_challenges": [
+            "low-stock-alert",
+            "top-spending-customers",
+            "category-revenue-cte",
+            "cumulative-transaction-ledger",
+            "product-price-category-rank"
+        ]
+    },
+    {
+        "id": "dba-general",
+        "title": "Enterprise Database Administrator (DBA)",
+        "title_id": "Administrator Basis Data Enterprise (DBA)",
         "category": "Operations & Reliability",
         "category_id": "Operasional & Keandalan",
         "summary": "Architects, provisions, monitors, and safeguards enterprise database instances to ensure 24/7 uptime, high performance, and rapid disaster recovery.",
         "summary_id": "Merancang, mengelola, memantau, dan menjaga cluster database perusahaan untuk memastikan uptime 24/7, performa maksimal, dan pemulihan bencana instan.",
-        "engines": ["PostgreSQL", "MySQL", "Oracle", "SQL Server"],
+        "engines": ["PostgreSQL", "MySQL", "Oracle", "SQL Server", "IBM Db2"],
         "recommended_tools": [
-            "oem",
-            "ssms",
-            "pem",
-            "manageengine-db-manager",
-            "ibm-dmc",
             "pmm",
-            "node-exporter",
+            "prometheus",
+            "grafana",
             "pgbackrest",
             "xtrabackup",
+            "dbeaver"
         ],
         "core_responsibilities": [
-            "Maintain database high availability (HA), mirroring, and automated failover clusters (AlwaysOn, Data Guard, Patroni)",
+            "Maintain database high availability (HA), mirroring, and automated failover clusters",
             "Design and test backup strategies (Full, Differential, Point-In-Time Recovery / PITR)",
-            "Monitor server resource consumption (Tablespace High Water Mark, buffer cache hit ratio, lock waits, replication lag)",
-            "Perform major version upgrades with zero or near-zero maintenance downtime",
+            "Monitor server resource consumption (Tablespace High Water Mark, buffer cache hit ratio, lock waits)",
+            "Perform major version upgrades with zero or near-zero maintenance downtime"
         ],
         "core_responsibilities_id": [
-            "Memelihara klaster ketersediaan tinggi (HA), mirroring, dan failover otomatis (AlwaysOn, Data Guard, Patroni)",
+            "Memelihara klaster ketersediaan tinggi (HA), mirroring, dan failover otomatis",
             "Merancang dan menguji strategi pencadangan (Full, Diferensial, PITR)",
-            "Memantau konsumsi sumber daya (High Water Mark tablespace, buffer cache hit ratio, lock wait, lag replikasi)",
-            "Melakukan upgrade versi mayor dengan zero-downtime atau downtime minimal",
+            "Memantau konsumsi sumber daya (High Water Mark tablespace, buffer cache hit ratio, lock wait)",
+            "Melakukan upgrade versi mayor dengan zero-downtime atau downtime minimal"
         ],
         "skills_progression": {
             "junior": [
                 "SQL DDL/DML syntax across multiple engines",
                 "Tablespace and datafile management (autoextend, HWM, storage allocation)",
                 "Logical backup & restore (pg_dump, mysqldump)",
-                "User management & privilege grants (least privilege)",
+                "User management & privilege grants (least privilege)"
             ],
             "mid": [
                 "Physical hot backup configuration (pgBackRest, XtraBackup)",
                 "Diagnosing blocking sessions, lock trees, and deadlock victims",
-                "Active-passive & streaming replication topology setup (AlwaysOn, Data Guard, Patroni)",
-                "Slow query log analysis and index defragmentation",
+                "Active-passive & streaming replication topology setup",
+                "Slow query log analysis and index defragmentation"
             ],
             "senior": [
                 "Multi-region active-active cluster architecture and zero-downtime failover",
                 "Automated chaos engineering & disaster recovery drills",
                 "Advanced performance telemetry via ASH, AWR, Extended Events, and kernel tuning",
-                "Automated migration pipelines and database sharding",
-            ],
+                "Automated migration pipelines and database sharding"
+            ]
         },
         "key_metrics": [
             "Tablespace Capacity & Datafile Headroom (> 85% alert)",
             "Replication Lag (seconds / bytes behind master)",
             "Cache Hit Ratio (> 99% target)",
-            "Lock Contention & Root Blocker Waiting Duration",
+            "Lock Contention & Root Blocker Waiting Duration"
         ],
         "runbooks": [
             {
@@ -668,319 +789,764 @@ PROFESSIONS = [
                     "Query lock catalogs to identify the root blocker SPID (blocked_by_spid IS NULL)",
                     "Inspect the root blocker query snippet and transaction start time",
                     "Attempt graceful statement cancellation before hard killing the connection",
-                    "Terminate session if uncommitted transaction blocks business-critical traffic",
-                ],
+                    "Terminate session if uncommitted transaction blocks business-critical traffic"
+                ]
             },
             {
                 "name": "Tablespace Storage Headroom Emergency Expansion",
                 "name_id": "Ekspansi Ruang Darurat Tablespace Kritis",
                 "steps": [
-                    "Check underlying OS mount filesystem space (`df -h`)",
+                    "Check underlying OS mount filesystem space (df -h)",
                     "Verify if tablespace datafiles are fixed-size or autoextensible",
-                    "Add new secondary datafile or resize existing datafile (`ALTER DATABASE DATAFILE ... RESIZE`)",
-                    "Schedule table segment shrink / VACUUM FULL to reclaim deleted block space",
-                ],
-            },
-            {
-                "name": "Replication Lag Emergency Remediation",
-                "name_id": "Penanganan Darurat Lag Replikasi",
-                "steps": [
-                    "Inspect replica I/O thread and SQL thread status",
-                    "Identify blocking long-running analytical queries on replica",
-                    "Increase parallel worker threads (e.g., slave_parallel_workers)",
-                    "If gap exceeds SLA, reroute read traffic to healthy nodes",
-                ],
-            },
+                    "Add new secondary datafile or resize existing datafile",
+                    "Schedule table segment shrink / VACUUM FULL to reclaim deleted block space"
+                ]
+            }
         ],
         "recommended_challenges": [
             "tablespace-capacity-alert",
             "blocking-sessions-root-cause",
             "tablespace-autoextend-exhaustion",
-            "banking-priority-accounts",
-        ],
+            "deadlock-contention-hotspot"
+        ]
     },
     {
-        "id": "data-engineer",
-        "title": "Backend & Data Engineer",
-        "title_id": "Insinyur Backend & Data",
-        "category": "Software Architecture",
-        "category_id": "Arsitektur Perangkat Lunak",
-        "summary": "Designs relational schemas, writes high-throughput queries, avoids ORM anti-patterns, and builds reliable ETL/ELT data pipelines.",
-        "summary_id": "Merancang skema relasional efisien, menulis kueri throughput tinggi, mencegah anti-pattern ORM, dan membangun pipa data ETL/ELT terpercaya.",
-        "engines": ["PostgreSQL", "MySQL", "SQLite", "SQL Server"],
-        "recommended_tools": ["bytebase", "flyway", "pgmustard", "litecli", "dbeaver"],
+        "id": "oracle-dba",
+        "title": "Oracle Database Administrator",
+        "title_id": "Administrator Basis Data Oracle",
+        "category": "Enterprise RDBMS Administration",
+        "category_id": "Administrasi RDBMS Enterprise",
+        "summary": "Specializes in mission-critical Oracle instances, Multitenant CDB/PDB architecture, Real Application Clusters (RAC), Data Guard disaster recovery, and deep AWR/ASH performance diagnostics.",
+        "summary_id": "Spesialis arsitektur Oracle Enterprise, Multitenant CDB/PDB, Real Application Clusters (RAC), disaster recovery Data Guard, dan diagnostik performa AWR/ASH.",
+        "engines": ["Oracle 23ai", "Oracle 19c"],
+        "recommended_tools": ["oracle-sql-developer", "oem", "sqlcl", "sqlplus", "rman"],
         "core_responsibilities": [
-            "Design normalized (3NF) relational models and denormalized analytical tables",
-            "Optimize database access layers in application code (eliminate N+1 query patterns)",
-            "Execute zero-downtime schema migrations using expand-contract patterns",
-            "Build robust transactional boundaries and concurrency controls (Optimistic / Pessimistic locking)",
+            "Manage SGA and PGA memory allocation (Buffer Cache, Shared Pool, Large Pool, PGA Target)",
+            "Configure and administer Oracle Data Guard physical standby and automated Fast-Start Failover (FSFO)",
+            "Perform backup and recovery operations with Oracle Recovery Manager (RMAN)",
+            "Analyze system performance bottlenecks using AWR, ASH, and ADDM reports"
         ],
         "core_responsibilities_id": [
-            "Merancang model relasional normal (3NF) dan tabel denormalisasi analitik",
-            "Mengoptimalkan layer akses database di kode backend (mengatasi kueri N+1)",
-            "Mengeksekusi migrasi skema tanpa downtime menggunakan pola expand-contract",
-            "Membangun batasan transaksi kuat dan kontrol konkurensi (Optimistic / Pessimistic locking)",
+            "Mengelola alokasi memori SGA dan PGA (Buffer Cache, Shared Pool, PGA Target)",
+            "Mengonfigurasi dan memelihara Oracle Data Guard standby dan Fast-Start Failover",
+            "Mengeksekusi backup dan recovery fisik dengan Oracle Recovery Manager (RMAN)",
+            "Mendiagnosis kemacetan performa melalui laporan AWR, ASH, dan ADDM"
         ],
         "skills_progression": {
             "junior": [
-                "Table design with appropriate data types and constraints",
-                "Multi-table JOINs and standard aggregations",
-                "Writing clean migration scripts using Flyway / Alembic",
-                "Basic understanding of transaction isolation levels",
+                "CDB and PDB provisioning, user roles, tablespaces, and datafiles",
+                "Basic SQL*Plus / SQLcl command-line navigation and alert.log monitoring",
+                "Configuring listener.ora and tnsnames.ora networking",
+                "Taking cold/hot database backups via RMAN"
             ],
             "mid": [
-                "Composite indexing strategy based on query predicate selectivity",
-                "Common Table Expressions (CTEs) and Window functions",
-                "Batch processing with pagination (keyset / cursor-based pagination)",
-                "Connection lifecycle management in microservices",
+                "Oracle Data Guard replication, switchover/failover validation",
+                "AWR and ASH report generation, analyzing top wait events (db file sequential read, enqueue)",
+                "Managing Automatic Storage Management (ASM) disk groups and rebalancing",
+                "Tuning undo tablespace retention to eliminate ORA-01555 (Snapshot too old)"
             ],
             "senior": [
-                "High-volume CDC (Change Data Capture) pipelines with Debezium",
-                "Polyglot persistence architecture (Relational + Cache + Search)",
-                "Design for distributed transactions (Saga pattern vs 2PC)",
-                "Declarative database CI/CD and automated schema linting",
-            ],
+                "Oracle Real Application Clusters (RAC) multi-node cache fusion and interconnect tuning",
+                "Zero-downtime rolling database patching with opatch / Grid Infrastructure",
+                "Advanced GoldenGate bidirectional replication and conflict resolution",
+                "Database consolidation and Exadata storage cell offloading optimization"
+            ]
         },
         "key_metrics": [
-            "Query Latency p95 and p99 (< 50ms target)",
-            "Query Execution Plan Cost & Temp Spill to Disk",
-            "Migration Execution Duration & Table Lock Time",
-            "ORM Query Amplification Ratio (Queries per API Request)",
+            "SGA Buffer Cache Hit Ratio (> 98%)",
+            "Top 5 Timed Foreground Wait Events (% of DB Time)",
+            "Redo Log Switch Frequency (< 4 per hour recommended)",
+            "Data Guard Transport & Apply Lag (0 seconds SLA)",
+            "Tablespace High Water Mark & Datafile Free Space"
         ],
         "runbooks": [
             {
-                "name": "Zero-Downtime Column Addition & Migration",
-                "name_id": "Penambahan Kolom & Migrasi Skema Zero-Downtime",
+                "name": "Oracle Data Guard Switchover Procedure",
+                "name_id": "Prosedur Switchover Terencana Oracle Data Guard",
                 "steps": [
-                    "Add new nullable column without heavy locks",
-                    "Deploy dual-writing backend code to write to old and new columns",
-                    "Backfill existing records in controlled batches",
-                    "Switch reads to new column and deprecate old column",
-                ],
+                    "Verify primary and standby are fully synchronized: check V$ARCHIVE_DEST_STATUS",
+                    "Switch primary to standby: ALTER DATABASE COMMIT TO SWITCHOVER TO PHYSICAL STANDBY",
+                    "Convert standby to primary: ALTER DATABASE COMMIT TO SWITCHOVER TO PRIMARY",
+                    "Open new primary database: ALTER DATABASE OPEN",
+                    "Verify log shipping resumes in reverse direction"
+                ]
             },
+            {
+                "name": "ORA-01555 Snapshot Too Old Mitigation",
+                "name_id": "Mitigasi Error ORA-01555 (Snapshot Too Old)",
+                "steps": [
+                    "Query V$UNDOSTAT to identify the longest-running query duration",
+                    "Increase UNDO_RETENTION parameter to exceed max query execution time",
+                    "Add storage space to UNDO tablespace or enable AUTOEXTEND",
+                    "Tune long-running transaction fetch loops to avoid excessive commits"
+                ]
+            }
+        ],
+        "recommended_challenges": [
+            "tablespace-capacity-alert",
+            "blocking-sessions-root-cause",
+            "tablespace-autoextend-exhaustion"
+        ]
+    },
+    {
+        "id": "postgres-dba",
+        "title": "PostgreSQL Database Administrator",
+        "title_id": "Administrator Basis Data PostgreSQL",
+        "category": "Open Source Database Administration",
+        "category_id": "Administrasi Database Open Source",
+        "summary": "Master of PostgreSQL internals: MVCC multi-versioning, autovacuum optimization, Write-Ahead Logging (WAL), streaming replication, and Patroni high-availability clusters.",
+        "summary_id": "Ahli internal PostgreSQL: kontrol konkurensi MVCC, tuning autovacuum, WAL, replikasi streaming, dan arsitektur klaster Patroni berkeandalan tinggi.",
+        "engines": ["PostgreSQL 17", "PostgreSQL 16"],
+        "recommended_tools": ["pgadmin", "pgmustard", "pgbackrest", "patroni", "prometheus"],
+        "core_responsibilities": [
+            "Tune shared_buffers, work_mem, maintenance_work_mem, and wal_buffers",
+            "Manage Autovacuum cost limits and scale factors to eliminate table and index bloat",
+            "Deploy and monitor physical streaming replication with replication slots",
+            "Build zero-loss physical backup and Point-In-Time Recovery pipelines with pgBackRest"
+        ],
+        "core_responsibilities_id": [
+            "Menyetel alokasi shared_buffers, work_mem, maintenance_work_mem, dan wal_buffers",
+            "Mengelola parameter autovacuum untuk memberantas pembengkakan bloat tabel dan indeks",
+            "Menerapkan replikasi streaming fisik dengan slot replikasi aman",
+            "Membangun arsitektur backup fisik zero-loss dan PITR menggunakan pgBackRest"
+        ],
+        "skills_progression": {
+            "junior": [
+                "PostgreSQL process model (postmaster, backends, background workers)",
+                "Managing roles, schemas, search_path, and least-privilege grants",
+                "Logical backups via pg_dump and restoration via pg_restore",
+                "Basic EXPLAIN and EXPLAIN ANALYZE query inspection"
+            ],
+            "mid": [
+                "Tuning autovacuum_vacuum_cost_limit and autovacuum_vacuum_scale_factor per table",
+                "Configuring PgBouncer for transaction-level connection pooling",
+                "Setting up hot standby streaming replication and monitoring pg_stat_replication",
+                "Diagnosing lock conflicts in pg_locks and slow queries in pg_stat_statements"
+            ],
+            "senior": [
+                "High availability cluster orchestration with Patroni, etcd, and HAProxy",
+                "Major version upgrades using pg_upgrade with hardlinks with zero data copy",
+                "Declarative partitioning and foreign data wrappers (postgres_fdw)",
+                "Transaction ID wraparound prevention and vacuum_freeze tuning"
+            ]
+        },
+        "key_metrics": [
+            "Transaction ID Age vs autovacuum_freeze_max_age (Wraparound headroom)",
+            "Replication Slot Lag Bytes & WAL Directory Spool Size",
+            "Cache Hit Ratio via pg_stat_database (> 99%)",
+            "Dead Tuple Bloat Ratio via pg_stat_user_tables",
+            "Connection Pool Saturation (Active vs max_connections)"
+        ],
+        "runbooks": [
+            {
+                "name": "Zero-Downtime Table Bloat Elimination (pg_repack)",
+                "name_id": "Pembersihan Bloat Tabel Zero-Downtime (pg_repack)",
+                "steps": [
+                    "Identify bloated tables using pg_stat_user_tables dead tuple metrics",
+                    "Verify available disk space is at least 2x the bloated table size",
+                    "Run pg_repack utility targeting bloated table without taking exclusive table locks",
+                    "Verify physical disk consumption drops and index scan latency improves"
+                ]
+            },
+            {
+                "name": "PostgreSQL Standby Replica Desynchronization Repair",
+                "name_id": "Pemulihan Desinkronisasi Standby Replica PostgreSQL",
+                "steps": [
+                    "Check replication status on standby: SELECT * FROM pg_stat_wal_receiver",
+                    "Check primary slot status: SELECT * FROM pg_stat_replication_slots",
+                    "If replication slot was dropped, restore missing WAL segments from pgBackRest archive",
+                    "Re-initialize standby via pg_basebackup or pgbackrest restore --delta if WAL is lost"
+                ]
+            }
+        ],
+        "recommended_challenges": [
+            "blocking-sessions-root-cause",
+            "replication-mirroring-lag-monitor",
+            "deadlock-contention-hotspot"
+        ]
+    },
+    {
+        "id": "mysql-dba",
+        "title": "MySQL & MariaDB Administrator",
+        "title_id": "Administrator Basis Data MySQL & MariaDB",
+        "category": "Open Source Database Administration",
+        "category_id": "Administrasi Database Open Source",
+        "summary": "Specialist in MySQL/MariaDB InnoDB storage engine, buffer pool memory management, GTID replication topologies, Galera multi-master clusters, and Percona toolkits.",
+        "summary_id": "Spesialis mesin InnoDB MySQL/MariaDB, manajemen buffer pool, replikasi berbasis GTID, klaster multi-master Galera, dan toolkit Percona.",
+        "engines": ["MariaDB 11.3", "MySQL 8.4 LTS"],
+        "recommended_tools": ["mysql-workbench", "pmm", "xtrabackup", "percona-toolkit"],
+        "core_responsibilities": [
+            "Tune InnoDB Buffer Pool instances, redo log capacity, and flush algorithms",
+            "Maintain Global Transaction Identifier (GTID) replication topologies and replication filters",
+            "Execute online physical hot backups and point-in-time recovery with Percona XtraBackup",
+            "Perform zero-downtime online schema alterations using pt-online-schema-change"
+        ],
+        "core_responsibilities_id": [
+            "Menyetel alokasi InnoDB Buffer Pool, kapasitas redo log, dan algoritma flush",
+            "Memelihara topologi replikasi berbasis GTID dan filter replikasi",
+            "Mengeksekusi pencadangan fisik hot backup dan PITR dengan Percona XtraBackup",
+            "Melakukan perubahan skema online tanpa downtime dengan pt-online-schema-change"
+        ],
+        "skills_progression": {
+            "junior": [
+                "InnoDB table creation, clustered indexes, and foreign keys",
+                "User privileges, authentication plugins, and network bind configuration",
+                "Taking logical backups via mysqldump / mydumper",
+                "Enabling and inspecting slow query log output"
+            ],
+            "mid": [
+                "Configuring master-replica streaming replication using GTID",
+                "InnoDB buffer pool sizing (70-80% of server RAM) and dirty page flush tuning",
+                "Non-blocking physical backups using Percona XtraBackup",
+                "Diagnosing lock wait timeouts and deadlocks via SHOW ENGINE INNODB STATUS"
+            ],
+            "senior": [
+                "Galera Cluster / Group Replication synchronous multi-primary architecture",
+                "ProxySQL routing: read/write splitting, query caching, and connection pooling",
+                "Zero-downtime MySQL major version rolling upgrades with minimal failover lag",
+                "Kernel I/O tuning for SSD flash storage (innodb_io_capacity, innodb_flush_method)"
+            ]
+        },
+        "key_metrics": [
+            "Seconds_Behind_Source (Replication Lag in seconds)",
+            "InnoDB Buffer Pool Read Hit Ratio (> 99.5%)",
+            "Deadlocks Count / sec (mysql_global_status_innodb_deadlocks)",
+            "Threads_connected vs max_connections capacity (> 80% alert)",
+            "InnoDB Log Wait Ratio (Redo log buffer saturation)"
+        ],
+        "runbooks": [
+            {
+                "name": "Percona XtraBackup Hot Physical Restore",
+                "name_id": "Restorasi Fisik Hot Backup Percona XtraBackup",
+                "steps": [
+                    "Stop running mysqld service: systemctl stop mysqld",
+                    "Prepare the backup: xtrabackup --prepare --target-dir=/data/backup",
+                    "Empty corrupted data directory: rm -rf /var/lib/mysql/*",
+                    "Copy back database files: xtrabackup --copy-back --target-dir=/data/backup",
+                    "Fix ownership: chown -R mysql:mysql /var/lib/mysql and start service"
+                ]
+            },
+            {
+                "name": "Broken GTID Replication Stream Repair",
+                "name_id": "Perbaikan Aliran Replikasi GTID yang Terputus",
+                "steps": [
+                    "Inspect replica error: SHOW REPLICA STATUS\\G",
+                    "Identify offending GTID causing duplicate key or table missing error",
+                    "Inject empty transaction on replica to skip offending GTID cleanly",
+                    "Restart replication thread: START REPLICA; verify Seconds_Behind_Source returns to 0"
+                ]
+            }
         ],
         "recommended_challenges": [
             "top-spending-customers",
-            "dormant-customers-anti-join",
-            "category-revenue-cte",
-        ],
+            "replication-mirroring-lag-monitor",
+            "deadlock-contention-hotspot"
+        ]
     },
     {
-        "id": "data-analyst",
-        "title": "Data Analyst & BI Specialist",
-        "title_id": "Analis Data & Spesialis BI",
-        "category": "Analytics & Business Intelligence",
-        "category_id": "Analitik & Kecerdasan Bisnis",
-        "summary": "Unlocks strategic insights from relational data through advanced SQL, window functions, statistical aggregations, and dimensional modeling.",
-        "summary_id": "Menghasilkan wawasan strategis dari data relasional melalui SQL tingkat lanjut, window function, agregasi statistik, dan pemodelan dimensional.",
-        "engines": ["PostgreSQL", "SQLite", "Oracle", "MySQL"],
-        "recommended_tools": ["dbeaver", "grafana", "litecli"],
+        "id": "sqlserver-dba",
+        "title": "Microsoft SQL Server DBA",
+        "title_id": "Administrator Basis Data Microsoft SQL Server",
+        "category": "Enterprise RDBMS Administration",
+        "category_id": "Administrasi RDBMS Enterprise",
+        "summary": "Focuses on enterprise SQL Server estates, Always On Availability Groups, TempDB contention mitigation, Query Store plan regressions, and Dynamic Management Views (DMVs).",
+        "summary_id": "Fokus pada pengelolaan SQL Server enterprise, Always On Availability Groups, mitigasi kontensi TempDB, analisis Query Store, dan DMV.",
+        "engines": ["SQL Server 2022", "Azure SQL Managed Instance"],
+        "recommended_tools": ["ssms", "azure-data-studio", "extended-events"],
         "core_responsibilities": [
-            "Author complex analytical SQL queries (Window functions, cohorts, rolling averages)",
-            "Build clean dimensional reporting models (Star Schema / Snowflake Schema)",
-            "Create performant database views and materialized views for reporting dashboards",
-            "Validate data quality and business metrics against financial ledgers",
+            "Administer Always On Availability Groups (Synchronous-Commit & Asynchronous-Commit)",
+            "Optimize TempDB file layout to prevent allocation bottleneck on PFS/GAM/SGAM pages",
+            "Analyze query performance regressions and force optimal plans via Query Store",
+            "Automate index maintenance, statistics updates, and database integrity checks (DBCC CHECKDB)"
         ],
         "core_responsibilities_id": [
-            "Menulis kueri SQL analitik kompleks (Fungsi jendela, kohort, rata-rata bergerak)",
-            "Membangun model pelaporan dimensional yang bersih (Star Schema / Snowflake Schema)",
-            "Membuat database view dan materialized view performa tinggi untuk dashboard",
-            "Memvalidasi kualitas data dan akurasi metrik bisnis terhadap buku kas keuangan",
+            "Mengelola cluster Always On Availability Groups (Sync & Async commit)",
+            "Mengoptimalkan layout file TempDB untuk mencegah kontensi halaman PFS/GAM/SGAM",
+            "Menganalisis regresi kueri dan memaksa plan optimal melalui Query Store",
+            "Mengotomatiskan pemeliharaan indeks, statistik data, dan integritas DBCC CHECKDB"
         ],
         "skills_progression": {
             "junior": [
-                "Filtering, sorting, and conditional aggregations (CASE WHEN)",
-                "GROUP BY, HAVING, and multi-table INNER/LEFT JOINs",
-                "Extracting metrics into clean CSV/Excel reports",
-                "Date/Time manipulations across database dialects",
+                "SQL Server Management Studio (SSMS) navigation, T-SQL scripting",
+                "Database filegroups, log files (LDF), and recovery models (Full, Simple)",
+                "Configuring SQL Server Agent maintenance plans and backup jobs",
+                "Basic permissions, SQL logins, database users, and server roles"
             ],
             "mid": [
-                "Ranking functions (ROW_NUMBER, RANK, DENSE_RANK)",
-                "Cumulative running totals and sliding frame aggregations (ROWS BETWEEN)",
-                "Recursive CTEs for hierarchical and tree data navigation",
-                "Creating and refreshing materialized views with indexes",
+                "Always On Availability Group replica administration and listener routing",
+                "Configuring TempDB with multiple uniform data files to prevent latch contention",
+                "Diagnosing blocking locks and deadlocks using sys.dm_exec_requests and Extended Events",
+                "Index defragmentation strategy: Reorganize vs Rebuild based on fragmentation %"
             ],
             "senior": [
-                "Advanced statistical analysis in SQL (percentiles, regression, histograms)",
-                "Designing self-service data marts for non-technical stakeholders",
-                "Optimizing query performance for multi-terabyte data warehouses",
-                "Building automated data quality verification tests in SQL",
-            ],
+                "Multi-subnet cross-datacenter Always On failover clustering (WSFC)",
+                "Query Store plan forcing and automated tuning parameter calibration",
+                "In-Memory OLTP memory-optimized tables and natively compiled stored procedures",
+                "Disaster recovery auditing: Page Life Expectancy (PLE) and buffer pool memory pressures"
+            ]
         },
         "key_metrics": [
-            "Dashboard Refresh Time (< 5s target)",
-            "Analytical Query Compute Cost & Memory Usage",
-            "Data Accuracy & Reconciliation Match Rate (100%)",
-            "Report Delivery SLA Adherence",
+            "Page Life Expectancy (PLE) in seconds (> 300s baseline, higher for large RAM)",
+            "Always On Synchronization Health (HEALTHY / SYNCHRONIZED)",
+            "Wait Statistics: PAGEIOLATCH_SH, CXPACKET, LCK_M_X % of total wait time",
+            "TempDB Allocation Contention (PFS/GAM/SGAM latch wait duration)",
+            "Log Space Used % & Virtual Log File (VLF) Count"
         ],
         "runbooks": [
             {
-                "name": "Slow Dashboard Query Troubleshooting",
-                "name_id": "Troubleshooting Query Dashboard yang Lambat",
+                "name": "Always On Availability Group Planned Failover",
+                "name_id": "Failover Terencana Always On Availability Group",
                 "steps": [
-                    "Inspect EXPLAIN plan for full table scans on historical partitions",
-                    "Add covering composite index for filter and aggregation columns",
-                    "Convert real-time join calculation to a scheduled Materialized View",
-                    "Verify dashboard latency drops below 2 seconds",
-                ],
+                    "Connect to target synchronous secondary replica via SSMS",
+                    "Verify secondary replica synchronization state is SYNCHRONIZED",
+                    "Execute failover command: ALTER AVAILABILITY GROUP [AG1] FAILOVER;",
+                    "Verify listener routes application traffic to new primary replica",
+                    "Confirm previous primary becomes secondary and resumes log synchronization"
+                ]
             },
+            {
+                "name": "TempDB Allocation Contention Resolution",
+                "name_id": "Resolusi Kontensi Alokasi TempDB",
+                "steps": [
+                    "Query sys.dm_os_waiting_tasks for PAGELATCH_UP waits on TempDB pages (2:1:1, 2:1:2)",
+                    "Configure TempDB to have 8 equal-sized data files matching logical CPU cores",
+                    "Enable Trace Flag 1118 (uniform extent allocation) if on legacy SQL Server versions",
+                    "Restart SQL Server service during maintenance window to apply new file distribution"
+                ]
+            }
         ],
         "recommended_challenges": [
-            "product-price-category-rank",
-            "cumulative-transaction-ledger",
-            "category-revenue-cte",
-            "high-volume-authors",
+            "blocking-sessions-root-cause",
+            "replication-mirroring-lag-monitor",
+            "deadlock-contention-hotspot"
+        ]
+    },
+    {
+        "id": "db2-dba",
+        "title": "IBM Db2 Database Administrator",
+        "title_id": "Administrator Basis Data IBM Db2",
+        "category": "Enterprise Core Banking & Financial DBA",
+        "category_id": "Administrasi Database Perbankan Enterprise",
+        "summary": "Manages enterprise IBM Db2 environments for banking, telecommunications, and high-security transactional workloads, specializing in HADR, pureScale, and db2pd diagnostic telemetry.",
+        "summary_id": "Mengelola IBM Db2 untuk perbankan, telekomunikasi, dan beban kerja finansial, spesialisasi HADR, pureScale, dan telemetri diagnostik db2pd.",
+        "engines": ["IBM Db2 11.5", "IBM Db2 11.1"],
+        "recommended_tools": ["ibm-dmc", "db2-clp", "db2pd", "dbeaver"],
+        "core_responsibilities": [
+            "Administer High Availability Disaster Recovery (HADR) synchronization modes",
+            "Configure bufferpools, SMS/DMS tablespaces, and multi-temperature storage tiers",
+            "Perform live system and lock troubleshooting using the db2pd diagnostic tool",
+            "Calibrate Workload Manager (WLM) thresholds to prevent runaway queries"
         ],
+        "core_responsibilities_id": [
+            "Mengelola sinkronisasi High Availability Disaster Recovery (HADR)",
+            "Mengonfigurasi bufferpool, tablespace SMS/DMS, dan tier penyimpanan multi-temperature",
+            "Melakukan troubleshooting lock dan memori secara live menggunakan alat db2pd",
+            "Mengonfigurasi Workload Manager (WLM) untuk mencegah query monopoli sumber daya"
+        ],
+        "skills_progression": {
+            "junior": [
+                "Db2 instance, database creation, and catalog navigation via Db2 CLP",
+                "Tablespace management (automatic storage, containers, prefetch size)",
+                "Full database backup and restore commands (BACKUP DATABASE ... TO)",
+                "User authentication, DBADM authority, and grant cascades"
+            ],
+            "mid": [
+                "HADR configuration (SYNC, NEARSYNC, ASYNC, SUPERASYNC)",
+                "Diagnosing lock waits, lock escalations, and deadlocks via db2pd -locks -wlocks",
+                "Reorganizing fragmented tables and updating statistics (REORG TABLE, RUNSTATS)",
+                "Tuning bufferpool hit ratios using MON_GET_BUFFERPOOL table functions"
+            ],
+            "senior": [
+                "Db2 pureScale active-active clustering and Cluster Caching Facility (CF) tuning",
+                "Automated HADR failover orchestration using Tivoli System Automation (TSA)",
+                "Database partition feature (DPF) for massive parallel processing analytics",
+                "Zero-downtime rolling fixpack updates and database catalog migrations"
+            ]
+        },
+        "key_metrics": [
+            "Bufferpool Hit Ratio (> 98%)",
+            "HADR Log Shipping Gap & Peer State (PEER vs DISCONNECTED)",
+            "Lock Escalation Rate (LOCKS_HELD approaching MAXLOCKS)",
+            "Package Cache Hit Ratio (> 95%)",
+            "Log Space Utilization % & Active Log Files Available"
+        ],
+        "runbooks": [
+            {
+                "name": "IBM Db2 HADR Graceful Takeover",
+                "name_id": "Takeover Terencana IBM Db2 HADR",
+                "steps": [
+                    "Connect to standby database via db2 CLP: db2 connect to DB_NAME",
+                    "Verify HADR state is PEER: db2pd -db DB_NAME -hadr",
+                    "Initiate graceful takeover: db2 TAKEOVER HADR ON DB DB_NAME",
+                    "Verify new primary transitions to PRIMARY state and previous primary becomes STANDBY"
+                ]
+            },
+            {
+                "name": "Db2 Lock Escalation & Deadlock Diagnostics",
+                "name_id": "Diagnostik Eskalasi Lock & Deadlock Db2",
+                "steps": [
+                    "Inspect lock contention: db2pd -db DB_NAME -wlocks",
+                    "Identify application handles holding exclusive locks on table rows",
+                    "Check db2diag.log for DIA8300E lock escalation events",
+                    "Increase LOCKLIST and MAXLOCKS database configuration parameters to prevent row-to-table escalation"
+                ]
+            }
+        ],
+        "recommended_challenges": [
+            "tablespace-capacity-alert",
+            "blocking-sessions-root-cause",
+            "tablespace-autoextend-exhaustion"
+        ]
+    },
+    {
+        "id": "database-engineer",
+        "title": "Database Engineer & Data Platform Specialist",
+        "title_id": "Insinyur Basis Data & Spesialis Platform Data",
+        "category": "Data Platform Engineering",
+        "category_id": "Rekayasa Platform Data",
+        "summary": "Bridges software engineering and database administration: builds declarative database migration pipelines, manages distributed SQL architectures, and optimizes microservice data layers.",
+        "summary_id": "Menjembatani rekayasa software dan DBA: membangun pipeline migrasi skema deklaratif, mengelola arsitektur Distributed SQL, dan optimasi data microservices.",
+        "engines": ["PostgreSQL", "CockroachDB", "MySQL", "Redis"],
+        "recommended_tools": ["bytebase", "liquibase", "flyway", "terraform", "prisma"],
+        "core_responsibilities": [
+            "Design normalized transactional schemas and zero-downtime expand-contract migration patterns",
+            "Manage connection pooling, client timeout budgets, and retry semantics across microservices",
+            "Evaluate and deploy Distributed SQL databases (CockroachDB, YugabyteDB) for global horizontal scaling",
+            "Implement Change Data Capture (CDC) streaming pipelines from transactional databases into Kafka"
+        ],
+        "core_responsibilities_id": [
+            "Merancang skema transaksional dan pola migrasi expand-contract tanpa downtime",
+            "Mengelola connection pooling, timeout budget, dan retry logic pada microservices",
+            "Menerapkan database Distributed SQL (CockroachDB, YugabyteDB) untuk skalabilitas horizontal",
+            "Membangun pipeline Change Data Capture (CDC) dari database transaksional ke Kafka"
+        ],
+        "skills_progression": {
+            "junior": [
+                "Relational schema modeling, constraints, foreign keys, and indexes",
+                "Authoring repeatable migration scripts via Flyway or Liquibase",
+                "Understanding connection pool configuration (min/max connections, idle timeouts)",
+                "Identifying and resolving slow N+1 query patterns in application logs"
+            ],
+            "mid": [
+                "Zero-downtime column renames and drops using expand-contract phasing",
+                "Designing caching layers with Redis (Cache-Aside, Write-Through, cache invalidation)",
+                "Implementing optimistic concurrency control using version numbers",
+                "Configuring Debezium CDC connectors for event-driven architectures"
+            ],
+            "senior": [
+                "Distributed SQL transaction coordination (Raft consensus, range leases, clock synchronization)",
+                "Horizontal sharding key selection to prevent hot range / hot spot partitions",
+                "Multi-region active-active database replication and conflict-free data types (CRDTs)",
+                "Database CI/CD automation with automated schema drift detection"
+            ]
+        },
+        "key_metrics": [
+            "Migration Failure Rate (Target: 0% in production)",
+            "Connection Pool Saturation % across service pods",
+            "p99 Read and Write Transaction Latency",
+            "CDC Replication Lag to Message Broker (< 1 second)"
+        ],
+        "runbooks": [
+            {
+                "name": "Zero-Downtime Column Addition with Default Value",
+                "name_id": "Penambahan Kolom Skema Zero-Downtime dengan Default Value",
+                "steps": [
+                    "Add new nullable column without heavy table lock",
+                    "Deploy application update writing to both old and new columns",
+                    "Execute background data backfill script in controlled batches",
+                    "Apply NOT NULL and DEFAULT constraint once backfill completes"
+                ]
+            }
+        ],
+        "recommended_challenges": [
+            "category-revenue-cte",
+            "dormant-customers-anti-join",
+            "cumulative-transaction-ledger"
+        ]
     },
     {
         "id": "dbre",
-        "title": "Site Reliability Engineer (Database SRE / DBRE)",
-        "title_id": "Insinyur Keandalan Situs (DBRE / SRE)",
-        "category": "Infrastructure & Telemetry",
-        "category_id": "Infrastruktur & Telemetri",
-        "summary": "Applies software engineering disciplines to database operations, defining SLOs/SLIs, building automated telemetry pipelines, and orchestrating self-healing topologies.",
-        "summary_id": "Menerapkan disiplin rekayasa perangkat lunak pada operasional database, merumuskan SLO/SLI, membangun telemetri otomatis, dan orkestrasi arsitektur self-healing.",
-        "engines": ["PostgreSQL", "MySQL", "Oracle", "SQL Server"],
+        "title": "Database Reliability Engineer (DBRE)",
+        "title_id": "Insinyur Keandalan Basis Data (DBRE / SRE)",
+        "category": "Infrastructure & Reliability",
+        "category_id": "Infrastruktur & Keandalan",
+        "summary": "Applies software engineering principles to database operations: automates failover mechanics, defines Service Level Objectives (SLOs), instruments telemetry, and conducts chaos engineering drills.",
+        "summary_id": "Menerapkan prinsip rekayasa perangkat lunak pada operasional database: otomatisasi failover, rumusan SLO, telemetri observabilitas, dan chaos engineering.",
+        "engines": ["PostgreSQL", "MySQL", "Redis", "Cassandra"],
         "recommended_tools": [
             "prometheus",
             "node-exporter",
             "grafana",
-            "pem",
-            "manageengine-db-manager",
-            "pmm",
-            "pgmustard",
+            "ansible",
+            "terraform",
+            "docker",
+            "kubernetes"
         ],
         "core_responsibilities": [
-            "Define and monitor Database Service Level Objectives (SLOs: 99.99% availability, p99 latency < 20ms)",
-            "Maintain Prometheus metric exporters (node_exporter, postgres_exporter, mysqld_exporter) and Grafana alert pipelines",
-            "Automate Kubernetes StatefulSet operators (CloudNativePG, Crunchy Data PGO, Percona Operators)",
-            "Conduct automated disaster recovery, database mirroring audits, and chaos engineering drills",
+            "Define and enforce Database Service Level Objectives (SLOs: 99.99% uptime, p99 latency < 20ms)",
+            "Automate Kubernetes database operators (CloudNativePG, Percona Operators)",
+            "Instrument Prometheus metric exporters and multi-window burn rate alert rules",
+            "Conduct automated disaster recovery and chaos injection drills"
         ],
         "core_responsibilities_id": [
             "Menentukan dan memantau SLO database (Ketersediaan 99.99%, latensi p99 < 20ms)",
-            "Memelihara exporter metrik Prometheus (node_exporter, postgres_exporter, mysqld_exporter) dan Grafana alert",
-            "Mengotomatiskan operator StatefulSet Kubernetes (CloudNativePG, Crunchy Data PGO, Percona Operators)",
-            "Melakukan latihan pemulihan bencana otomatis, audit mirroring database, dan chaos engineering",
+            "Mengotomatiskan operator database di Kubernetes (CloudNativePG, Percona Operators)",
+            "Mengelola exporter Prometheus dan aturan alert multi-window burn rate",
+            "Melakukan latihan pemulihan bencana otomatis dan chaos engineering"
         ],
         "skills_progression": {
             "junior": [
-                "Linux OS performance fundamentals (CPU, I/O wait, memory buffers, disk queues, inode limits)",
-                "Configuring Prometheus scrape targets and node/database exporters",
-                "Basic containerization and orchestration for database sidecars (Docker volumes, /dev/shm sizing)",
-                "Incident triage and logging aggregation (Loki, Elasticsearch)",
+                "Linux OS telemetry: CPU, memory buffers, I/O wait, disk queue depth, inode capacity",
+                "Deploying Prometheus database exporters (postgres_exporter, mysqld_exporter)",
+                "Docker container volume persistence, storage classes, and /dev/shm tuning",
+                "Aggregating error and slow query logs with Promtail and Loki"
             ],
             "mid": [
-                "SLO / Error Budget alerting strategies (multi-window burn rate alerts)",
-                "Kubernetes StatefulSet persistent volume claim management and pod anti-affinity rules",
-                "Kernel sysctl parameter tuning for heavy database I/O (`vm.dirty_ratio`, `swappiness`)",
-                "Automated snapshot verification and restore validation bots",
+                "Multi-window error budget burn rate alerting implementation",
+                "Kubernetes StatefulSet persistence, anti-affinity, and graceful termination hooks",
+                "Kernel sysctl parameter calibration (vm.dirty_ratio, vm.swappiness, fs.file-max)",
+                "Automated snapshot verification and automated PITR recovery tests"
             ],
             "senior": [
-                "Autonomous self-healing cluster orchestration and split-brain prevention (etcd, Raft)",
-                "Global multi-cloud active replication topologies with automatic traffic steering",
-                "Capacity forecasting models using machine learning on Prometheus telemetry",
-                "Zero-downtime Kubernetes database operator upgrades and automated failover validation",
-            ],
+                "Self-healing database topology orchestration with Raft / etcd consensus",
+                "Global multi-cloud active replication with automated DNS traffic steering",
+                "Predictive capacity planning using time-series forecasting algorithms",
+                "Architecting zero-downtime database disaster recovery with RPO=0 and RTO < 30s"
+            ]
         },
         "key_metrics": [
             "SLO Error Budget Burn Rate",
-            "Storage IOPS & Disk Queue Depth (%util saturation)",
+            "Disk I/O Utilization % and IOPS Saturation",
             "Replication Lag in Seconds & Replay Queue Bytes",
-            "Kubernetes Pod Buffer Cache Hit Ratio & CPU Throttling Duration",
+            "Kubernetes Database Pod Buffer Cache Ratio & CPU Throttling Duration"
         ],
         "runbooks": [
             {
                 "name": "Kubernetes Pod Buffer Cache & OOM Throttling Remediation",
                 "name_id": "Penanganan Degradasi Buffer Cache & Throttling Pod K8s",
                 "steps": [
-                    "Inspect pod memory usage vs cgroup limit to avoid immediate OOMKilled (ExitCode 137)",
-                    "Verify buffer cache hit ratio: if < 95%, scale pod memory request or tune shared_buffers",
-                    "Check /dev/shm size: ensure --shm-size or tmpfs volume is >= 1GB for parallel query IPC",
-                    "Verify node anti-affinity rules to prevent scheduling multiple cluster replicas on same worker node",
-                ],
+                    "Inspect pod memory usage vs cgroup memory limit to prevent OOMKilled (ExitCode 137)",
+                    "Check buffer cache hit ratio: if < 95%, scale pod memory limit or adjust shared_buffers",
+                    "Verify /dev/shm size: ensure --shm-size or tmpfs volume is >= 1GB for parallel query IPC",
+                    "Enforce pod anti-affinity rules so replicas never share the same physical node"
+                ]
             },
             {
-                "name": "Automated Primary Failover Verification",
-                "name_id": "Verifikasi Failover Primary Otomatis",
+                "name": "Automated Primary Failover Quorum Verification",
+                "name_id": "Verifikasi Kuorum Failover Primary Otomatis",
                 "steps": [
-                    "Verify consensus quorum in distributed coordination store (e.g. etcd)",
+                    "Verify consensus quorum in distributed coordination store (etcd / Consul)",
                     "Confirm replica has fully applied WAL/Binlog stream with zero transaction loss",
-                    "Promote replica to primary and update virtual IP / DNS endpoint",
-                    "Demote previous primary to standby upon recovery",
-                ],
-            },
+                    "Promote replica to primary and update virtual IP / DNS routing endpoint",
+                    "Demote previous primary to standby upon recovery"
+                ]
+            }
         ],
         "recommended_challenges": [
             "replication-mirroring-lag-monitor",
             "k8s-pod-buffer-cache-ratio",
-            "deadlock-contention-hotspot",
-        ],
+            "deadlock-contention-hotspot"
+        ]
     },
     {
-        "id": "security-auditor",
-        "title": "Database Security & Compliance Specialist",
-        "title_id": "Spesialis Keamanan & Kepatuhan Database",
-        "category": "Security & Governance",
-        "category_id": "Keamanan & Tata Kelola",
-        "summary": "Enforces cryptographic protection, fine-grained access governance, audit logging, and regulatory compliance (PCI-DSS, SOC 2, GDPR, HIPAA) across all enterprise database tiers.",
-        "summary_id": "Menerapkan proteksi kriptografis, tata kelola akses mendalam, audit logging, dan kepatuhan regulasi (PCI-DSS, SOC 2, GDPR, HIPAA) pada seluruh tier database perusahaan.",
+        "id": "perf-engineer",
+        "title": "Database Performance & Capacity Engineer",
+        "title_id": "Insinyur Optimasi Performa & Kapasitas Database",
+        "category": "Performance & Capacity",
+        "category_id": "Performa & Kapasitas",
+        "summary": "Specialist in identifying query performance regressions, deep wait event analysis, latch contention profiling, and memory/storage subsystem hardware optimization.",
+        "summary_id": "Spesialis identifikasi regresi performa query, analisis mendalam wait event, profiling kontensi latch, dan optimasi hardware subsistem memori/storage.",
         "engines": ["PostgreSQL", "Oracle", "SQL Server", "MySQL"],
-        "recommended_tools": ["bytebase", "dbeaver", "pmm"],
+        "recommended_tools": ["pmm", "pgmustard", "grafana", "extended-events"],
         "core_responsibilities": [
-            "Implement Role-Based Access Control (RBAC) and Row-Level Security (RLS) policies",
-            "Configure Transparent Data Encryption (TDE) at rest and TLS 1.3 in transit",
-            "Audit privileged user activity and detect anomalous data exfiltration queries",
-            "Automate PII data masking in staging and development sandboxes",
+            "Perform wait-state analysis (AWR/ASH, Extended Events, pg_stat_statements)",
+            "Identify and resolve parameter sniffing and execution plan regressions",
+            "Design advanced indexing strategies (covering, functional, partial, and GiST/GIN indexes)",
+            "Calibrate Cost-Based Optimizer cost parameters against storage NVMe I/O profiles"
         ],
         "core_responsibilities_id": [
-            "Menerapkan Role-Based Access Control (RBAC) dan kebijakan Row-Level Security (RLS)",
-            "Mengonfigurasi Transparent Data Encryption (TDE) saat diam dan TLS 1.3 saat transmisi",
-            "Mengaudit aktivitas pengguna istimewa dan mendeteksi kueri eksfiltrasi data anomali",
-            "Mengotomatiskan penyamaran data PII pada sandbox staging dan development",
+            "Melakukan analisis wait-state (AWR/ASH, Extended Events, pg_stat_statements)",
+            "Mengidentifikasi dan mengatasi masalah parameter sniffing dan regresi execution plan",
+            "Merancang strategi indeks tingkat lanjut (covering, fungsional, parsial, GiST/GIN)",
+            "Mengalibrasi parameter cost optimizer sesuai profil performa storage NVMe"
         ],
         "skills_progression": {
             "junior": [
-                "Principle of Least Privilege: granting precise table and column permissions",
-                "Configuring secure TLS connection certificates for database clients",
-                "Password complexity, rotation policies, and connection timeout rules",
-                "Reviewing database audit logs for unauthorized access attempts",
+                "Detailed query execution plan reading (Nested Loop, Hash Join, Merge Join)",
+                "Identifying missing index warnings and redundant / duplicate indexes",
+                "Understanding CPU vs I/O bound queries in database telemetry",
+                "Monitoring slow query log trends over time"
             ],
             "mid": [
-                "Implementing Row-Level Security (RLS) policies in PostgreSQL / Oracle",
-                "Transparent Data Encryption (TDE) and key management integration (Vault / KMS)",
-                "Dynamic data masking for sensitive fields (credit cards, national IDs)",
-                "SQL injection vulnerability assessment and parameterized query enforcement",
+                "Wait event profiling: distinguishing CPU starvation from storage queue waits",
+                "Parameter sniffing diagnosis and query hint application",
+                "Partition pruning verification for massive historical tables",
+                "Index defragmentation analysis and fillfactor calibration"
             ],
             "senior": [
-                "Zero-Trust database access architecture with ephemeral credentials",
-                "Regulatory audit defense and continuous compliance reporting (SOC 2, ISO 27001)",
-                "Hardware Security Module (HSM) key lifecycle management",
-                "Automated anomaly detection for suspicious bulk SELECT patterns",
-            ],
+                "Kernel I/O subsystem profiling with eBPF / bpftrace",
+                "Memory latch and spinlock contention analysis on high-core NUMA machines",
+                "Optimizer cost parameter calibration (random_page_cost, effective_cache_size)",
+                "Designing automated query regression detection testbeds for staging environments"
+            ]
         },
         "key_metrics": [
-            "Privileged Account Exposure Count (Target: Minimal/Ephemeral)",
-            "Unencrypted Connection Rate (Target: 0%)",
-            "Audit Trail Coverage Rate (100% of DDL & DCL statements)",
-            "Vulnerability Remediation Mean Time (MTTR < 7 days)",
+            "p95 and p99 Query Latency (< 15ms target for OLTP)",
+            "Top 5 Wait Events % of Total Active DB Time",
+            "Buffer Cache Miss % (< 1%)",
+            "Physical Disk Read / Write Latency in ms (< 1ms on NVMe)"
         ],
         "runbooks": [
             {
-                "name": "Row-Level Security (RLS) Policy Implementation",
-                "name_id": "Penerapan Kebijakan Row-Level Security (RLS)",
+                "name": "Parameter Sniffing Execution Plan Regression Resolution",
+                "name_id": "Resolusi Regresi Execution Plan Akibat Parameter Sniffing",
                 "steps": [
-                    "Enable RLS on target table (`ALTER TABLE accounts ENABLE ROW LEVEL SECURITY;`)",
-                    "Define tenant isolation policy based on session variable `current_setting('app.current_tenant_id')`",
-                    "Verify standard user cannot read cross-tenant rows even with `SELECT *`",
-                    "Log policy violations to centralized SIEM security collector",
-                ],
-            },
+                    "Compare current poor execution plan with historical plan in Query Store / AWR",
+                    "Identify skew in predicate value cardinality causing suboptimal plan selection",
+                    "Force known good plan via Query Store / SQL Plan Baseline or rewrite query with RECOMPILE hint",
+                    "Update statistics with FULLSCAN on affected table columns"
+                ]
+            }
         ],
         "recommended_challenges": [
-            "banking-priority-accounts",
-            "academic-grade-a",
-        ],
+            "k8s-pod-buffer-cache-ratio",
+            "tablespace-capacity-alert",
+            "deadlock-contention-hotspot"
+        ]
     },
+    {
+        "id": "data-engineer",
+        "title": "Data Engineer & Analytics Architect",
+        "title_id": "Insinyur Data & Arsitek Analitika",
+        "category": "Data Platform & Analytics",
+        "category_id": "Platform Data & Analitika",
+        "summary": "Builds scalable data lakehouses, designs star/snowflake dimensional schemas, manages streaming data pipelines, and provisions columnar analytical engines.",
+        "summary_id": "Membangun data lakehouse terukur, merancang skema dimensional star/snowflake, mengelola pipeline streaming data, dan optimasi mesin analitik kolumnar.",
+        "engines": ["Snowflake", "ClickHouse", "BigQuery", "PostgreSQL", "DuckDB"],
+        "recommended_tools": ["dbeaver", "grafana", "bytebase"],
+        "core_responsibilities": [
+            "Design Kimball dimensional models (Star Schema, Fact tables, Slowly Changing Dimensions)",
+            "Construct batch and real-time streaming ETL/ELT pipelines",
+            "Optimize columnar storage engines (micro-partitioning, sorting keys, compression)",
+            "Enforce data quality gates, schema evolution governance, and SLA monitoring"
+        ],
+        "core_responsibilities_id": [
+            "Merancang model dimensional Kimball (Star Schema, tabel fakta, dimensi SCD)",
+            "Membangun pipeline data ETL/ELT batch dan streaming real-time",
+            "Mengoptimalkan mesin penyimpanan kolumnar (micro-partitioning, sorting key, kompresi)",
+            "Menerapkan audit kualitas data, tata kelola evolusi skema, dan SLA data"
+        ],
+        "skills_progression": {
+            "junior": [
+                "SQL transformations, date/time manipulations, conditional aggregations",
+                "Dimensional modeling fundamentals (Star vs Snowflake schema)",
+                "Loading raw data into staging tables and basic cleansing",
+                "Materialized view creation and incremental refresh strategies"
+            ],
+            "mid": [
+                "Slowly Changing Dimensions (SCD Type 1, Type 2, Type 4)",
+                "Partitioning and clustering key selection on columnar data platforms",
+                "Real-time Change Data Capture (CDC) streaming integration with Kafka",
+                "Data quality testing frameworks in SQL (dbt tests, Great Expectations)"
+            ],
+            "senior": [
+                "Open table formats architecture (Apache Iceberg, Delta Lake, Apache Hudi)",
+                "Data mesh architecture: federated data governance and domain data products",
+                "Cost optimization across serverless query engines (BigQuery slots, Snowflake warehouses)",
+                "Streaming analytical processing with vectorized ClickHouse engines"
+            ]
+        },
+        "key_metrics": [
+            "Data Freshness SLA Adherence (> 99.5%)",
+            "Pipeline Ingestion Lag (Seconds from transactional commit to analytics)",
+            "Data Quality Test Pass Rate (100% on financial ledgers)",
+            "Query Compute Cost per Terabyte Scanned"
+        ],
+        "runbooks": [
+            {
+                "name": "Broken Analytical Ingestion Pipeline Recovery",
+                "name_id": "Pemulihan Pipa Ingesti Analitik yang Terputus",
+                "steps": [
+                    "Inspect ingestion consumer group offset lag in Kafka / message queue",
+                    "Identify poison pill schema mismatch or malformed JSON payload",
+                    "Reroute malformed record to Dead Letter Queue (DLQ) for manual inspection",
+                    "Resume consumer worker and verify downstream data freshness recovers"
+                ]
+            }
+        ],
+        "recommended_challenges": [
+            "category-revenue-cte",
+            "product-price-category-rank",
+            "cumulative-transaction-ledger",
+            "high-volume-authors"
+        ]
+    },
+    {
+        "id": "db-architect",
+        "title": "Enterprise Database Architect",
+        "title_id": "Arsitek Basis Data Enterprise",
+        "category": "Enterprise Architecture",
+        "category_id": "Arsitektur Enterprise",
+        "summary": "Defines enterprise data strategies, navigates CAP/PACELC trade-offs, architects polyglot persistence systems, and ensures regulatory compliance across hybrid multi-cloud topologies.",
+        "summary_id": "Menentukan strategi data enterprise, menavigasi trade-off CAP/PACELC, arsitektur polyglot persistence, dan kepatuhan regulasi di multi-cloud.",
+        "engines": ["PostgreSQL", "Oracle", "CockroachDB", "MongoDB", "Snowflake"],
+        "recommended_tools": ["bytebase", "terraform", "prometheus", "dbeaver"],
+        "core_responsibilities": [
+            "Formulate polyglot persistence blueprints (Relational + Document + Cache + Search)",
+            "Evaluate CAP and PACELC trade-offs for distributed global transaction systems",
+            "Design disaster recovery architectures with multi-decade data retention rules",
+            "Establish enterprise security, data sovereignty, and encryption standards"
+        ],
+        "core_responsibilities_id": [
+            "Merumuskan cetak biru polyglot persistence (Relasional + Dokumen + Cache + Search)",
+            "Mengevaluasi trade-off CAP dan PACELC untuk sistem transaksi global terdistribusi",
+            "Merancang arsitektur disaster recovery dengan retensi data multi-dekade",
+            "Menetapkan standar keamanan enterprise, kedaulatan data, dan enkripsi"
+        ],
+        "skills_progression": {
+            "junior": [
+                "Relational vs NoSQL vs Analytical engine strengths and trade-offs",
+                "Entity Relationship Diagram (ERD) design and normalization principles",
+                "Basic data encryption at rest and in transit compliance",
+                "Designing backup retention policies"
+            ],
+            "mid": [
+                "Polyglot persistence patterns: event-driven consistency and read/write segregation (CQRS)",
+                "Multi-region active-passive disaster recovery topology design",
+                "Database sharding architectures vs scale-up enterprise systems",
+                "Regulatory compliance standards (PCI-DSS, GDPR, HIPAA, SOC 2)"
+            ],
+            "senior": [
+                "Distributed consistency models: Linearizable, Serializable, Snapshot, Eventual",
+                "Global multi-cloud data sovereignty and cross-border regulatory compliance",
+                "Total Cost of Ownership (TCO) modeling across database license models",
+                "Enterprise data mesh architecture and multi-tenant isolation patterns"
+            ]
+        },
+        "key_metrics": [
+            "Total Cost of Ownership (TCO) per Business Transaction",
+            "Enterprise High Availability SLA (99.999% Five Nines)",
+            "Compliance Audit Pass Rate (100% across PCI-DSS / SOC 2)",
+            "Architectural Technical Debt Index"
+        ],
+        "runbooks": [
+            {
+                "name": "Enterprise Database Architecture Review",
+                "name_id": "Tinjauan Kelayakan Arsitektur Database Enterprise",
+                "steps": [
+                    "Audit data volume growth and peak write TPS projections over 3 years",
+                    "Evaluate consistency requirements: Strong Consistency (ACID) vs Eventual Consistency",
+                    "Review single point of failure (SPOF) risks across compute, network, and storage",
+                    "Produce architecture decision record (ADR) documenting trade-offs and vendor choices"
+                ]
+            }
+        ],
+        "recommended_challenges": [
+            "concurrency-serializable-anomaly",
+            "tablespace-autoextend-exhaustion",
+            "replication-mirroring-lag-monitor"
+        ]
+    }
 ]
 
 
@@ -1152,47 +1718,56 @@ async def get_dataset_schema(dataset_slug: str) -> dict:
     ).fetchall()
 
     schema_tables = []
-    for t_row in tables_res:
-        t_name = t_row["name"]
+    for (t_name,) in tables_res:
         cols_res = conn.execute(f"PRAGMA table_info('{t_name}');").fetchall()
-        columns = [
-            {
-                "cid": c["cid"],
-                "name": c["name"],
-                "type": c["type"],
-                "notnull": bool(c["notnull"]),
-                "pk": bool(c["pk"]),
-            }
-            for c in cols_res
-        ]
-        row_count = conn.execute(f"SELECT COUNT(*) FROM '{t_name}';").fetchone()[0]
-        schema_tables.append({"name": t_name, "columns": columns, "row_count": row_count})
+        count_res = conn.execute(f"SELECT COUNT(*) FROM '{t_name}';").fetchone()
+        row_count = count_res[0] if count_res else 0
+
+        schema_tables.append({
+            "name": t_name,
+            "columns": [
+                {
+                    "cid": col["cid"],
+                    "name": col["name"],
+                    "type": col["type"],
+                    "notnull": bool(col["notnull"]),
+                    "pk": bool(col["pk"]),
+                }
+                for col in cols_res
+            ],
+            "row_count": row_count,
+        })
 
     conn.close()
-    return {"dataset": dataset_slug, "tables": schema_tables}
+    return {
+        "slug": dataset_slug,
+        "name": template["name"],
+        "description": template["description"],
+        "tables": schema_tables,
+    }
 
 
 @router.post("/exercises/{slug}/submit", response_model=ChallengeSubmitResponse)
-async def submit_exercise(slug: str, body: ChallengeSubmitRequest) -> ChallengeSubmitResponse:
+async def submit_challenge(slug: str, body: ChallengeSubmitRequest) -> ChallengeSubmitResponse:
     challenge = next((c for c in CHALLENGES if c["slug"] == slug), None)
     if not challenge:
-        raise HTTPException(status_code=404, detail="Exercise challenge not found")
+        raise HTTPException(status_code=404, detail="Challenge exercise not found")
 
+    dataset_slug = challenge["dataset"]
+    engine_type = body.engine.lower().strip()
     is_id = body.language == "id"
     hints = challenge["hints_id"] if is_id else challenge["hints"]
-    engine = body.engine.lower() if body.engine else "postgres"
-    dataset_slug = challenge["dataset"]
 
     try:
-        if engine == "postgres":
+        if engine_type == "postgres":
             ref_columns, ref_rows, user_cols, user_rows, elapsed_ms, err_msg = _execute_postgres(
                 dataset_slug, challenge["solution_sql"], body.query
             )
-        elif engine == "mysql":
+        elif engine_type in ("mysql", "mariadb"):
             ref_columns, ref_rows, user_cols, user_rows, elapsed_ms, err_msg = _execute_mysql(
                 dataset_slug, challenge["solution_sql"], body.query
             )
-        elif engine == "oracle":
+        elif engine_type == "oracle":
             conn = sqlite3.connect(":memory:")
             conn.row_factory = sqlite3.Row
             seed_sql = TEMPLATES.get(dataset_slug, TEMPLATES["ecommerce"])["sql"]
@@ -1207,11 +1782,12 @@ async def submit_exercise(slug: str, body: ChallengeSubmitRequest) -> ChallengeS
             user_res = adapter.execute(body.query, max_rows=100, read_only=True)
             elapsed_ms = round((time.perf_counter() - start_time) * 1000, 2)
             conn.close()
+
             if not user_res.get("success"):
                 ref_columns, ref_rows, user_cols, user_rows, elapsed_ms, err_msg = ref_columns, ref_rows, [], [], elapsed_ms, user_res.get("error")
             else:
                 ref_columns, ref_rows, user_cols, user_rows, elapsed_ms, err_msg = ref_columns, ref_rows, user_res.get("columns", []), user_res.get("rows", []), elapsed_ms, None
-        elif engine == "mssql":
+        elif engine_type in ("mssql", "sqlserver"):
             conn = sqlite3.connect(":memory:")
             conn.row_factory = sqlite3.Row
             seed_sql = TEMPLATES.get(dataset_slug, TEMPLATES["ecommerce"])["sql"]
@@ -1226,11 +1802,12 @@ async def submit_exercise(slug: str, body: ChallengeSubmitRequest) -> ChallengeS
             user_res = adapter.execute(body.query, max_rows=100, read_only=True)
             elapsed_ms = round((time.perf_counter() - start_time) * 1000, 2)
             conn.close()
+
             if not user_res.get("success"):
                 ref_columns, ref_rows, user_cols, user_rows, elapsed_ms, err_msg = ref_columns, ref_rows, [], [], elapsed_ms, user_res.get("error")
             else:
                 ref_columns, ref_rows, user_cols, user_rows, elapsed_ms, err_msg = ref_columns, ref_rows, user_res.get("columns", []), user_res.get("rows", []), elapsed_ms, None
-        elif engine == "db2":
+        elif engine_type == "db2":
             conn = sqlite3.connect(":memory:")
             conn.row_factory = sqlite3.Row
             seed_sql = TEMPLATES.get(dataset_slug, TEMPLATES["ecommerce"])["sql"]
@@ -1241,17 +1818,11 @@ async def submit_exercise(slug: str, body: ChallengeSubmitRequest) -> ChallengeS
 
             adapter = Db2Adapter()
             adapter._conn = conn
-            try:
-                adapter._conn.execute(
-                    "CREATE VIEW IF NOT EXISTS sysibm_sysdummy1 AS SELECT 'Y' AS IBMREQD;"
-                )
-                adapter._conn.commit()
-            except Exception:
-                pass
             start_time = time.perf_counter()
             user_res = adapter.execute(body.query, max_rows=100, read_only=True)
             elapsed_ms = round((time.perf_counter() - start_time) * 1000, 2)
             conn.close()
+
             if not user_res.get("success"):
                 ref_columns, ref_rows, user_cols, user_rows, elapsed_ms, err_msg = ref_columns, ref_rows, [], [], elapsed_ms, user_res.get("error")
             else:
@@ -1270,8 +1841,8 @@ async def submit_exercise(slug: str, body: ChallengeSubmitRequest) -> ChallengeS
             expected_columns=challenge["expected_columns"],
             sample_user_rows=[],
             sample_expected_rows=[],
-            elapsed_ms=0,
-            feedback=[str(exc)],
+            elapsed_ms=0.0,
+            feedback=["Terjadi kegagalan koneksi ke sandbox engine." if is_id else "Database engine connection failed."],
             hints=hints,
         )
 

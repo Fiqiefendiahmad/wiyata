@@ -14,6 +14,9 @@ import {
   X,
   BookOpen,
   AlertTriangle,
+  Terminal,
+  Cpu,
+  Server,
 } from "lucide-react";
 import { api } from "@/lib/api";
 
@@ -31,16 +34,195 @@ interface Tool {
   slug: string;
   name: string;
   vendor: string;
-  category: "Clients & Administration" | "Monitoring & Observability" | "Backup & Migration";
+  category:
+    | "Clients & Administration"
+    | "Monitoring & Observability"
+    | "Backup & Migration"
+    | "Linux & Systems Diagnostics"
+    | "Automation & Infrastructure";
   license: string;
   engines: string[];
   summary: string;
   summaryId?: string;
   url: string;
+  lifecycleStatus?: "Active" | "Maintenance / Deprecated";
   guide?: MonitoringGuide;
 }
 
 const DEFAULT_TOOLS: Tool[] = [
+  // 1. Clients & Administration
+  {
+    slug: "dbeaver",
+    name: "DBeaver Community",
+    vendor: "DBeaver Corp",
+    category: "Clients & Administration",
+    license: "Open Source (Apache 2.0)",
+    engines: ["PostgreSQL", "MySQL", "Oracle", "SQL Server", "IBM Db2", "SQLite"],
+    summary:
+      "Universal multi-platform database client for developers, SQL programmers, analysts, and DBAs supporting JDBC.",
+    summaryId:
+      "Aplikasi GUI multi-platform universal untuk developer dan DBA yang mendukung hampir semua mesin database via JDBC.",
+    url: "https://dbeaver.io/",
+  },
+  {
+    slug: "pgadmin",
+    name: "pgAdmin 4",
+    vendor: "PostgreSQL Global Development Group",
+    category: "Clients & Administration",
+    license: "Open Source (PostgreSQL License)",
+    engines: ["PostgreSQL"],
+    summary:
+      "The premier open-source graphical administration and development platform for PostgreSQL with query analysis.",
+    summaryId:
+      "Platform administrasi dan manajemen database terkemuka khusus untuk ekosistem PostgreSQL.",
+    url: "https://www.pgadmin.org/",
+  },
+  {
+    slug: "mysql-workbench",
+    name: "MySQL Workbench",
+    vendor: "Oracle Corporation",
+    category: "Clients & Administration",
+    license: "Open Source (GPL)",
+    engines: ["MySQL", "MariaDB"],
+    summary:
+      "Visual tool for database architects, developers, and DBAs providing data modeling, SQL development, and server configuration.",
+    summaryId:
+      "Aplikasi visual resmi untuk pemodelan data, pengembangan SQL, dan administrasi server MySQL.",
+    url: "https://www.mysql.com/products/workbench/",
+  },
+  {
+    slug: "oracle-sql-developer",
+    name: "Oracle SQL Developer",
+    vendor: "Oracle Corporation",
+    category: "Clients & Administration",
+    license: "Free Proprietary",
+    engines: ["Oracle"],
+    summary:
+      "Integrated development environment for database tasks in Oracle Database, providing PL/SQL development and DBA consoles.",
+    summaryId:
+      "Aplikasi visual resmi Oracle untuk pengembangan PL/SQL, manajemen objek skema, dan konsol administrasi DBA.",
+    url: "https://www.oracle.com/database/sqldeveloper/",
+  },
+  {
+    slug: "sqlcl",
+    name: "Oracle SQLcl",
+    vendor: "Oracle Corporation",
+    category: "Clients & Administration",
+    license: "Free Proprietary",
+    engines: ["Oracle"],
+    summary:
+      "Modern, feature-packed command-line interface for Oracle with inline editing, SQL history, auto-completion, and Liquibase.",
+    summaryId:
+      "CLI modern untuk Oracle Database dengan fitur auto-complete, format output interaktif, dan integrasi Liquibase.",
+    url: "https://www.oracle.com/database/sqldeveloper/technologies/sqlcl/",
+  },
+  {
+    slug: "sqlplus",
+    name: "Oracle SQL*Plus",
+    vendor: "Oracle Corporation",
+    category: "Clients & Administration",
+    license: "Proprietary",
+    engines: ["Oracle"],
+    summary:
+      "Standard interactive and batch query command-line tool installed with every Oracle Database edition.",
+    summaryId:
+      "Alat baris perintah standar bawaan Oracle Database untuk administrasi, eksekusi skrip, dan operasi darurat DBA.",
+    url: "https://docs.oracle.com/en/database/oracle/oracle-database/23/sqpug/",
+  },
+  {
+    slug: "ssms",
+    name: "SQL Server Management Studio (SSMS)",
+    vendor: "Microsoft",
+    category: "Clients & Administration",
+    license: "Free Proprietary",
+    engines: ["SQL Server"],
+    summary:
+      "The definitive Windows desktop environment for configuring, managing, and administering all SQL Server components.",
+    summaryId:
+      "Aplikasi desktop utama untuk konfigurasi, pemantauan, dan administrasi seluruh komponen Microsoft SQL Server.",
+    url: "https://learn.microsoft.com/en-us/ssms/",
+  },
+  {
+    slug: "azure-data-studio",
+    name: "Azure Data Studio",
+    vendor: "Microsoft",
+    category: "Clients & Administration",
+    license: "Open Source (MIT)",
+    lifecycleStatus: "Maintenance / Deprecated",
+    engines: ["SQL Server", "PostgreSQL"],
+    summary:
+      "Cross-platform desktop database tool for data professionals. (Note: Microsoft placed ADS into maintenance; active development shifted to VS Code mssql extension).",
+    summaryId:
+      "Alat database lintas platform. (Catatan: Microsoft mengumumkan status maintenance; pengembangan aktif dialihkan ke ekstensi mssql di VS Code).",
+    url: "https://learn.microsoft.com/en-us/azure-data-studio/",
+  },
+  {
+    slug: "ibm-dmc",
+    name: "IBM Data Management Console (DMC)",
+    vendor: "IBM",
+    category: "Clients & Administration",
+    license: "Commercial / Community",
+    engines: ["IBM Db2"],
+    summary:
+      "Browser-based unified administration, performance tuning, and alert console for IBM Db2 instances.",
+    summaryId:
+      "Konsol berbasis web untuk memantau performa, tuning memori, dan mengelola database IBM Db2.",
+    url: "https://www.ibm.com/products/db2-data-management-console",
+  },
+  {
+    slug: "db2-clp",
+    name: "IBM Db2 Command Line Processor (CLP)",
+    vendor: "IBM",
+    category: "Clients & Administration",
+    license: "Proprietary",
+    engines: ["IBM Db2"],
+    summary:
+      "Native command-line environment for Db2 database administration, HADR takeover commands, and storage management.",
+    summaryId:
+      "Lingkungan CLI native untuk mengendalikan database Db2, aktivasi HADR, dan konfigurasi bufferpool.",
+    url: "https://www.ibm.com/docs/en/db2/11.5?topic=commands-command-line-processor-clp",
+  },
+  {
+    slug: "datagrip",
+    name: "JetBrains DataGrip",
+    vendor: "JetBrains",
+    category: "Clients & Administration",
+    license: "Commercial",
+    engines: ["PostgreSQL", "MySQL", "Oracle", "SQL Server", "IBM Db2", "SQLite", "Snowflake", "ClickHouse"],
+    summary:
+      "Powerful multi-engine database IDE with smart schema introspection, refactoring, and Git integration.",
+    summaryId:
+      "IDE database multi-mesin profesional dengan auto-completion cerdas, refactoring skema, dan integrasi Git.",
+    url: "https://www.jetbrains.com/datagrip/",
+  },
+  {
+    slug: "heidisql",
+    name: "HeidiSQL",
+    vendor: "Ansgar Becker",
+    category: "Clients & Administration",
+    license: "Open Source (GPL)",
+    engines: ["MariaDB", "MySQL", "SQL Server", "PostgreSQL", "SQLite"],
+    summary:
+      "Lightweight, blazing-fast native Windows tool for managing MariaDB, MySQL, SQL Server, and PostgreSQL.",
+    summaryId:
+      "Aplikasi klien native Windows yang sangat ringan dan cepat untuk mengelola database MariaDB, MySQL, dan PostgreSQL.",
+    url: "https://www.heidisql.com/",
+  },
+  {
+    slug: "litecli",
+    name: "LiteCLI",
+    vendor: "DBCLI Community",
+    category: "Clients & Administration",
+    license: "Open Source (BSD-3)",
+    engines: ["SQLite"],
+    summary:
+      "Interactive command-line interface for SQLite featuring auto-completion and syntax highlighting.",
+    summaryId:
+      "CLI interaktif untuk SQLite dengan auto-completion cerdas dan pewarnaan sintaks di terminal.",
+    url: "https://litecli.com/",
+  },
+
+  // 2. Monitoring & Observability
   {
     slug: "pmm",
     name: "Percona Monitoring and Management (PMM)",
@@ -66,15 +248,15 @@ const DEFAULT_TOOLS: Tool[] = [
         "I/O Disk: Pembuatan tabel sementara di disk per detik",
         "Lag Replikasi: Keterlambatan thread dalam detik antara primary dan replika",
       ],
-      sampleAlertQuery: `increase(mysql_global_status_innodb_deadlocks[1h]) > 0`,
+      sampleAlertQuery: "increase(mysql_global_status_innodb_deadlocks[1h]) > 0",
       architectureOverview:
-        "Central PMM Server running Prometheus & Grafana in a Docker container, polling lightweight pmm-agent / vmagent on database hosts.",
+        "Central PMM Server running Prometheus & Grafana in a Docker container, polling lightweight pmm-agent on hosts.",
       architectureOverviewId:
-        "Server terpusat PMM yang menjalankan Prometheus & Grafana di kontainer Docker, mengumpulkan metrik dari pmm-agent di host database.",
+        "Server terpusat PMM yang menjalankan Prometheus & Grafana di kontainer Docker, mengumpulkan metrik dari pmm-agent.",
       whenToUse:
-        "Essential for production MySQL, Percona Server, and PostgreSQL clusters requiring granular slow query triage without proprietary agent licensing.",
+        "Essential for production MySQL and PostgreSQL clusters requiring granular slow query triage without commercial fees.",
       whenToUseId:
-        "Wajib digunakan untuk klaster MySQL dan PostgreSQL produksi yang membutuhkan analisis kueri lambat tanpa biaya lisensi agen komersial.",
+        "Wajib digunakan untuk klaster MySQL dan PostgreSQL produksi yang membutuhkan analisis kueri lambat tanpa biaya lisensi.",
     },
   },
   {
@@ -82,12 +264,12 @@ const DEFAULT_TOOLS: Tool[] = [
     name: "Prometheus & Database Exporters",
     vendor: "CNCF",
     category: "Monitoring & Observability",
-    license: "Open Source",
+    license: "Open Source (Apache 2.0)",
     engines: ["PostgreSQL", "MySQL", "Oracle", "SQL Server", "Universal"],
     summary:
-      "Industry standard time-series metric scraper with PromQL, powering database exporters across all engines.",
+      "Industry-standard metrics scraping and alerting system with PromQL, powering database exporters across all engines.",
     summaryId:
-      "Standar industri pengumpul metrik time-series dengan bahasa kueri PromQL untuk memantau performa semua jenis database.",
+      "Standar industri pengumpul metrik time-series dengan PromQL untuk memantau performa semua jenis database.",
     url: "https://prometheus.io/",
     guide: {
       goldenSignals: [
@@ -98,383 +280,97 @@ const DEFAULT_TOOLS: Tool[] = [
       ],
       goldenSignalsId: [
         "Saturasi: Koneksi aktif berbanding kapasitas max_connections (> 85% waspada)",
-        "Latensi: Rata-rata durasi kueri via rate(pg_stat_statements_total_time)",
+        "Latensi: Durasi rata-rata kueri via rate(pg_stat_statements_total_time)",
         "Throughput: Jumlah transaksi commit dan rollback per detik (TPS)",
-        "Trafik: Kecepatan transfer data jaringan per detik",
+        "Trafik: Kecepatan transmisi data jaringan per detik",
       ],
-      sampleAlertQuery: `(pg_stat_database_numbackends / pg_settings_max_connections) > 0.85`,
+      sampleAlertQuery: "rate(pg_stat_database_xact_rollback[5m]) > 5",
       architectureOverview:
-        "Pull-based metrics collection via postgres_exporter (port 9187), mysqld_exporter (port 9104), and sql_exporter.",
+        "Pull-based metrics collection server pulling data from postgres_exporter, mysqld_exporter, and node_exporter.",
       architectureOverviewId:
-        "Pengumpulan metrik berbasis Pull via postgres_exporter (port 9187), mysqld_exporter (port 9104), dan sql_exporter.",
+        "Server metrik berbasis pull yang menarik data dari postgres_exporter, mysqld_exporter, dan node_exporter.",
       whenToUse:
-        "The backbone for Cloud-Native database monitoring, Kubernetes deployments, and automated PagerDuty/Slack incident routing.",
+        "The backbone for any modern cloud-native or Kubernetes infrastructure needing unified SLO alerting.",
       whenToUseId:
-        "Fondasi utama monitoring database Cloud-Native, deployment Kubernetes, dan integrasi alert otomatis ke PagerDuty/Slack.",
+        "Fondasi telemetri untuk infrastruktur modern atau Kubernetes yang membutuhkan sistem alert SLO terintegrasi.",
     },
   },
   {
     slug: "grafana",
-    name: "Grafana DBA Dashboards",
+    name: "Grafana Dashboards",
     vendor: "Grafana Labs",
     category: "Monitoring & Observability",
-    license: "AGPLv3",
+    license: "Open Source (AGPLv3)",
     engines: ["PostgreSQL", "MySQL", "Oracle", "SQL Server", "Universal"],
     summary:
-      "Interactive visual analytics dashboards displaying real-time database throughput, cache ratios, and connection pools.",
+      "Visualization and observability platform turning database metrics, logs, and traces into operational dashboards.",
     summaryId:
-      "Dashboard visual analitik interaktif untuk memvisualisasikan throughput database, rasio cache, dan connection pool.",
+      "Platform visualisasi telemetri untuk mengubah metrik database dan server menjadi dashboard operasional real-time.",
     url: "https://grafana.com/",
-    guide: {
-      goldenSignals: [
-        "Real-time IOPS & Disk Wait Times (read/write await in ms)",
-        "Buffer Cache Hit Ratio gauge panel",
-        "Transaction volume heatmaps across cluster replicas",
-        "Connection pool saturation bars (PgBouncer / ProxySQL)",
-      ],
-      goldenSignalsId: [
-        "IOPS real-time & Waktu tunggu disk (await baca/tulis dalam ms)",
-        "Panel gauge rasio keberhasilan Buffer Cache (Hit Ratio)",
-        "Heatmap volume transaksi di seluruh replika klaster",
-        "Bar saturasi connection pool (PgBouncer / ProxySQL)",
-      ],
-      sampleAlertQuery: `rate(node_disk_io_time_seconds_total[5m]) > 0.9`,
-      architectureOverview:
-        "Visual frontend connected to Prometheus, InfluxDB, or native SQL data sources with pre-built Community DBA Dashboards (#9628, #7362).",
-      architectureOverviewId:
-        "Frontend visual yang terhubung ke Prometheus, InfluxDB, atau sumber data SQL dengan template dashboard DBA komunitas.",
-      whenToUse:
-        "Used by DBAs and SREs in NOC dashboards to provide high-level and drill-down operational visibility.",
-      whenToUseId:
-        "Digunakan oleh DBA dan SRE di layar NOC untuk memantau status operasional secara menyeluruh maupun mendalam.",
-    },
+  },
+  {
+    slug: "zabbix",
+    name: "Zabbix Enterprise Monitoring",
+    vendor: "Zabbix LLC",
+    category: "Monitoring & Observability",
+    license: "Open Source (AGPLv3)",
+    engines: ["PostgreSQL", "MySQL", "Oracle", "SQL Server", "IBM Db2"],
+    summary:
+      "Enterprise-class distributed monitoring platform with native agent and agentless templates for all enterprise databases.",
+    summaryId:
+      "Platform monitoring enterprise terdistribusi open-source dengan template bawaan untuk memantau performa database.",
+    url: "https://www.zabbix.com/",
+  },
+  {
+    slug: "datadog",
+    name: "Datadog Database Monitoring (DBM)",
+    vendor: "Datadog",
+    category: "Monitoring & Observability",
+    license: "Commercial SaaS",
+    engines: ["PostgreSQL", "MySQL", "SQL Server", "Oracle"],
+    summary:
+      "Cloud observability platform providing normalized query samples, execution plan tracking, and host infrastructure telemetry.",
+    summaryId:
+      "Platform observabilitas cloud enterprise untuk pelacakan explain plan, historis kueri lambat, dan metrik infrastruktur.",
+    url: "https://www.datadoghq.com/product/database-monitoring/",
   },
   {
     slug: "pgmustard",
     name: "pgMustard",
-    vendor: "pgMustard",
+    vendor: "pgMustard Ltd",
     category: "Monitoring & Observability",
     license: "Commercial",
     engines: ["PostgreSQL"],
     summary:
-      "Visual query plan analyzer for PostgreSQL that explains execution bottlenecks, shared buffer hits, and index recommendations.",
+      "Visual EXPLAIN ANALYZE plan explainer identifying bad estimates, sequential scans, and buffer cache misses in PostgreSQL.",
     summaryId:
-      "Alat analisis visual query plan PostgreSQL untuk mendeteksi bottleneck, shared buffer hits, dan rekomendasi indeks.",
-    url: "https://www.pgmustard.com",
-    guide: {
-      goldenSignals: [
-        "Sequential Scans: Table scans reading millions of rows without indexes",
-        "Buffer Hits: Shared buffer cache read percentage vs physical disk reads",
-        "Sort & Hash Spills: Operations exceeding work_mem and spilling to temporary disk files",
-        "Row Estimate Discrepancy: Bad planner statistics causing suboptimal nested loop joins",
-      ],
-      goldenSignalsId: [
-        "Sequential Scans: Pemindaian tabel berukuran jutaan baris tanpa indeks",
-        "Buffer Hits: Persentase pembacaan memori shared buffer vs I/O disk fisik",
-        "Sort & Hash Spill: Operasi yang melebihi work_mem sehingga tumpah ke disk sementara",
-        "Discrepansi Estimasi: Statistik planner yang usang memicu nested loop lambat",
-      ],
-      sampleAlertQuery: `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) SELECT ...;`,
-      architectureOverview:
-        "Web application or CLI that parses raw PostgreSQL JSON/Text EXPLAIN output and scores optimization opportunities.",
-      architectureOverviewId:
-        "Aplikasi web atau CLI yang mem-parsing output EXPLAIN JSON PostgreSQL dan menilai peluang perbaikan kueri.",
-      whenToUse:
-        "When an individual PostgreSQL query is degrading performance and standard EXPLAIN text is too cryptic to diagnose.",
-      whenToUseId:
-        "Ketika kueri PostgreSQL tertentu berjalan lambat dan output teks EXPLAIN standar terlalu sulit dianalisis secara manual.",
-    },
+      "Alat visualisasi EXPLAIN ANALYZE untuk mendeteksi estimasi baris salah, scan berurutan, dan memori cache miss di PostgreSQL.",
+    url: "https://www.pgmustard.com/",
   },
   {
     slug: "oracle-enterprise-manager",
     name: "Oracle Enterprise Manager (OEM)",
     vendor: "Oracle Corporation",
     category: "Monitoring & Observability",
-    license: "Commercial / Enterprise",
+    license: "Commercial Enterprise",
     engines: ["Oracle"],
     summary:
-      "Enterprise management platform for full lifecycle monitoring, Active Session History (ASH), AWR diagnostics, and Exadata tuning.",
+      "The complete enterprise management solution for Oracle Database estates with AWR, ASH, ADDM, and Data Guard consoles.",
     summaryId:
-      "Platform manajemen enterprise untuk pemantauan menyeluruh, Active Session History (ASH), laporan AWR, dan optimasi cluster Exadata.",
+      "Platform manajemen enterprise terpusat untuk memantau klaster Oracle Database, AWR, ASH, dan Data Guard.",
     url: "https://www.oracle.com/enterprise-manager/",
-    guide: {
-      goldenSignals: [
-        "Active Session History (ASH): 1-second sample of non-idle sessions waiting on CPU or I/O wait events",
-        "AWR Top SQL: Queries consuming the highest percentage of Database Time (DB Time)",
-        "Tablespace HWM: Datafile autoextend threshold warnings (> 85% capacity)",
-        "Redo Log Contention: Log file switch completion and log buffer space waits",
-      ],
-      goldenSignalsId: [
-        "Active Session History (ASH): Sampel 1-detik sesi aktif yang menunggu CPU atau antrean I/O",
-        "AWR Top SQL: Kueri yang memakan porsi terbesar dari waktu total database (DB Time)",
-        "Tablespace HWM: Peringatan batas alokasi autoextend datafile (> 85% kapasitas)",
-        "Kontensi Redo Log: Frekuensi log switch dan penundaan alokasi ruang log buffer",
-      ],
-      sampleAlertQuery: `SELECT tablespace_name, ROUND(used_percent, 1) FROM dba_tablespace_usage_metrics WHERE used_percent >= 85.0;`,
-      architectureOverview:
-        "Three-tier architecture: Oracle Management Agent (OMA) on DB host -> Oracle Management Service (OMS WebLogic) -> Oracle Management Repository (OMR database).",
-      architectureOverviewId:
-        "Arsitektur 3-tingkat: Oracle Management Agent (OMA) di host -> Oracle Management Service (OMS WebLogic) -> Oracle Management Repository (OMR).",
-      whenToUse:
-        "Mandatory cockpit for mission-critical Oracle RAC, Exadata, and Active Data Guard disaster recovery environments.",
-      whenToUseId:
-        "Pusat kendali wajib untuk lingkungan enterprise Oracle RAC, Exadata, dan disaster recovery Active Data Guard.",
-    },
   },
-  {
-    slug: "manageengine-db-manager",
-    name: "ManageEngine Applications Manager",
-    vendor: "Zoho Corporation",
-    category: "Monitoring & Observability",
-    license: "Commercial",
-    engines: ["Oracle", "SQL Server", "PostgreSQL", "MySQL", "DB2"],
-    summary:
-      "Full-stack heterogeneous database APM with automated anomaly detection, replication lag alerts, and automated runbooks.",
-    summaryId:
-      "APM database heterogen terpadu dengan deteksi anomali berbasis AI, pemantauan lag replikasi, dan runbook remediasi otomatis.",
-    url: "https://www.manageengine.com/products/applications_manager/database-monitoring.html",
-    guide: {
-      goldenSignals: [
-        "Connection Pool Exhaustion: Active client connections vs configured maximum threshold",
-        "Buffer Cache Hit Ratio: Memory caching efficiency across Oracle, SQL Server, and MySQL",
-        "Replication Sync Lag: Standby node delay in seconds across heterogeneous clusters",
-        "Deadlock Occurrence Frequency: Automated alerts when deadlocks occur in business transactions",
-      ],
-      goldenSignalsId: [
-        "Saturasi Connection Pool: Koneksi aktif berbanding batas maksimal konfigurasi",
-        "Buffer Cache Hit Ratio: Efisiensi cache memori di Oracle, SQL Server, dan MySQL",
-        "Lag Replikasi: Keterlambatan node standby dalam detik di seluruh cluster",
-        "Frekuensi Deadlock: Alert otomatis saat terjadi deadlock pada transaksi bisnis",
-      ],
-      sampleAlertQuery: `SELECT spid, blocked_by_spid, wait_time_seconds FROM active_sessions WHERE wait_time_seconds > 30;`,
-      architectureOverview:
-        "Centralized collector utilizing agentless JDBC/WMI/SSH or lightweight local agents with webhook integrations into PagerDuty and ServiceNow.",
-      architectureOverviewId:
-        "Kolektor terpusat berbasis JDBC/WMI/SSH agentless atau agen lokal ringan dengan integrasi webhook ke PagerDuty dan ServiceNow.",
-      whenToUse:
-        "Ideal for enterprise IT operations teams managing mixed database environments requiring single-pane-of-glass SLA tracking.",
-      whenToUseId:
-        "Sangat ideal untuk tim IT enterprise yang mengelola aneka vendor database dengan pelacakan SLA dalam satu layar terpadu.",
-    },
-  },
-  {
-    slug: "ibm-dmc",
-    name: "IBM Db2 Data Management Console (DMC)",
-    vendor: "IBM",
-    category: "Monitoring & Observability",
-    license: "Enterprise / Included with Db2",
-    engines: ["IBM Db2"],
-    summary:
-      "Browser-based administration console for IBM Db2 featuring real-time lock trees, statement cache metrics, and workload management.",
-    summaryId:
-      "Konsol web resmi untuk IBM Db2 dengan visualisasi grafis antrean lock, metrik statement cache, dan manajemen beban kerja (WLM).",
-    url: "https://www.ibm.com/products/db2-data-management-console",
-    guide: {
-      goldenSignals: [
-        "Lock Waiters & Blocker Trees: Visual graph of waiting transactions and lock escalations",
-        "Statement Cache Hit Ratio: Performance of dynamic and static SQL statement reuse",
-        "Bufferpool Hit Ratio: Data and index page cache efficiency",
-        "WLM Queue Delay: Workload Manager queue wait times protecting OLTP priority",
-      ],
-      goldenSignalsId: [
-        "Antrean Lock & Blocker Tree: Grafik visual transaksi yang saling mengunci dan eskalasi lock",
-        "Statement Cache Hit Ratio: Efisiensi penggunaan ulang kueri SQL dinamis dan statis",
-        "Bufferpool Hit Ratio: Rasio efisiensi cache halaman data dan indeks di RAM",
-        "WLM Queue Delay: Waktu antrean Workload Manager untuk melindungi prioritas transaksi OLTP",
-      ],
-      sampleAlertQuery: `SELECT APPLICATION_HANDLE, BLOCKING_APPLICATION_HANDLE, LOCK_WAIT_ELAPSED_TIME FROM TABLE(MON_GET_APPL_LOCKWAIT(NULL, -2));`,
-      architectureOverview:
-        "Modern browser-based web application interacting with Db2 engine monitor table functions (`MON_GET_*`) and event monitors.",
-      architectureOverviewId:
-        "Aplikasi web modern yang berinteraksi langsung dengan table function monitor internal Db2 (`MON_GET_*`).",
-      whenToUse:
-        "Essential for enterprise banking and legacy core systems running IBM Db2 on Linux, Unix, Windows, or IBM z/OS.",
-      whenToUseId:
-        "Wajib untuk sistem core banking dan enterprise yang menjalankan IBM Db2 di Linux, Unix, Windows, atau IBM z/OS.",
-    },
-  },
-  {
-    slug: "edb-pem",
-    name: "EDB Postgres Enterprise Manager (PEM)",
-    vendor: "EnterpriseDB",
-    category: "Monitoring & Observability",
-    license: "Commercial / Enterprise",
-    engines: ["PostgreSQL"],
-    summary:
-      "Enterprise management suite for large-scale Postgres instances with SQL Profiler, Postgres Expert advisor, and replication maps.",
-    summaryId:
-      "Suite manajemen enterprise untuk cluster PostgreSQL skala besar dengan SQL Profiler, Postgres Expert advisor, dan topologi replikasi.",
-    url: "https://www.enterprisedb.com/products/edb-postgres-enterprise-manager-pem",
-    guide: {
-      goldenSignals: [
-        "Streaming Replication Delay: Bytes and time lag between primary and standbys",
-        "Autovacuum Backlog: Dead tuple bloat and table freeze age to prevent transaction ID wraparound",
-        "Shared Buffer Contention: Buffer allocation efficiency and background writer checkpoints",
-        "Lock Contention: Exclusive table locks waiting on long-running analytical queries",
-      ],
-      goldenSignalsId: [
-        "Keterlambatan Replikasi Streaming: Selisih byte dan detik antara primary dan standby",
-        "Antrean Autovacuum: Pembengkakan dead tuple dan usia freeze tabel untuk mencegah XID wraparound",
-        "Kontensi Shared Buffer: Efisiensi alokasi buffer dan checkpoint background writer",
-        "Kontensi Lock: Antrean kunci eksklusif yang tertahan kueri analitik berdurasi panjang",
-      ],
-      sampleAlertQuery: `SELECT datname, age(datfrozenxid) AS xid_age FROM pg_database WHERE age(datfrozenxid) > 1500000000;`,
-      architectureOverview:
-        "PEM Server hosting centralized alert engine and metadata, receiving telemetry from PEM Agents deployed on database hosts.",
-      architectureOverviewId:
-        "PEM Server yang mengelola mesin alert dan metadata terpusat, menerima telemetri dari PEM Agent di tiap node database.",
-      whenToUse:
-        "Recommended for enterprise PostgreSQL deployments requiring automated capacity planning, compliance audits, and commercial support.",
-      whenToUseId:
-        "Sangat direkomendasikan untuk cluster PostgreSQL enterprise yang membutuhkan audit kepatuhan, capacity planning, dan dukungan komersial.",
-    },
-  },
-  {
-    slug: "node-exporter",
-    name: "Prometheus Node Exporter & Host Monitor",
-    vendor: "CNCF",
-    category: "Monitoring & Observability",
-    license: "Open Source",
-    engines: ["Linux", "Host Server", "Universal"],
-    summary:
-      "Host and OS telemetry collector exposing CPU steal/iowait, disk IOPS queue depth, memory swap paging, and filesystem inode exhaustion.",
-    summaryId:
-      "Pengumpul telemetri sistem operasi dan server host: CPU iowait, antrean antarmuka disk IOPS, paging swap RAM, dan kapasitas inode.",
-    url: "https://github.com/prometheus/node_exporter",
-    guide: {
-      goldenSignals: [
-        "Disk I/O Utilization (%util): Sustained 100% utilization indicates storage queue saturation",
-        "CPU I/O Wait (%iowait): CPU cycles stalled waiting on disk reads or synchronous WAL/Redo writes",
-        "Memory Swap Thrashing: OS swapping database memory to disk, devastating query latency",
-        "Inode Capacity (df -i): Inode exhaustion causing 'Disk Full' errors despite free disk gigabytes",
-      ],
-      goldenSignalsId: [
-        "Utilisasi I/O Disk (%util): Utilisasi 100% kontinu menandakan antrean disk jenuh",
-        "CPU I/O Wait (%iowait): Siklus prosesor terbuang menunggu pembacaan disk atau penulisan WAL/Redo",
-        "Swap Thrashing: Sistem operasi memindahkan RAM buffer pool ke swap disk, melumpuhkan latensi kueri",
-        "Kapasitas Inode (df -i): Kehabisan inode memicu galat 'Disk Full' meskipun sisa gigabyte disk masih banyak",
-      ],
-      sampleAlertQuery: `rate(node_disk_io_time_seconds_total[5m]) > 0.95`,
-      architectureOverview:
-        "Lightweight standalone daemon reading `/proc` and `/sys` kernel subsystems, exposing metric endpoints on HTTP port 9100 for Prometheus scraping.",
-      architectureOverviewId:
-        "Daemon ringan yang membaca subsistem kernel `/proc` dan `/sys`, mengekspos endpoint metrik di port HTTP 9100 untuk Prometheus.",
-      whenToUse:
-        "Universal requirement on every database server host to isolate physical infrastructure bottlenecks from application SQL issues.",
-      whenToUseId:
-        "Komponen wajib pada setiap server database untuk membedakan bottleneck perangkat keras OS dari masalah kueri SQL aplikasi.",
-    },
-  },
-  {
-    slug: "dbeaver",
-    name: "DBeaver Community",
-    vendor: "DBeaver Corp",
-    category: "Clients & Administration",
-    license: "Open Source",
-    engines: ["SQLite", "PostgreSQL", "MySQL", "Oracle", "SQL Server"],
-    summary:
-      "Universal database tool for developers and DBAs supporting any database with a JDBC driver, ER diagrams, and data editor.",
-    summaryId:
-      "Aplikasi universal manajemen database untuk developer dan DBA yang mendukung database apapun via driver JDBC.",
-    url: "https://dbeaver.io",
-  },
-  {
-    slug: "pgadmin",
-    name: "pgAdmin 4",
-    vendor: "PostgreSQL Global Development Group",
-    category: "Clients & Administration",
-    license: "Open Source",
-    engines: ["PostgreSQL"],
-    summary:
-      "The official and most feature-rich graphical administration and query tool for PostgreSQL instances.",
-    summaryId:
-      "Platform administrasi grafis dan kueri resmi paling lengkap untuk mengelola server PostgreSQL.",
-    url: "https://www.pgadmin.org",
-  },
-  {
-    slug: "mysql-workbench",
-    name: "MySQL Workbench",
-    vendor: "Oracle Corporation",
-    category: "Clients & Administration",
-    license: "Open Source",
-    engines: ["MySQL"],
-    summary:
-      "Unified visual tool for database architects, developers, and DBAs working with MySQL for schema design and user admin.",
-    summaryId:
-      "Alat visual terpadu untuk perancangan skema, administrasi pengguna, dan pengembangan kueri MySQL.",
-    url: "https://www.mysql.com/products/workbench/",
-  },
-  {
-    slug: "oracle-sql-developer",
-    name: "Oracle SQL Developer",
-    vendor: "Oracle Corporation",
-    category: "Clients & Administration",
-    license: "Free Proprietary",
-    engines: ["Oracle"],
-    summary:
-      "Dedicated management and development interface for Oracle Database, PL/SQL debugging, and AWR reports.",
-    summaryId:
-      "Aplikasi grafis resmi untuk administrasi Oracle Database, debugging PL/SQL, dan pembuatan laporan AWR.",
-    url: "https://www.oracle.com/database/sqldeveloper/",
-  },
-  {
-    slug: "ssms",
-    name: "SQL Server Management Studio (SSMS)",
-    vendor: "Microsoft",
-    category: "Clients & Administration",
-    license: "Free Proprietary",
-    engines: ["SQL Server"],
-    summary:
-      "Microsoft's official integrated environment for managing SQL Server infrastructure, Query Store, and Agent jobs.",
-    summaryId:
-      "Lingkungan resmi Microsoft untuk mengelola infrastruktur SQL Server, Query Store, dan jadwal SQL Agent.",
-    url: "https://learn.microsoft.com/en-us/ssms/",
-    guide: {
-      goldenSignals: [
-        "Activity Monitor Tasks: Waiting tasks, blocked sessions count, and data file I/O latency (MB/s)",
-        "Lock Wait Time: Cumulative wait duration in sys.dm_os_waiting_tasks (LCK_M_X, LCK_M_S)",
-        "Query Store Plan Regressions: Queries whose CPU or duration degraded after recompilation",
-        "TempDB Contention: Page allocation latch contention in TempDB (PAGELATCH_UP / PAGELATCH_SH)",
-      ],
-      goldenSignalsId: [
-        "Task Activity Monitor: Task menunggu, jumlah sesi terblokir, dan latensi file I/O (MB/s)",
-        "Waktu Antrean Lock: Akumulasi durasi tunggu di sys.dm_os_waiting_tasks (LCK_M_X, LCK_M_S)",
-        "Regresi Plan Query Store: Kueri yang mengalami penurunan performa CPU/durasi setelah rekompilasi",
-        "Kontensi TempDB: Perebutan latch alokasi halaman di TempDB (PAGELATCH_UP / PAGELATCH_SH)",
-      ],
-      sampleAlertQuery: `SELECT session_id, blocking_session_id, wait_type, wait_time FROM sys.dm_exec_requests WHERE blocking_session_id <> 0;`,
-      architectureOverview:
-        "Microsoft's native Win32 cockpit integrating Activity Monitor, Extended Events (XEvents), and Query Store flight recorder for SQL Server and Azure SQL.",
-      architectureOverviewId:
-        "Cockpit administratif resmi Microsoft yang mengintegrasikan Activity Monitor, Extended Events (XEvents), dan Query Store untuk SQL Server dan Azure SQL.",
-      whenToUse:
-        "Primary administrative interface for configuring SQL Server AlwaysOn Availability Groups, inspecting deadlock graphs, and forcing stable query execution plans.",
-      whenToUseId:
-        "Antarmuka administratif utama untuk mengonfigurasi AlwaysOn Availability Groups, menganalisis grafik deadlock, dan mengunci execution plan yang stabil.",
-    },
-  },
-  {
-    slug: "litecli",
-    name: "LiteCLI",
-    vendor: "DBCLI Community",
-    category: "Clients & Administration",
-    license: "Open Source",
-    engines: ["SQLite"],
-    summary:
-      "Terminal CLI for SQLite with intelligent auto-completion, syntax highlighting, and multi-line editor.",
-    summaryId:
-      "Terminal CLI untuk SQLite dengan auto-completion cerdas, penyorotan sintaks, dan editor multi-baris.",
-    url: "https://litecli.com",
-  },
+
+  // 3. Backup & Migration
   {
     slug: "pgbackrest",
     name: "pgBackRest",
     vendor: "pgBackRest Community",
     category: "Backup & Migration",
-    license: "Open Source",
+    license: "Open Source (MIT)",
     engines: ["PostgreSQL"],
     summary:
-      "Enterprise physical backup and restore for PostgreSQL with multi-threading, compression, and S3 streaming.",
+      "Enterprise physical backup and restore for PostgreSQL with parallel processing, delta restore, compression, and S3 streaming.",
     summaryId:
       "Solusi backup dan restore fisik tingkat enterprise untuk PostgreSQL dengan kompresi dan streaming ke S3.",
     url: "https://pgbackrest.org/",
@@ -484,13 +380,39 @@ const DEFAULT_TOOLS: Tool[] = [
     name: "Percona XtraBackup",
     vendor: "Percona",
     category: "Backup & Migration",
-    license: "Open Source",
-    engines: ["MySQL"],
+    license: "Open Source (GPL)",
+    engines: ["MySQL", "MariaDB"],
     summary:
-      "Non-blocking physical hot backup utility for MySQL and MariaDB without locking database tables during backups.",
+      "Non-blocking physical hot backup utility for MySQL and MariaDB without locking tables during backups.",
     summaryId:
-      "Aplikasi backup fisik tanpa penguncian (hot backup) untuk MySQL dan MariaDB tanpa memblokir transaksi.",
+      "Aplikasi backup fisik tanpa penguncian (hot backup) untuk MySQL dan MariaDB tanpa memblokir transaksi pengguna.",
     url: "https://www.percona.com/software/mysql-database/percona-xtrabackup",
+  },
+  {
+    slug: "flyway",
+    name: "Flyway",
+    vendor: "Redgate",
+    category: "Backup & Migration",
+    license: "Open Source / Commercial",
+    engines: ["PostgreSQL", "MySQL", "Oracle", "SQL Server", "SQLite", "IBM Db2"],
+    summary:
+      "Database version control and evolutionary migration tool supporting 25+ database engines in CI/CD pipelines.",
+    summaryId:
+      "Alat version control database dan migrasi skema evolusioner yang mendukung lebih dari 25 mesin database di pipeline CI/CD.",
+    url: "https://www.red-gate.com/products/flyway/",
+  },
+  {
+    slug: "liquibase",
+    name: "Liquibase",
+    vendor: "Liquibase Inc",
+    category: "Backup & Migration",
+    license: "Open Source / Commercial",
+    engines: ["PostgreSQL", "MySQL", "Oracle", "SQL Server", "IBM Db2", "SQLite"],
+    summary:
+      "Database-independent library for tracking, managing, and applying database schema changes across SQL, YAML, and XML formats.",
+    summaryId:
+      "Alat otomasi perubahan skema database multi-format (SQL, YAML, XML) dengan kemampuan rollback terstruktur.",
+    url: "https://www.liquibase.com/",
   },
   {
     slug: "bytebase",
@@ -506,17 +428,125 @@ const DEFAULT_TOOLS: Tool[] = [
     url: "https://www.bytebase.com",
   },
   {
-    slug: "flyway",
-    name: "Flyway",
-    vendor: "Redgate",
+    slug: "percona-toolkit",
+    name: "Percona Toolkit",
+    vendor: "Percona",
     category: "Backup & Migration",
-    license: "Open Source / Commercial",
-    engines: ["PostgreSQL", "MySQL", "Oracle", "SQL Server", "SQLite"],
+    license: "Open Source (GPL)",
+    engines: ["MySQL", "MariaDB", "MongoDB"],
     summary:
-      "Database version control and evolutionary migration tool supporting 25+ database engines in CI/CD pipelines.",
+      "Collection of advanced command-line tools (pt-online-schema-change, pt-query-digest, pt-table-checksum) for mission-critical operations.",
     summaryId:
-      "Alat version control database dan migrasi skema evolusioner yang mendukung lebih dari 25 mesin database di pipeline CI/CD.",
-    url: "https://www.red-gate.com/products/flyway/",
+      "Koleksi utilitas baris perintah canggih untuk migrasi skema online, digest kueri lambat, dan verifikasi checksum replika.",
+    url: "https://www.percona.com/software/database-tools/percona-toolkit",
+  },
+
+  // 4. Linux & Systems Diagnostics
+  {
+    slug: "htop",
+    name: "htop / btop",
+    vendor: "Hisham Muhammad & Community",
+    category: "Linux & Systems Diagnostics",
+    license: "Open Source (GPL)",
+    engines: ["Universal", "Linux"],
+    summary:
+      "Interactive process viewer and system monitor for Linux, displaying per-core CPU utilization, memory pressure, and database threads.",
+    summaryId:
+      "Monitor proses interaktif untuk Linux yang menampilkan utilisasi CPU per-core, konsumsi memori, dan thread proses database.",
+    url: "https://htop.dev/",
+  },
+  {
+    slug: "iostat",
+    name: "sysstat (iostat / sar / mpstat)",
+    vendor: "Sebastien Godard & Community",
+    category: "Linux & Systems Diagnostics",
+    license: "Open Source (GPL)",
+    engines: ["Universal", "Linux"],
+    summary:
+      "Indispensable Linux I/O monitoring tools measuring disk read/write throughput, await latency, and %util saturation.",
+    summaryId:
+      "Utilitas utama Linux untuk memantau performa I/O disk, throughput baca/tulis, latensi await, dan persentase saturasi %util.",
+    url: "https://github.com/sysstat/sysstat",
+  },
+  {
+    slug: "vmstat",
+    name: "vmstat",
+    vendor: "procps-ng Community",
+    category: "Linux & Systems Diagnostics",
+    license: "Open Source (GPL)",
+    engines: ["Universal", "Linux"],
+    summary:
+      "Reports processes, memory, paging, block I/O, traps, and CPU activity to detect database swap thrashing.",
+    summaryId:
+      "Menampilkan telemetri proses, paging memori, I/O blok, dan aktivitas CPU untuk mendeteksi bahaya swap thrashing pada server database.",
+    url: "https://gitlab.com/procps-ng/procps",
+  },
+  {
+    slug: "nmon",
+    name: "nmon (Nigel's Monitor)",
+    vendor: "Nigel Griffiths",
+    category: "Linux & Systems Diagnostics",
+    license: "Open Source (GPL)",
+    engines: ["Universal", "Linux", "AIX"],
+    summary:
+      "Single-screen performance tuner for Linux and AIX displaying CPU, disks, memory, network, and file systems simultaneously.",
+    summaryId:
+      "Monitor performa terpadu untuk Linux dan AIX yang menampilkan grafik CPU, disk I/O, memori, dan jaringan secara simultan.",
+    url: "https://nmon.sourceforge.net/",
+  },
+  {
+    slug: "tcpdump-wireshark",
+    name: "tcpdump & Wireshark",
+    vendor: "Wireshark Foundation & TCPDUMP Team",
+    category: "Linux & Systems Diagnostics",
+    license: "Open Source (GPL)",
+    engines: ["Universal", "PostgreSQL", "MySQL", "Oracle", "SQL Server"],
+    summary:
+      "Packet analyzer capturing database wire protocol packets (PostgreSQL FE/BE, MySQL, TDS, TNS) to diagnose TCP resets and TLS handshakes.",
+    summaryId:
+      "Penganalisis paket jaringan untuk membedah protokol database, latensi TCP handshake, reset koneksi, dan negosiasi TLS.",
+    url: "https://www.wireshark.org/",
+  },
+
+  // 5. Automation & Infrastructure
+  {
+    slug: "ansible",
+    name: "Ansible",
+    vendor: "Red Hat",
+    category: "Automation & Infrastructure",
+    license: "Open Source (GPLv3)",
+    engines: ["Universal", "PostgreSQL", "MySQL", "Oracle", "SQL Server"],
+    summary:
+      "Agentless automation engine used by DBAs for cluster provisioning, configuration drift remediation, and automated OS patching.",
+    summaryId:
+      "Mesin otomasi tanpa agen untuk provisioning cluster database, manajemen konfigurasi seragam, dan patching OS otomatis.",
+    url: "https://www.ansible.com/",
+  },
+  {
+    slug: "terraform",
+    name: "Terraform & OpenTofu",
+    vendor: "HashiCorp & Linux Foundation",
+    category: "Automation & Infrastructure",
+    license: "BSL / MPL 2.0",
+    engines: ["Universal", "PostgreSQL", "MySQL", "Oracle", "SQL Server"],
+    summary:
+      "Infrastructure as Code (IaC) tool for provisioning database instances, private subnets, security groups, and storage volumes deterministically.",
+    summaryId:
+      "Alat Infrastructure as Code (IaC) untuk mengelola instance database cloud, subnet privat, security group, dan volume penyimpanan.",
+    url: "https://www.opentofu.org/",
+  },
+  {
+    slug: "docker-kubernetes",
+    name: "Docker & Kubernetes (StatefulSets & Operators)",
+    vendor: "CNCF",
+    category: "Automation & Infrastructure",
+    license: "Open Source (Apache 2.0)",
+    engines: ["PostgreSQL", "MySQL", "Redis", "Cassandra"],
+    summary:
+      "Container orchestration platform powering database operators (CloudNativePG, Percona K8s Operators) with automated self-healing failover.",
+    summaryId:
+      "Platform orkestrasi kontainer yang menggerakkan operator database StatefulSet dengan fitur pemulihan failover otomatis.",
+    url: "https://kubernetes.io/",
   },
 ];
 
@@ -534,18 +564,37 @@ export function ToolsCatalog({ language }: ToolsCatalogProps) {
 
   const categories = [
     { id: "All", label: isId ? "Semua Kategori" : "All Categories" },
-    { id: "Monitoring & Observability", label: isId ? "Monitoring & Observabilitas" : "Monitoring & Observability" },
-    { id: "Clients & Administration", label: isId ? "Klien & Administrasi" : "Clients & Administration" },
-    { id: "Backup & Migration", label: isId ? "Backup & Migrasi" : "Backup & Migration" },
+    {
+      id: "Clients & Administration",
+      label: isId ? "Klien & Administrasi" : "Clients & Administration",
+    },
+    {
+      id: "Monitoring & Observability",
+      label: isId ? "Monitoring & Observabilitas" : "Monitoring & Observability",
+    },
+    {
+      id: "Backup & Migration",
+      label: isId ? "Backup & Migrasi" : "Backup & Migration",
+    },
+    {
+      id: "Linux & Systems Diagnostics",
+      label: isId ? "Diagnostik Linux & Sistem" : "Linux & Diagnostics",
+    },
+    {
+      id: "Automation & Infrastructure",
+      label: isId ? "Otomasi & Infrastruktur" : "Automation & Infra",
+    },
   ];
 
   const engines = [
     "All",
     "PostgreSQL",
     "MySQL",
-    "SQLite",
     "Oracle",
     "SQL Server",
+    "IBM Db2",
+    "SQLite",
+    "Linux",
   ];
 
   const filteredTools = tools.filter((tool) => {
@@ -576,10 +625,16 @@ export function ToolsCatalog({ language }: ToolsCatalogProps) {
           <div>
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#F2B84B] mb-1">
               <Wrench className="h-4 w-4" />
-              <span>{isId ? "Katalog Alat & Observabilitas" : "Professional Tooling & Observability"}</span>
+              <span>
+                {isId
+                  ? "Katalog Alat & Observabilitas Database"
+                  : "Database Tooling & Observability Catalog"}
+              </span>
             </div>
             <h1 className="text-lg sm:text-xl font-bold text-white">
-              {isId ? "Ekosistem Perangkat Lunak Database" : "Database Software Ecosystem"}
+              {isId
+                ? "Ekosistem Perangkat Lunak & Administrasi Database"
+                : "Database Engineering & Systems Ecosystem"}
             </h1>
           </div>
 
@@ -587,7 +642,11 @@ export function ToolsCatalog({ language }: ToolsCatalogProps) {
             <Search className="absolute left-3 top-3 h-3.5 w-3.5 text-slate-400" />
             <input
               type="text"
-              placeholder={isId ? "Cari alat atau monitoring..." : "Search tools or observability..."}
+              placeholder={
+                isId
+                  ? "Cari alat, CLI, atau monitoring..."
+                  : "Search tools, CLIs, or monitoring..."
+              }
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full rounded-xl bg-slate-900 border border-slate-700/80 pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#F2B84B]"
@@ -605,7 +664,7 @@ export function ToolsCatalog({ language }: ToolsCatalogProps) {
                 onClick={() => setSelectedCategory(c.id)}
                 className={`rounded-lg px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors min-h-[36px] ${
                   selectedCategory === c.id
-                    ? "bg-[#F2B84B] text-[#071A3A]"
+                    ? "bg-[#F2B84B] text-[#071A3A] font-bold"
                     : "bg-slate-900/80 text-slate-400 hover:text-white border border-slate-800"
                 }`}
               >
@@ -625,7 +684,7 @@ export function ToolsCatalog({ language }: ToolsCatalogProps) {
                 onClick={() => setSelectedEngine(eng)}
                 className={`rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
                   selectedEngine === eng
-                    ? "bg-slate-700 text-[#F2B84B] border border-[#F2B84B]/40"
+                    ? "bg-slate-700 text-[#F2B84B] border border-[#F2B84B]/40 font-bold"
                     : "bg-slate-900/60 text-slate-400 hover:text-slate-200 border border-slate-800/80"
                 }`}
               >
@@ -664,6 +723,18 @@ export function ToolsCatalog({ language }: ToolsCatalogProps) {
                     </span>
                   </div>
 
+                  {/* Lifecycle Warning for Deprecated / Maintenance Tools */}
+                  {tool.lifecycleStatus === "Maintenance / Deprecated" && (
+                    <div className="mb-2 flex items-center gap-1.5 rounded-lg bg-amber-950/60 border border-amber-600/60 px-2 py-1 text-[10px] text-amber-300 font-semibold">
+                      <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0" />
+                      <span>
+                        {isId
+                          ? "Status: Maintenance Mode (Dialihkan ke VS Code mssql)"
+                          : "Status: Maintenance Mode (Transition to VS Code mssql)"}
+                      </span>
+                    </div>
+                  )}
+
                   <h3 className="text-sm sm:text-base font-bold text-white mb-1">
                     {tool.name}
                   </h3>
@@ -697,7 +768,9 @@ export function ToolsCatalog({ language }: ToolsCatalogProps) {
                         className="flex items-center gap-1.5 rounded-lg bg-[#10264A] border border-[#F2B84B]/40 px-3 py-1.5 text-xs font-semibold text-[#F2B84B] hover:bg-[#F2B84B] hover:text-[#071A3A] transition-colors"
                       >
                         <Activity className="h-3.5 w-3.5" />
-                        <span>{isId ? "Panduan Monitoring" : "Observability Guide"}</span>
+                        <span>
+                          {isId ? "Panduan Monitoring" : "Observability Guide"}
+                        </span>
                       </button>
                     ) : (
                       <div className="text-[11px] text-slate-500 font-mono">
@@ -730,7 +803,9 @@ export function ToolsCatalog({ language }: ToolsCatalogProps) {
             <div className="flex items-start justify-between border-b border-slate-800 pb-3">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[#F2B84B]">
-                  {isId ? "Panduan Observabilitas Mendalam" : "Observability Architecture Guide"}
+                  {isId
+                    ? "Panduan Observabilitas Mendalam"
+                    : "Observability Architecture Guide"}
                 </span>
                 <h2 className="text-base sm:text-xl font-bold text-white flex items-center gap-2 mt-0.5">
                   <Activity className="h-5 w-5 text-[#F2B84B]" />
@@ -748,18 +823,24 @@ export function ToolsCatalog({ language }: ToolsCatalogProps) {
             {/* When to use */}
             <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3.5 text-xs text-slate-300 leading-relaxed">
               <strong className="text-white block mb-1">
-                {isId ? "Kapan Harus Menggunakan Alat Ini:" : "When to Use This Tool:"}
+                {isId ? "Kapan Menggunakan Alat Ini?" : "When to Use This Tool:"}
               </strong>
-              {isId ? activeGuideTool.guide.whenToUseId : activeGuideTool.guide.whenToUse}
+              {isId
+                ? activeGuideTool.guide.whenToUseId
+                : activeGuideTool.guide.whenToUse}
             </div>
 
             {/* Architecture Overview */}
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
-                <Layers className="h-4 w-4 text-[#F2B84B]" />
-                <span>{isId ? "Arsitektur & Pola Deployment:" : "Architecture & Deployment Topology:"}</span>
-              </h3>
-              <p className="text-xs text-slate-300 leading-relaxed font-mono bg-[#071329] p-3 rounded-lg border border-slate-800">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[#F2B84B] mb-1.5 flex items-center gap-1.5">
+                <Layers className="h-3.5 w-3.5" />
+                <span>
+                  {isId
+                    ? "Arsitektur Pengumpulan Metrik"
+                    : "Metrics Architecture"}
+                </span>
+              </h4>
+              <p className="text-xs text-slate-300 leading-relaxed bg-[#10264A]/40 p-3 rounded-xl border border-slate-800">
                 {isId
                   ? activeGuideTool.guide.architectureOverviewId
                   : activeGuideTool.guide.architectureOverview}
@@ -768,47 +849,61 @@ export function ToolsCatalog({ language }: ToolsCatalogProps) {
 
             {/* Golden Signals */}
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
-                <CheckCircle className="h-4 w-4 text-emerald-400" />
-                <span>{isId ? "Metrik Golden Signals Kunci yang Wajib Dipantau:" : "Key Golden Signals to Monitor:"}</span>
-              </h3>
-              <div className="space-y-1.5">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[#F2B84B] mb-2 flex items-center gap-1.5">
+                <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
+                <span>
+                  {isId
+                    ? "Sinyal Emas Observabilitas (Golden Signals)"
+                    : "Observability Golden Signals"}
+                </span>
+              </h4>
+              <ul className="space-y-1.5 text-xs text-slate-300">
                 {(isId
                   ? activeGuideTool.guide.goldenSignalsId
                   : activeGuideTool.guide.goldenSignals
                 ).map((signal, idx) => (
-                  <div
+                  <li
                     key={idx}
-                    className="flex items-start gap-2 text-xs text-slate-200 bg-[#071329] p-2.5 rounded-lg border border-slate-800/80 font-mono"
+                    className="flex items-start gap-2 bg-slate-900/40 p-2 rounded-lg border border-slate-800/80"
                   >
-                    <span className="text-[#F2B84B] font-bold shrink-0">{idx + 1}.</span>
+                    <span className="text-[#F2B84B] font-bold">•</span>
                     <span>{signal}</span>
-                  </div>
+                  </li>
                 ))}
-              </div>
+              </ul>
             </div>
 
             {/* Sample Alert Query */}
             {activeGuideTool.guide.sampleAlertQuery && (
               <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
-                  <FileCode className="h-4 w-4 text-[#F2B84B]" />
-                  <span>{isId ? "Contoh Kueri Peringatan (Alert / Diagnostic Query):" : "Sample Alert / Diagnostic Query:"}</span>
-                </h3>
-                <pre className="rounded-xl border border-slate-800 bg-black/40 p-3 font-mono text-xs text-emerald-300 overflow-x-auto">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[#F2B84B] mb-1.5 flex items-center gap-1.5">
+                  <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
+                  <span>
+                    {isId ? "Contoh Kueri Peringatan (Alert Rule)" : "Sample Alert Rule Query"}
+                  </span>
+                </h4>
+                <pre className="rounded-xl border border-slate-800 bg-[#071329] p-3 font-mono text-xs text-emerald-300 overflow-x-auto">
                   <code>{activeGuideTool.guide.sampleAlertQuery}</code>
                 </pre>
               </div>
             )}
 
             {/* Footer */}
-            <div className="border-t border-slate-800 pt-3 flex justify-end">
-              <button
-                onClick={() => setActiveGuideTool(null)}
-                className="rounded-lg bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-200 hover:text-white"
+            <div className="border-t border-slate-800 pt-3 flex items-center justify-between">
+              <span className="text-[11px] text-slate-500 font-mono">
+                {isId ? "Lisensi:" : "License:"} {activeGuideTool.license}
+              </span>
+              <a
+                href={activeGuideTool.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 rounded-lg bg-[#F2B84B] px-3.5 py-1.5 text-xs font-bold text-[#071A3A] hover:bg-[#F2B84B]/90 transition-colors"
               >
-                {isId ? "Tutup Panduan" : "Close Guide"}
-              </button>
+                <span>
+                  {isId ? "Dokumentasi Resmi" : "Official Documentation"}
+                </span>
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
             </div>
           </div>
         </div>

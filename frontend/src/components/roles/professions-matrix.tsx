@@ -16,6 +16,11 @@ import {
   FileText,
   AlertTriangle,
   ArrowRight,
+  Code2,
+  Database,
+  Cpu,
+  Gauge,
+  Zap,
 } from "lucide-react";
 import { api } from "@/lib/api";
 
@@ -54,10 +59,20 @@ interface ProfessionsMatrixProps {
 }
 
 const ROLE_ICONS: Record<string, any> = {
-  dba: Server,
-  "data-engineer": Layers,
-  "data-analyst": TrendingUp,
+  "sql-developer": Code2,
+  "dba-general": Server,
+  "oracle-dba": Database,
+  "postgres-dba": Database,
+  "mysql-dba": Database,
+  "sqlserver-dba": Server,
+  "db2-dba": Server,
+  "database-engineer": Cpu,
   dbre: Activity,
+  "perf-engineer": Gauge,
+  "data-engineer": Layers,
+  "db-architect": Compass,
+  dba: Server,
+  "data-analyst": TrendingUp,
   "security-auditor": Shield,
 };
 

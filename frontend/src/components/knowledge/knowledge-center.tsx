@@ -393,6 +393,116 @@ ACID adalah empat pilar jaminan keandalan transaksi database relasional:
 - **Isolation (Isolasi)**: Transaksi bersamaan tidak saling mengganggu atau melihat mutasi yang belum di-commit.
 - **Durability (Ketahanan)**: Sekali transaksi di-commit, data dijamin bertahan walau sistem atau server mati mendadak.`,
   },
+  {
+    slug: "mongodb-architecture-wiredtiger-sharding",
+    title: "MongoDB Architecture: WiredTiger Engine, Replica Sets, and Sharding",
+    titleId: "Arsitektur MongoDB: WiredTiger Engine, Replica Set, dan Sharding",
+    category: "NoSQL",
+    engine: "MongoDB",
+    readTime: "7 min read",
+    summary: "Deep dive into MongoDB WiredTiger cache evictions, write concerns, Raft-like replica set elections, and distributed sharded cluster balancing.",
+    summaryId: "Analisis mendalam mesin penyimpanan WiredTiger MongoDB, write concerns, pemilihan replica set, dan partisi klaster sharding terdistribusi.",
+    body: `### MongoDB Core Architecture
+MongoDB is a distributed document database using BSON serialization.
+- **WiredTiger Engine**: Document-level concurrency, Snappy compression, checkpoints every 60s.
+- **Replica Sets**: Raft-like elections with 10s timeout, idempotent oplog replication.
+- **Sharded Clusters**: mongos query routers, Config Replica Set metadata, background chunk balancing.`,
+    bodyId: `### Arsitektur Inti MongoDB
+MongoDB adalah database dokumen terdistribusi yang menyimpan data dalam format serialisasi BSON.
+- **Mesin WiredTiger**: Kontrol konkurensi tingkat dokumen, kompresi Snappy, dan checkpoint berkala tiap 60 detik.
+- **Replica Set**: Pemilihan pemimpin berbasis Raft, replikasi oplog idempoten ke node Secondary.
+- **Klaster Sharding**: Router mongos stateless, metadata Config Replica Set, dan balancing chunk otomatis.`,
+  },
+  {
+    slug: "redis-internals-persistence-cluster",
+    title: "Redis Architecture & Internals: In-Memory Data Structures, Persistence, and Cluster",
+    titleId: "Arsitektur & Internal Redis: Struktur Data Memori, Persistensi RDB/AOF, dan Klaster",
+    category: "NoSQL",
+    engine: "Redis",
+    readTime: "6 min read",
+    summary: "Understanding Redis single-threaded event loop, RDB vs AOF persistence trade-offs, Sentinel failovers, and 16,384-slot Cluster partitioning.",
+    summaryId: "Memahami event loop single-threaded Redis, kompromi persistensi RDB vs AOF, failover otomatis Sentinel, dan partisi 16.384 slot Redis Cluster.",
+    body: `### Redis Architecture Overview
+- **Event Loop**: Single-threaded non-blocking epoll loop eliminates locking overhead.
+- **Persistence**: RDB point-in-time binary snapshots vs. AOF append-only log with configurable fsync policies.
+- **Cluster**: Keyspace partitioned across exactly 16,384 hash slots (\`CRC16(key) MOD 16384\`).`,
+    bodyId: `### Ikhtisar Arsitektur Redis
+- **Event Loop**: Loop epoll non-blocking single-threaded meniadakan perebutan kunci (lock contention).
+- **Persistensi Ganda**: Snapshot biner RDB fork copy-on-write vs log mutasi sekuensial AOF.
+- **Redis Cluster**: Ruang kunci dipartisi rata ke dalam 16.384 hash slot (\`CRC16(key) MOD 16384\`).`,
+  },
+  {
+    slug: "cassandra-lsm-architecture-ring",
+    title: "Apache Cassandra Architecture: LSM-Tree Storage, Ring Topology, and Tunable Consistency",
+    titleId: "Arsitektur Apache Cassandra: Penyimpanan LSM-Tree, Topologi Ring, dan Konsistensi Fleksibel",
+    category: "NoSQL",
+    engine: "Apache Cassandra",
+    readTime: "8 min read",
+    summary: "Mastering Cassandra masterless architecture, Memtable/SSTable compaction, Bloom filters, and tunable CAP theorem consistency levels.",
+    summaryId: "Menguasai arsitektur masterless Cassandra, komparasi pemadatan Memtable/SSTable, filter Bloom, dan tingkat konsistensi CAP theorem yang dapat dikonfigurasi.",
+    body: `### Apache Cassandra Core Architecture
+- **Masterless Ring**: Peer-to-peer ring topology with Murmur3Partitioner and Gossip protocol.
+- **LSM-Tree Write Path**: Sequential CommitLog append + Memtable write flushed to immutable SSTables.
+- **Tunable Consistency**: R + W > N ensures strong consistency across distributed nodes.`,
+    bodyId: `### Arsitektur Inti Apache Cassandra
+- **Ring Masterless**: Topologi peer-to-peer terdistribusi tanpa Single Point of Failure (SPOF).
+- **Alur Tulis LSM**: Penulisan sekuensial ke CommitLog dan Memtable tanpa random I/O disk, di-flush ke SSTable.
+- **Konsistensi Fleksibel**: Rumus R + W > N menjamin pembacaan konsistensi kuat lintas node.`,
+  },
+  {
+    slug: "cockroachdb-distributed-sql-raft",
+    title: "CockroachDB & YugabyteDB: Distributed SQL, Multi-Raft Consensus, and HLC",
+    titleId: "CockroachDB & YugabyteDB: SQL Terdistribusi, Konsensus Multi-Raft, dan HLC",
+    category: "Distributed SQL",
+    engine: "CockroachDB & YugabyteDB",
+    readTime: "7 min read",
+    summary: "How next-generation distributed SQL databases provide full ACID serializability, Raft range replication, and Hybrid Logical Clocks.",
+    summaryId: "Bagaimana database Distributed SQL modern menghadirkan serializability ACID penuh, replikasi range berbasis Multi-Raft, dan Hybrid Logical Clocks (HLC).",
+    body: `### Distributed SQL Paradigm
+- **Multi-Raft Consensus**: Keyspace divided into 64 MB ranges, each managed by independent Raft groups.
+- **Hybrid Logical Clocks**: Combines physical wall-clock time with logical counters to coordinate serializable ordering without atomic GPS hardware.
+- **Inline Intent MVCC**: Non-blocking lock-free transaction resolution.`,
+    bodyId: `### Paradigma Distributed SQL
+- **Konsensus Multi-Raft**: Ruang kunci dibagi menjadi rentang 64 MB (Ranges) yang direplikasi via Raft.
+- **Hybrid Logical Clocks (HLC)**: Sinkronisasi waktu konsisten tanpa memerlukan jam atomik GPS khusus.
+- **Intent MVCC**: Transaksi terdistribusi aman tanpa memicu deadlock atau lock berkepanjangan.`,
+  },
+  {
+    slug: "snowflake-cloud-data-warehouse-internals",
+    title: "Snowflake Architecture: Multi-Cluster Shared Data, Micro-Partitions, and Zero-Copy Cloning",
+    titleId: "Arsitektur Snowflake: Multi-Cluster Shared Data, Micro-Partition, dan Zero-Copy Cloning",
+    category: "Analytics",
+    engine: "Snowflake",
+    readTime: "7 min read",
+    summary: "An architectural exploration of Snowflake tri-layer separation of storage, compute virtual warehouses, and cloud services metadata.",
+    summaryId: "Eksplorasi arsitektur pemisahan tiga lapis Snowflake: penyimpanan data terpusat, komputasi virtual warehouse, dan layanan metadata cloud.",
+    body: `### Snowflake Tri-Layer Architecture
+- **Separation of Concerns**: Centralized object storage, elastic Virtual Warehouses for compute, and Cloud Services metadata brain.
+- **Immutable Micro-Partitions**: 50-500 MB columnar partitions with metadata min/max pruning.
+- **Zero-Copy Cloning**: Metadata-only duplication enables instant table copies with zero initial storage cost.`,
+    bodyId: `### Arsitektur Tiga Lapis Snowflake
+- **Pemisahan Storage & Compute**: Penyimpanan cloud terpusat, Virtual Warehouse elastis, dan Cloud Services koordinator.
+- **Micro-Partition Kolumnar**: File 50-500 MB immutable dengan optimasi partition pruning otomatis.
+- **Zero-Copy Cloning**: Duplikasi instan dalam hitungan detik berbasis pointer metadata.`,
+  },
+  {
+    slug: "clickhouse-duckdb-columnar-vectorized",
+    title: "ClickHouse & DuckDB: Column-Oriented Storage and Vectorized Query Execution",
+    titleId: "ClickHouse & DuckDB: Penyimpanan Kolumnar dan Eksekusi Kueri Tervektorisasi (SIMD)",
+    category: "Analytics",
+    engine: "ClickHouse & DuckDB",
+    readTime: "6 min read",
+    summary: "High-performance analytical engines demystified: MergeTree storage family, SIMD vectorized processing, and embedded columnar analytics with DuckDB.",
+    summaryId: "Membedah mesin analitik performa tinggi: arsitektur MergeTree, eksekusi tervektorisasi SIMD pada CPU, dan analisis kolumnar embedded dengan DuckDB.",
+    body: `### Columnar Analytical Engines
+- **Column-Oriented Storage**: Reading only required columns slashes disk I/O by 90-95% with high compression.
+- **SIMD Vectorized Execution**: Operates on arrays of values using CPU vector registers for massive throughput.
+- **ClickHouse MergeTree & DuckDB**: High-throughput parts merging and embedded in-process OLAP.`,
+    bodyId: `### Mesin Analitik Berorientasi Kolom
+- **Penyimpanan Kolumnar**: Membaca kolom yang dibutuhkan saja memangkas I/O disk hingga 90%+.
+- **Eksekusi Tervektorisasi (SIMD)**: Memanfaatkan register vektor CPU modern untuk memproses ribuan baris per siklus clock.
+- **ClickHouse MergeTree & DuckDB**: Arsitektur merge parts berkinerja tinggi serta analitik kolumnar in-process.`,
+  },
 ];
 
 type KnowledgeSection = "articles" | "visual" | "glossary" | "comparison" | "handbook";
@@ -497,7 +607,31 @@ export function KnowledgeCenter({ language, onOpenLab }: KnowledgeCenterProps) {
   const filteredArticles = useMemo(() => {
     return articles.filter((a) => {
       if (activeEngineFilter !== "ALL") {
-        if (!a.engine.toLowerCase().includes(activeEngineFilter.toLowerCase())) {
+        const eng = a.engine.toLowerCase();
+        const cat = (a.category || "").toLowerCase();
+        const filt = activeEngineFilter.toLowerCase();
+        if (filt === "nosql") {
+          if (
+            !eng.includes("mongo") &&
+            !eng.includes("redis") &&
+            !eng.includes("cassandra") &&
+            !eng.includes("cockroach") &&
+            !cat.includes("nosql")
+          ) {
+            return false;
+          }
+        } else if (filt === "analytics") {
+          if (
+            !eng.includes("snow") &&
+            !eng.includes("click") &&
+            !eng.includes("duck") &&
+            !eng.includes("bigquery") &&
+            !eng.includes("redshift") &&
+            !cat.includes("analytics")
+          ) {
+            return false;
+          }
+        } else if (!eng.includes(filt)) {
           return false;
         }
       }
@@ -592,6 +726,8 @@ export function KnowledgeCenter({ language, onOpenLab }: KnowledgeCenterProps) {
                     { id: "sql server", label: "SQL Server" },
                     { id: "ibm db2", label: "IBM Db2" },
                     { id: "sqlite", label: "SQLite" },
+                    { id: "nosql", label: isId ? "NoSQL & Terdistribusi" : "NoSQL & Distributed" },
+                    { id: "analytics", label: isId ? "Analitik & Cloud" : "Analytics & Cloud" },
                     { id: "universal", label: isId ? "Infrastruktur & APM" : "Infra & APM" },
                   ].map((chip) => (
                     <button

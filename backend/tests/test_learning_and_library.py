@@ -136,3 +136,23 @@ async def test_knowledge_v2_endpoints() -> None:
         vis_detail = await client.get(f"/api/v1/knowledge/visual-lessons/{slug}")
         assert vis_detail.status_code == 200
         assert len(vis_detail.json()["steps"]) >= 3
+
+        # 5. Troubleshooting KB
+        trouble_res = await client.get("/api/v1/knowledge/troubleshooting")
+        assert trouble_res.status_code == 200
+        trouble_items = trouble_res.json()
+        assert len(trouble_items) >= 2
+        assert any("ORA-01555" in t["title"] for t in trouble_items)
+
+        # 6. Roles & 12 Guided Career Paths
+        roles_res = await client.get("/api/v1/learning/roles")
+        assert roles_res.status_code == 200
+        roles = roles_res.json()
+        assert len(roles) == 12
+        role_ids = {r["id"] for r in roles}
+        expected_roles = {
+            "sql-developer", "dba-general", "oracle-dba", "postgres-dba",
+            "mysql-dba", "sqlserver-dba", "db2-dba", "database-engineer",
+            "dbre", "perf-engineer", "data-engineer", "db-architect"
+        }
+        assert expected_roles.issubset(role_ids)

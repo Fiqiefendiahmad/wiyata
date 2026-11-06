@@ -10,6 +10,7 @@ from app.templates.knowledge_v2 import (
     CROSS_COMPARISONS,
     INCIDENT_RUNBOOKS,
     VISUAL_LESSONS,
+    TROUBLESHOOTING_KB,
 )
 
 router = APIRouter(prefix="/knowledge", tags=["Knowledge"])
@@ -103,3 +104,23 @@ async def get_visual_lesson(slug: str) -> dict:
     if not lesson:
         raise HTTPException(status_code=404, detail="Visual lesson not found")
     return lesson
+
+
+@router.get("/troubleshooting")
+async def list_troubleshooting_cases(
+    engine: str | None = None,
+    search: str | None = None,
+) -> list[dict]:
+    items = list(TROUBLESHOOTING_KB)
+    if engine and engine != "ALL":
+        items = [i for i in items if engine.lower() in [e.lower() for e in i.get("engines", [])]]
+    if search and search.strip():
+        q = search.strip().lower()
+        items = [
+            i for i in items
+            if q in i["title"].lower()
+            or q in i["title_id"].lower()
+            or q in i.get("error_code", "").lower()
+            or q in i.get("root_cause", "").lower()
+        ]
+    return items
