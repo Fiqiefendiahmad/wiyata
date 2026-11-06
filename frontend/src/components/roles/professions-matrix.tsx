@@ -289,7 +289,7 @@ export function ProfessionsMatrix({
       {/* MAIN CONTENT PANE */}
       <main className="flex-1 flex flex-col overflow-y-auto bg-[#071A3A] min-w-0">
         {role && (
-          <div className="p-4 sm:p-6 max-w-5xl space-y-6">
+          <div className="p-4 sm:p-6 w-full max-w-5xl mx-auto space-y-6">
             {/* Role Header Banner */}
             <div className="rounded-2xl border border-slate-800 bg-[#10264A]/40 p-4 sm:p-6 backdrop-blur-sm shadow-sm">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3">

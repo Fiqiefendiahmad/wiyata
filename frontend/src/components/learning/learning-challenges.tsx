@@ -569,11 +569,11 @@ export function LearningChallenges({
               {/* Engine Bar & Editor Header */}
               <div className="flex flex-wrap items-center justify-between gap-2 bg-[#10264A]/40 p-2 rounded-xl border border-slate-800">
                 {/* Engine Selector */}
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] font-semibold text-slate-400 pl-1">
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar touch-scroll max-w-full py-0.5">
+                  <span className="text-[11px] font-semibold text-slate-400 pl-1 shrink-0">
                     {isId ? "Target Mesin:" : "Target Engine:"}
                   </span>
-                  <div className="flex items-center rounded-lg bg-slate-900/90 p-0.5 border border-slate-700/80">
+                  <div className="flex items-center rounded-lg bg-slate-900/90 p-0.5 border border-slate-700/80 shrink-0">
                     <button
                       onClick={() => setActiveEngine("postgres")}
                       className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
@@ -660,7 +660,7 @@ export function LearningChallenges({
 
               {/* Action Toolbar & Progressive Hints Accordion */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shrink-0">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     onClick={handleVerify}
                     disabled={isSubmitting}
