@@ -7,14 +7,18 @@ from sqlglot import exp
 from app.config import settings
 
 
-def optimize_query(query: str, dialect: str = "sqlite") -> list[dict[str, str]]:
+def optimize_query(query: str, dialect: str = "sqlite", language: str = "en") -> list[dict[str, str]]:
     """Analyzes SQL query AST for common anti-patterns and performance optimizations."""
     suggestions: list[dict[str, str]] = []
+    is_id = language == "id"
 
     try:
         parsed = sqlglot.parse_one(query, read=dialect)
     except Exception:
-        return [{"type": "syntax_error", "message": "Cannot parse SQL for optimization check."}]
+        return [{
+            "type": "syntax_error",
+            "message": "Format SQL tidak dapat diurai untuk pemeriksaan optimasi." if is_id else "Cannot parse SQL for optimization check."
+        }]
 
     # 1. SELECT * check
     select_all = False
@@ -28,7 +32,11 @@ def optimize_query(query: str, dialect: str = "sqlite") -> list[dict[str, str]]:
         suggestions.append({
             "type": "projection_overhead",
             "severity": "warning",
-            "message": "Query uses 'SELECT *'. In production workloads, explicitly project only required columns to reduce memory, network bandwidth, and prevent table schema change breakages.",
+            "message": (
+                "Query menggunakan 'SELECT *'. Pada beban kerja produksi, proyeksikan hanya kolom yang diperlukan secara eksplisit untuk menghemat memori, bandwidth jaringan, dan mencegah gangguan akibat perubahan skema tabel."
+                if is_id
+                else "Query uses 'SELECT *'. In production workloads, explicitly project only required columns to reduce memory, network bandwidth, and prevent table schema change breakages."
+            ),
             "rule": "RULE-SQL-01"
         })
 
@@ -37,7 +45,11 @@ def optimize_query(query: str, dialect: str = "sqlite") -> list[dict[str, str]]:
         suggestions.append({
             "type": "unbounded_result",
             "severity": "info",
-            "message": "Query does not specify a 'LIMIT' clause. Unbounded queries can exhaust database memory or lock buffers on large tables.",
+            "message": (
+                "Query tidak menentukan klausa 'LIMIT'. Query tanpa batas (unbounded) dapat menguras memori database atau mengunci buffer pada tabel berukuran besar."
+                if is_id
+                else "Query does not specify a 'LIMIT' clause. Unbounded queries can exhaust database memory or lock buffers on large tables."
+            ),
             "rule": "RULE-SQL-02"
         })
 
@@ -48,7 +60,11 @@ def optimize_query(query: str, dialect: str = "sqlite") -> list[dict[str, str]]:
             suggestions.append({
                 "type": "implicit_join",
                 "severity": "warning",
-                "message": "Detected join without explicit 'ON' or 'USING' clause. Ensure this is not an unintentional Cartesian product.",
+                "message": (
+                    "Terdeteksi penggabungan (join) tanpa klausa 'ON' atau 'USING' eksplisit. Pastikan operasi ini bukan Cartesian product yang tidak disengaja."
+                    if is_id
+                    else "Detected join without explicit 'ON' or 'USING' clause. Ensure this is not an unintentional Cartesian product."
+                ),
                 "rule": "RULE-SQL-03"
             })
 
@@ -59,7 +75,11 @@ def optimize_query(query: str, dialect: str = "sqlite") -> list[dict[str, str]]:
             suggestions.append({
                 "type": "unindexed_like",
                 "severity": "warning",
-                "message": "Leading wildcard pattern 'LIKE %...' prevents standard B-Tree index utilization and forces a full table scan. Consider trigram indexes or full-text search.",
+                "message": (
+                    "Pola wildcard di awal 'LIKE %...' mencegah penggunaan indeks B-Tree standar dan memaksa pemindaian tabel penuh (full table scan). Pertimbangkan indeks trigram atau pencarian teks penuh (full-text search)."
+                    if is_id
+                    else "Leading wildcard pattern 'LIKE %...' prevents standard B-Tree index utilization and forces a full table scan. Consider trigram indexes or full-text search."
+                ),
                 "rule": "RULE-SQL-04"
             })
 

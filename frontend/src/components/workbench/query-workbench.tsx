@@ -63,6 +63,42 @@ interface QueryWorkbenchProps {
   initialTemplate?: string;
 }
 
+const TEMPLATE_LOCALES: Record<
+  string,
+  { name: string; nameId: string; desc: string; descId: string }
+> = {
+  banking: {
+    name: "Core Banking System",
+    nameId: "Core Banking System",
+    desc: "Customers, savings/checking accounts, transactions (QRIS/Transfer/ATM), and loans",
+    descId: "Nasabah, rekening tabungan/giro, mutasi transaksi (QRIS/Transfer/ATM), dan pinjaman",
+  },
+  ecommerce: {
+    name: "E-Commerce Store",
+    nameId: "Toko E-Commerce",
+    desc: "Customers, products, categories, and shopping order transactions",
+    descId: "Pelanggan, produk, kategori, dan transaksi belanja online",
+  },
+  school: {
+    name: "University Academy",
+    nameId: "Akademi Kampus",
+    desc: "Campus academics: students, professors, courses, and GPA grades",
+    descId: "Akademik kampus: mahasiswa, dosen, mata kuliah, dan indeks prestasi",
+  },
+  blog: {
+    name: "Tech Blog Platform",
+    nameId: "Platform Blog Teknologi",
+    desc: "Authors, tech articles, tags, and reader comments",
+    descId: "Penulis, publikasi artikel teknik, tag, dan komentar pembaca",
+  },
+  blank: {
+    name: "Blank Database",
+    nameId: "Database Kosong",
+    desc: "Empty SQLite database for schema experiments and custom DDL",
+    descId: "Database SQLite kosong untuk eksperimen skema dan DDL bebas",
+  },
+};
+
 const DEFAULT_BANKING_SQL = `-- Analisis Saldo Rekening Nasabah (Core Banking System)
 SELECT
   c.cif_number,
@@ -396,6 +432,7 @@ export function QueryWorkbench({
       const res = await api.post("/query/optimize", {
         query: query.trim(),
         dialect: "sqlite",
+        language: language,
       });
       setOptimizations(res.data.suggestions || []);
     } catch (err: any) {
@@ -452,7 +489,19 @@ export function QueryWorkbench({
                   : "bg-slate-900 text-slate-400 border border-slate-800"
               }`}
             >
-              {tpl.slug === "banking" ? "🏦 Bank" : tpl.name.split(" ")[0]}
+              {tpl.slug === "banking"
+                ? isId
+                  ? "🏦 Bank"
+                  : "🏦 Bank"
+                : tpl.slug === "ecommerce"
+                ? isId
+                  ? "Toko"
+                  : "Store"
+                : tpl.slug === "school"
+                ? isId
+                  ? "Kampus"
+                  : "Academy"
+                : tpl.name.split(" ")[0]}
             </button>
           ))}
         </div>
@@ -482,10 +531,18 @@ export function QueryWorkbench({
               >
                 <span className="text-xs font-bold text-slate-100 flex items-center gap-1">
                   {tpl.slug === "banking" && "🏦 "}
-                  {tpl.name}
+                  {TEMPLATE_LOCALES[tpl.slug]
+                    ? isId
+                      ? TEMPLATE_LOCALES[tpl.slug].nameId
+                      : TEMPLATE_LOCALES[tpl.slug].name
+                    : tpl.name}
                 </span>
                 <span className="mt-0.5 line-clamp-1 text-[10px] text-slate-400">
-                  {tpl.description}
+                  {TEMPLATE_LOCALES[tpl.slug]
+                    ? isId
+                      ? TEMPLATE_LOCALES[tpl.slug].descId
+                      : TEMPLATE_LOCALES[tpl.slug].desc
+                    : tpl.description}
                 </span>
               </button>
             ))}
@@ -532,7 +589,7 @@ export function QueryWorkbench({
                       title="SELECT * FROM table"
                       className="rounded bg-[#10264A] px-2.5 py-1 text-[11px] font-mono font-semibold text-[#F2B84B] hover:bg-[#F2B84B] hover:text-[#071A3A] transition-colors min-h-[30px]"
                     >
-                      query
+                      {isId ? "kueri" : "query"}
                     </button>
                   </div>
 
@@ -680,7 +737,7 @@ export function QueryWorkbench({
               className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-700/60 transition-colors min-h-[42px]"
             >
               <Layers className="h-3.5 w-3.5" />
-              <span>Plan</span>
+              <span>{isId ? "Rencana" : "Plan"}</span>
             </button>
 
             {/* Dialect Transpiler */}
@@ -701,18 +758,18 @@ export function QueryWorkbench({
                 className="flex items-center gap-1 rounded-lg bg-[#10264A] border border-[#F2B84B]/40 px-3 py-2 text-xs font-semibold text-[#F2B84B] hover:bg-[#F2B84B] hover:text-[#071A3A] transition-colors min-h-[42px]"
               >
                 <ArrowRightLeft className="h-3.5 w-3.5" />
-                <span>Konversi</span>
+                <span>{isId ? "Konversi" : "Convert"}</span>
               </button>
             </div>
 
             {/* Export SQL */}
             <button
               onClick={handleExportSql}
-              title="Unduh DDL/DML SQL Database"
+              title={isId ? "Unduh DDL/DML SQL Database" : "Export SQL Database Dump"}
               className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-700/60 transition-colors min-h-[42px]"
             >
               <Download className="h-3.5 w-3.5 text-emerald-400" />
-              <span>Export</span>
+              <span>{isId ? "Ekspor" : "Export"}</span>
             </button>
           </div>
 
@@ -734,7 +791,7 @@ export function QueryWorkbench({
               ) : (
                 <>
                   <ShieldCheck className="h-4 w-4" />
-                  <span>Hanya Baca</span>
+                  <span>{isId ? "Hanya Baca" : "Read Only"}</span>
                 </>
               )}
             </button>
@@ -747,6 +804,7 @@ export function QueryWorkbench({
             value={query}
             onChange={setQuery}
             onExecute={handleRunQuery}
+            language={language}
           />
         </div>
 
@@ -812,7 +870,7 @@ export function QueryWorkbench({
                 }`}
               >
                 <Layers className="h-3.5 w-3.5" />
-                <span>Plan</span>
+                <span>{isId ? "Rencana" : "Plan"}</span>
               </button>
             </div>
 
@@ -1000,10 +1058,13 @@ export function QueryWorkbench({
                   <SqlEditor
                     value={
                       transpiledSql ||
-                      "-- Klik 'Konversi' untuk melihat SQL target"
+                      (isId
+                        ? "-- Klik 'Konversi' untuk melihat SQL target"
+                        : "-- Click 'Convert' to see target dialect SQL")
                     }
                     onChange={() => {}}
                     readOnly={true}
+                    language={language}
                   />
                 </div>
               </div>
@@ -1015,13 +1076,15 @@ export function QueryWorkbench({
                 {!explainPlan ? (
                   <div className="text-center text-xs text-slate-500 py-6">
                     {isId
-                      ? "Klik 'Plan' untuk melihat rencana optimasi query"
+                      ? "Klik 'Rencana' untuk melihat rencana optimasi query"
                       : "Click 'Plan' to inspect the execution plan"}
                   </div>
                 ) : (
                   <div className="rounded-lg border border-slate-800 bg-[#10264A]/40 p-3 font-mono text-xs overflow-x-auto no-scrollbar touch-scroll">
                     <div className="font-bold text-[#F2B84B] mb-2">
-                      SQLite Query Plan:
+                      {isId
+                        ? "Rencana Eksekusi Query SQLite:"
+                        : "SQLite Query Execution Plan:"}
                     </div>
                     {explainPlan.map((step, idx) => (
                       <div key={idx} className="py-1 text-slate-300">
@@ -1048,7 +1111,11 @@ export function QueryWorkbench({
             </p>
             <input
               type="text"
-              placeholder="e.g. Analisis Nasabah Saldo Terbesar"
+              placeholder={
+                isId
+                  ? "Contoh: Analisis Saldo Nasabah Prioritas"
+                  : "e.g. Priority Customers Balance Analysis"
+              }
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               className="w-full rounded bg-slate-900 border border-slate-700 px-3 py-2 text-xs text-white focus:outline-none focus:border-[#F2B84B] mb-4 min-h-[44px]"

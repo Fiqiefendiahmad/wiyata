@@ -129,10 +129,10 @@ export function Header({
             disabled={isResetting}
             title={
               isId
-                ? "Refresh / Reset Data Sandbox ke Kondisi Awal"
+                ? "Muat Ulang / Reset Data Sandbox ke Kondisi Awal"
                 : "Refresh & Reset Sandboxed Data to Initial State"
             }
-            aria-label="Refresh and reset sandboxed data"
+            aria-label={isId ? "Segarkan data sandbox" : "Refresh and reset sandboxed data"}
             className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-[#10264A] px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-slate-200 hover:text-white hover:border-[#F2B84B] transition-colors disabled:opacity-50 min-h-[38px] active:scale-95"
           >
             <RefreshCw
@@ -143,10 +143,10 @@ export function Header({
             <span className="hidden xs:inline text-[11px] font-semibold">
               {isResetting
                 ? isId
-                  ? "Merefresh..."
+                  ? "Menyegarkan..."
                   : "Refreshing..."
                 : isId
-                ? "Refresh Data"
+                ? "Segarkan Data"
                 : "Refresh Data"}
             </span>
           </button>

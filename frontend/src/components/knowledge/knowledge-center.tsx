@@ -130,6 +130,12 @@ interface KnowledgeCenterProps {
   onOpenLab: () => void;
 }
 
+const CATEGORY_LOCALES: Record<string, { en: string; id: string }> = {
+  Architecture: { en: "Architecture", id: "Arsitektur" },
+  Performance: { en: "Performance", id: "Performa" },
+  Internals: { en: "Internals", id: "Internal Mesin" },
+};
+
 export function KnowledgeCenter({ language, onOpenLab }: KnowledgeCenterProps) {
   const isId = language === "id";
   const [searchTerm, setSearchTerm] = useState("");
@@ -159,6 +165,10 @@ export function KnowledgeCenter({ language, onOpenLab }: KnowledgeCenterProps) {
         } lg:flex w-full lg:w-80 flex-col border-b lg:border-b-0 lg:border-r border-slate-800 bg-[#071A3A]/95 overflow-hidden`}
       >
         <div className="p-3 border-b border-slate-800">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#F2B84B] mb-2">
+            <BookOpen className="h-3.5 w-3.5" />
+            <span>{isId ? "Pusat Panduan & Arsitektur" : "Knowledge & Architecture"}</span>
+          </div>
           <div className="relative">
             <Search className="absolute left-2.5 top-3 h-3.5 w-3.5 text-slate-400" />
             <input
@@ -186,9 +196,13 @@ export function KnowledgeCenter({ language, onOpenLab }: KnowledgeCenterProps) {
             >
               <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
                 <span className="font-semibold text-[#F2B84B] uppercase tracking-wider">
-                  {art.category}
+                  {CATEGORY_LOCALES[art.category]
+                    ? isId
+                      ? CATEGORY_LOCALES[art.category].id
+                      : CATEGORY_LOCALES[art.category].en
+                    : art.category}
                 </span>
-                <span>{art.readTime}</span>
+                <span>{isId ? art.readTime.replace("min read", "menit baca") : art.readTime}</span>
               </div>
               <h3 className="text-xs font-bold text-slate-100 leading-snug">
                 {isId ? art.titleId : art.title}
@@ -224,10 +238,20 @@ export function KnowledgeCenter({ language, onOpenLab }: KnowledgeCenterProps) {
           <div>
             <div className="flex items-center gap-2 text-xs text-[#F2B84B] font-semibold uppercase tracking-wider mb-2">
               <Tag className="h-3.5 w-3.5" />
-              <span>{selectedArticle.category}</span>
+              <span>
+                {CATEGORY_LOCALES[selectedArticle.category]
+                  ? isId
+                    ? CATEGORY_LOCALES[selectedArticle.category].id
+                    : CATEGORY_LOCALES[selectedArticle.category].en
+                  : selectedArticle.category}
+              </span>
               <span>•</span>
               <Database className="h-3.5 w-3.5" />
-              <span>{selectedArticle.engine}</span>
+              <span>
+                {isId && selectedArticle.engine === "Universal"
+                  ? "Universal (Semua DB)"
+                  : selectedArticle.engine}
+              </span>
             </div>
 
             <h1 className="text-xl sm:text-3xl font-extrabold text-white tracking-tight mb-4">

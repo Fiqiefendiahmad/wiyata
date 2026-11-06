@@ -214,6 +214,21 @@ export function ToolsCatalog({ language }: ToolsCatalogProps) {
       .catch((err) => console.error("Error fetching live tools:", err));
   }, []);
 
+  const CATEGORY_LOCALES: Record<string, { en: string; id: string }> = {
+    "All": { en: "All", id: "Semua" },
+    "Clients & Administration": { en: "Clients & Administration", id: "Klien & Administrasi" },
+    "Monitoring & Observability": { en: "Monitoring & Observability", id: "Monitoring & Observabilitas" },
+    "Backup & Migration": { en: "Backup & Migration", id: "Backup & Migrasi" },
+  };
+
+  const LICENSE_LOCALES: Record<string, { en: string; id: string }> = {
+    "Open Source": { en: "Open Source", id: "Sumber Terbuka" },
+    "Open Source / AGPL": { en: "Open Source / AGPL", id: "Sumber Terbuka / AGPL" },
+    "Open Source / Commercial": { en: "Open Source / Commercial", id: "Sumber Terbuka / Komersial" },
+    "Commercial": { en: "Commercial", id: "Komersial" },
+    "Freemium": { en: "Freemium", id: "Freemium" },
+  };
+
   const categories = [
     "All",
     "Clients & Administration",
@@ -286,7 +301,11 @@ export function ToolsCatalog({ language }: ToolsCatalogProps) {
                     : "bg-slate-900/60 text-slate-400 hover:text-slate-200 border border-slate-800"
                 }`}
               >
-                {cat}
+                {CATEGORY_LOCALES[cat]
+                  ? isId
+                    ? CATEGORY_LOCALES[cat].id
+                    : CATEGORY_LOCALES[cat].en
+                  : cat}
               </button>
             ))}
           </div>
@@ -294,63 +313,75 @@ export function ToolsCatalog({ language }: ToolsCatalogProps) {
 
         {/* Grid of Tools */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-8">
-          {filtered.map((tool) => (
-            <div
-              key={tool.slug}
-              className="rounded-lg border border-slate-800 bg-[#10264A]/30 p-4 sm:p-5 flex flex-col justify-between hover:border-slate-700 hover:bg-[#10264A]/50 transition-all"
-            >
-              <div>
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div>
-                    <h3 className="font-bold text-sm text-white">
-                      {tool.name}
-                    </h3>
-                    <p className="text-[11px] text-slate-400">{tool.vendor}</p>
-                  </div>
-                  <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-semibold tracking-wide border shrink-0 ${
-                      tool.license.includes("Open Source")
-                        ? "bg-emerald-950/60 text-emerald-400 border-emerald-800/80"
-                        : tool.license === "Commercial"
-                        ? "bg-purple-950/60 text-purple-400 border-purple-800/80"
-                        : "bg-amber-950/60 text-amber-400 border-amber-800/80"
-                    }`}
-                  >
-                    {tool.license}
-                  </span>
-                </div>
-
-                <p className="text-xs text-slate-300 leading-relaxed line-clamp-3 mb-4">
-                  {isId && tool.summaryId ? tool.summaryId : tool.summary}
-                </p>
-              </div>
-
-              <div>
-                <div className="flex flex-wrap gap-1 mb-4">
-                  {tool.engines.map((e) => (
-                    <span
-                      key={e}
-                      className="rounded bg-slate-900 px-2 py-0.5 text-[10px] font-mono text-slate-400 border border-slate-800"
-                    >
-                      {e}
-                    </span>
-                  ))}
-                </div>
-
-                <a
-                  href={tool.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 py-2.5 text-xs font-semibold text-slate-200 hover:text-white hover:border-[#F2B84B] transition-colors min-h-[44px]"
-                >
-                  <span>
-                    {isId ? "Kunjungi Dokumentasi Resmi" : "Official Website"}
-                  </span>
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </div>
+          {filtered.length === 0 ? (
+            <div className="col-span-full py-12 text-center text-xs text-slate-500">
+              {isId
+                ? "Tidak ada software atau database yang cocok dengan kriteria pencarian Anda."
+                : "No software tools or databases match your search query."}
             </div>
-          ))}
+          ) : (
+            filtered.map((tool) => (
+              <div
+                key={tool.slug}
+                className="rounded-lg border border-slate-800 bg-[#10264A]/30 p-4 sm:p-5 flex flex-col justify-between hover:border-slate-700 hover:bg-[#10264A]/50 transition-all"
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div>
+                      <h3 className="font-bold text-sm text-white">
+                        {tool.name}
+                      </h3>
+                      <p className="text-[11px] text-slate-400">{tool.vendor}</p>
+                    </div>
+                    <span
+                      className={`px-2 py-0.5 rounded text-[10px] font-semibold tracking-wide border shrink-0 ${
+                        tool.license.includes("Open Source")
+                          ? "bg-emerald-950/60 text-emerald-400 border-emerald-800/80"
+                          : tool.license === "Commercial"
+                          ? "bg-purple-950/60 text-purple-400 border-purple-800/80"
+                          : "bg-amber-950/60 text-amber-400 border-amber-800/80"
+                      }`}
+                    >
+                      {LICENSE_LOCALES[tool.license]
+                        ? isId
+                          ? LICENSE_LOCALES[tool.license].id
+                          : LICENSE_LOCALES[tool.license].en
+                        : tool.license}
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-slate-300 leading-relaxed line-clamp-3 mb-4">
+                    {isId && tool.summaryId ? tool.summaryId : tool.summary}
+                  </p>
+                </div>
+
+                <div>
+                  <div className="flex flex-wrap gap-1 mb-4">
+                    {tool.engines.map((e) => (
+                      <span
+                        key={e}
+                        className="rounded bg-slate-900 px-2 py-0.5 text-[10px] font-mono text-slate-400 border border-slate-800"
+                      >
+                        {e}
+                      </span>
+                    ))}
+                  </div>
+
+                  <a
+                    href={tool.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 py-2.5 text-xs font-semibold text-slate-200 hover:text-white hover:border-[#F2B84B] transition-colors min-h-[44px]"
+                  >
+                    <span>
+                      {isId ? "Kunjungi Dokumentasi Resmi" : "Visit Official Documentation"}
+                    </span>
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

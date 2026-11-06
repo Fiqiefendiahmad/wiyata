@@ -12,6 +12,7 @@ interface SqlEditorProps {
   onChange: (value: string) => void;
   onExecute?: () => void;
   readOnly?: boolean;
+  language?: "en" | "id";
 }
 
 const COMMON_SQL_KEYWORDS = [
@@ -29,7 +30,9 @@ export function SqlEditor({
   onChange,
   onExecute,
   readOnly = false,
+  language = "id",
 }: SqlEditorProps) {
+  const isId = language === "id";
   const [mounted, setMounted] = useState(false);
   const [isMobileScreen, setIsMobileScreen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -130,7 +133,7 @@ export function SqlEditor({
                 <div className="flex h-full w-full items-center justify-center font-mono text-xs text-slate-400 bg-[#071A3A]">
                   <div className="flex items-center gap-2">
                     <span className="h-2 w-2 rounded-full bg-[#F2B84B] animate-ping" />
-                    <span>Memuat SQL Editor...</span>
+                    <span>{isId ? "Memuat SQL Editor..." : "Loading SQL Editor..."}</span>
                   </div>
                 </div>
               }
@@ -165,7 +168,11 @@ export function SqlEditor({
               autoCorrect="off"
               spellCheck={false}
               className="flex-1 w-full h-full resize-none bg-transparent p-3 font-mono text-xs text-slate-100 leading-relaxed focus:outline-none placeholder-slate-600"
-              placeholder="-- Tulis perintah SQL di sini...&#10;SELECT * FROM accounts LIMIT 10;"
+              placeholder={
+                isId
+                  ? "-- Tulis perintah SQL di sini...\nSELECT * FROM accounts LIMIT 10;"
+                  : "-- Enter SQL query here...\nSELECT * FROM accounts LIMIT 10;"
+              }
             />
           </div>
         )}
@@ -178,8 +185,10 @@ export function SqlEditor({
           <span>SQLite 3</span>
         </span>
         <div className="flex items-center gap-3">
-          <span>{lineCount} baris</span>
-          <span className="hidden sm:inline">Ctrl + Enter untuk Menjalankan</span>
+          <span>{lineCount} {isId ? "baris" : "lines"}</span>
+          <span className="hidden sm:inline">
+            {isId ? "Ctrl + Enter untuk Menjalankan" : "Ctrl + Enter to Execute"}
+          </span>
         </div>
       </div>
     </div>

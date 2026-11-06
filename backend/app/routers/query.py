@@ -26,6 +26,7 @@ class QueryFormatRequest(BaseModel):
 class QueryOptimizeRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=50000)
     dialect: str = "sqlite"
+    language: str = "en"
 
 
 class QueryExplainNaturalRequest(BaseModel):
@@ -57,7 +58,7 @@ async def generate_query(body: QueryGenerateWithSchemaRequest) -> QueryResult:
 
 @router.post("/optimize")
 async def check_query_optimizations(body: QueryOptimizeRequest) -> dict:
-    suggestions = optimize_query(body.query, dialect=body.dialect)
+    suggestions = optimize_query(body.query, dialect=body.dialect, language=body.language)
     return {
         "status": "success",
         "suggestions_count": len(suggestions),

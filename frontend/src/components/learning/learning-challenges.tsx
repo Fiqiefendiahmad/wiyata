@@ -40,6 +40,12 @@ interface LearningChallengesProps {
   onOpenLabWithQuery: (query: string, template: string) => void;
 }
 
+const LEVEL_LOCALES: Record<string, { en: string; id: string }> = {
+  Beginner: { en: "Beginner", id: "Pemula" },
+  Intermediate: { en: "Intermediate", id: "Menengah" },
+  Advanced: { en: "Advanced", id: "Lanjutan" },
+};
+
 export function LearningChallenges({
   language,
   onOpenLabWithQuery,
@@ -96,7 +102,11 @@ export function LearningChallenges({
         user_columns: [],
         expected_columns: selectedExercise.expected_columns,
         elapsed_ms: 0,
-        feedback: ["Network or server error executing test."],
+        feedback: [
+          isId
+            ? "Terjadi kesalahan jaringan atau server saat mengeksekusi pengujian."
+            : "Network or server error executing test.",
+        ],
       });
     } finally {
       setIsSubmitting(false);
@@ -121,7 +131,8 @@ export function LearningChallenges({
           >
             {exercises.map((ex) => (
               <option key={ex.slug} value={ex.slug}>
-                [{ex.level}] {isId ? ex.title_id : ex.title}
+                [{LEVEL_LOCALES[ex.level] ? (isId ? LEVEL_LOCALES[ex.level].id : LEVEL_LOCALES[ex.level].en) : ex.level}]{" "}
+                {isId ? ex.title_id : ex.title}
               </option>
             ))}
           </select>
@@ -165,10 +176,14 @@ export function LearningChallenges({
                       : "bg-amber-950 text-amber-400 border border-amber-800"
                   }`}
                 >
-                  {ex.level}
+                  {LEVEL_LOCALES[ex.level]
+                    ? isId
+                      ? LEVEL_LOCALES[ex.level].id
+                      : LEVEL_LOCALES[ex.level].en
+                    : ex.level}
                 </span>
                 <span className="font-mono text-slate-500">
-                  {ex.dataset} dataset
+                  {ex.dataset} {isId ? "skema" : "dataset"}
                 </span>
               </div>
               <h3 className="text-xs font-bold text-slate-100">
@@ -191,7 +206,11 @@ export function LearningChallenges({
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
                 <div className="flex items-center gap-2">
                   <span className="rounded bg-[#F2B84B]/20 px-2 py-0.5 text-[11px] font-bold text-[#F2B84B] border border-[#F2B84B]/30 shrink-0">
-                    {selectedExercise.level}
+                    {LEVEL_LOCALES[selectedExercise.level]
+                      ? isId
+                        ? LEVEL_LOCALES[selectedExercise.level].id
+                        : LEVEL_LOCALES[selectedExercise.level].en
+                      : selectedExercise.level}
                   </span>
                   <h1 className="text-base sm:text-xl font-bold text-white truncate">
                     {isId ? selectedExercise.title_id : selectedExercise.title}
@@ -237,6 +256,7 @@ export function LearningChallenges({
                   value={solutionSql}
                   onChange={setSolutionSql}
                   onExecute={handleVerify}
+                  language={language}
                 />
               </div>
 
