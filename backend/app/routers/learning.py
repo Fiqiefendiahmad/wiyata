@@ -1,109 +1,361 @@
+import re
+import secrets
 import sqlite3
+import time
 from typing import Any
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
+import psycopg
+import pymysql
 
 from app.adapters.sqlite import SQLiteAdapter
+from app.config import settings
 from app.templates.datasets import TEMPLATES
+import sqlglot
 
 router = APIRouter(prefix="/learning", tags=["Learning"])
 
 CHALLENGES = [
     {
-        "slug": "banking-priority-accounts",
-        "title": "Priority Banking Balances (> IDR 30M)",
-        "title_id": "Audit Saldo Nasabah Prioritas (> 30 Juta)",
-        "level": "Intermediate",
-        "dataset": "banking",
-        "description": "Write a query selecting customer full_name, account_number, account_type, and balance for accounts with status 'ACTIVE' and balance greater than 30,000,000. Sort by balance descending.",
-        "description_id": "Tulis query yang menampilkan full_name nasabah, account_number, account_type, dan balance untuk rekening berstatus 'ACTIVE' dengan saldo di atas 30.000.000, diurutkan dari saldo tertinggi.",
-        "expected_columns": ["full_name", "account_number", "account_type", "balance"],
-        "solution_sql": """
-SELECT c.full_name, a.account_number, a.account_type, a.balance
-FROM accounts a
-JOIN customers c ON a.customer_id = c.customer_id
-WHERE a.status = 'ACTIVE' AND a.balance > 30000000.0
-ORDER BY a.balance DESC;
-""",
-        "starter_sql": """-- Lengkapi kueri berikut:
-SELECT c.full_name, a.account_number, a.account_type, a.balance
-FROM accounts a
-JOIN customers c ON a.customer_id = c.customer_id
-WHERE a.status = 'ACTIVE' AND a.balance > 30000000.0
-ORDER BY a.balance DESC;
-""",
-    },
-    {
-        "slug": "top-spending-customers",
-        "title": "Top Spending Customers",
-        "title_id": "5 Pelanggan dengan Pengeluaran Terbesar",
-        "level": "Intermediate",
-        "dataset": "ecommerce",
-        "description": "Write a query that returns the first_name, city, and sum of total_amount (as total_spent) for customers with completed orders, sorted by total_spent descending, limited to 5 rows.",
-        "description_id": "Tulis query yang menghasilkan first_name, city, dan total pengeluaran (total_spent) untuk pelanggan dengan pesanan 'completed', diurutkan dari yang terbanyak, dibatasi 5 baris.",
-        "expected_columns": ["first_name", "city", "total_spent"],
-        "solution_sql": """
-SELECT c.first_name, c.city, SUM(o.total_amount) AS total_spent
-FROM customers c
-JOIN orders o ON c.id = o.customer_id
-WHERE o.status = 'completed'
-GROUP BY c.id
-ORDER BY total_spent DESC
-LIMIT 5;
-""",
-        "starter_sql": """-- Tulis query Anda di bawah:
-SELECT c.first_name, c.city, SUM(o.total_amount) AS total_spent
-FROM customers c
-JOIN orders o ON c.id = o.customer_id
--- Lengkapi WHERE, GROUP BY, ORDER BY, dan LIMIT:
-GROUP BY c.id;
-""",
-    },
-    {
         "slug": "low-stock-alert",
         "title": "Restock Warning Alert",
         "title_id": "Peringatan Stok Barang Menipis",
         "level": "Beginner",
+        "category": "Data Filtering",
+        "category_id": "Penyaringan Data",
         "dataset": "ecommerce",
-        "description": "Select the product name, price, and stock for all products where stock is strictly less than 35 units, ordered by stock ascending.",
-        "description_id": "Pilih kolom name, price, dan stock untuk semua produk dengan stok di bawah 35 unit, diurutkan dari stok paling sedikit.",
+        "description": "Select product name, price, and stock for all products where stock is strictly less than 35 units, ordered by stock ascending.",
+        "description_id": "Pilih kolom name, price, dan stock untuk semua produk dengan stok kurang dari 35 unit, diurutkan dari stok paling sedikit.",
         "expected_columns": ["name", "price", "stock"],
-        "solution_sql": """
+        "solution_sql": """SELECT name, price, stock
+FROM products
+WHERE stock < 35
+ORDER BY stock ASC;""",
+        "starter_sql": """-- Tulis kueri penyaringan produk dengan stok < 35:
 SELECT name, price, stock
 FROM products
 WHERE stock < 35
-ORDER BY stock ASC;
-""",
-        "starter_sql": """SELECT name, price, stock
-FROM products
-WHERE stock < 35
-ORDER BY stock ASC;
-""",
+ORDER BY stock ASC;""",
+        "hints": [
+            "Use the WHERE clause with condition 'stock < 35'.",
+            "Sort the final rows using 'ORDER BY stock ASC'."
+        ],
+        "hints_id": [
+            "Gunakan klausul WHERE dengan kondisi 'stock < 35'.",
+            "Urutkan baris hasil akhir menggunakan 'ORDER BY stock ASC'."
+        ],
+        "supported_engines": ["sqlite", "postgres", "mysql"],
     },
     {
         "slug": "academic-grade-a",
         "title": "Honors List: Grade A Students",
         "title_id": "Daftar Mahasiswa Berprestasi (Nilai A)",
         "level": "Beginner",
+        "category": "Multi-table JOINs",
+        "category_id": "Relasi Multi-Tabel",
         "dataset": "school",
-        "description": "Find student name (as student_name), course title (as course_title), and grade for all enrollments with grade 'A'. Sort alphabetically by student_name.",
-        "description_id": "Temukan nama mahasiswa (student_name), judul mata kuliah (course_title), dan nilai untuk semua pendaftaran dengan nilai 'A'. Urutkan alfabetis berdasarkan student_name.",
+        "description": "Find student name (as student_name), course title (as course_title), and grade for all enrollments with grade 'A'. Sort alphabetically by student_name ascending.",
+        "description_id": "Temukan nama mahasiswa (student_name), judul mata kuliah (course_title), dan nilai untuk semua pendaftaran bernilai 'A'. Urutkan alfabetis dari student_name.",
         "expected_columns": ["student_name", "course_title", "grade"],
-        "solution_sql": """
+        "solution_sql": """SELECT s.name AS student_name, c.title AS course_title, e.grade
+FROM enrollments e
+JOIN students s ON e.student_id = s.id
+JOIN courses c ON e.course_id = c.id
+WHERE e.grade = 'A'
+ORDER BY s.name ASC;""",
+        "starter_sql": """-- Hubungkan tabel enrollments, students, dan courses:
 SELECT s.name AS student_name, c.title AS course_title, e.grade
 FROM enrollments e
-JOIN students s ON e.student_id = s.id
-JOIN courses c ON e.course_id = c.id
-WHERE e.grade = 'A'
-ORDER BY s.name ASC;
+-- Lengkapi JOIN dan kondisi WHERE:
 """,
-        "starter_sql": """SELECT s.name AS student_name, c.title AS course_title, e.grade
-FROM enrollments e
-JOIN students s ON e.student_id = s.id
-JOIN courses c ON e.course_id = c.id
-WHERE e.grade = 'A'
-ORDER BY s.name ASC;
+        "hints": [
+            "JOIN enrollments to students on e.student_id = s.id.",
+            "JOIN enrollments to courses on e.course_id = c.id.",
+            "Add filter WHERE e.grade = 'A' and alias columns with AS student_name and AS course_title."
+        ],
+        "hints_id": [
+            "Lakukan JOIN antara enrollments ke students pada e.student_id = s.id.",
+            "Lakukan JOIN ke courses pada e.course_id = c.id.",
+            "Tambahkan filter WHERE e.grade = 'A' dan gunakan alias kolom AS student_name dan AS course_title."
+        ],
+        "supported_engines": ["sqlite", "postgres", "mysql"],
+    },
+    {
+        "slug": "banking-priority-accounts",
+        "title": "Priority Banking Balances (> IDR 30M)",
+        "title_id": "Audit Saldo Nasabah Prioritas (> 30 Juta)",
+        "level": "Intermediate",
+        "category": "Filtering & Joins",
+        "category_id": "Filter & Relasi",
+        "dataset": "banking",
+        "description": "Select customer full_name, account_number, account_type, and balance for accounts with status 'ACTIVE' and balance greater than 30,000,000. Sort by balance descending.",
+        "description_id": "Tampilkan full_name nasabah, account_number, account_type, dan balance untuk rekening berstatus 'ACTIVE' dengan saldo di atas 30.000.000, diurutkan dari saldo tertinggi.",
+        "expected_columns": ["full_name", "account_number", "account_type", "balance"],
+        "solution_sql": """SELECT c.full_name, a.account_number, a.account_type, a.balance
+FROM accounts a
+JOIN customers c ON a.customer_id = c.customer_id
+WHERE a.status = 'ACTIVE' AND a.balance > 30000000.0
+ORDER BY a.balance DESC;""",
+        "starter_sql": """-- Tulis query nasabah prioritas:
+SELECT c.full_name, a.account_number, a.account_type, a.balance
+FROM accounts a
+JOIN customers c ON a.customer_id = c.customer_id
+-- Lengkapi filter WHERE dan pengurutan ORDER BY:
 """,
+        "hints": [
+            "Join accounts and customers using customer_id.",
+            "Apply two conditions in WHERE: a.status = 'ACTIVE' AND a.balance > 30000000.0.",
+            "Sort with ORDER BY a.balance DESC."
+        ],
+        "hints_id": [
+            "Gabungkan accounts dan customers menggunakan customer_id.",
+            "Gunakan dua filter pada WHERE: a.status = 'ACTIVE' AND a.balance > 30000000.0.",
+            "Urutkan dengan ORDER BY a.balance DESC."
+        ],
+        "supported_engines": ["sqlite", "postgres", "mysql"],
+    },
+    {
+        "slug": "top-spending-customers",
+        "title": "Top Spending Customers",
+        "title_id": "Pelanggan dengan Pengeluaran Terbesar",
+        "level": "Intermediate",
+        "category": "Aggregation & Grouping",
+        "category_id": "Agregasi & Pengelompokan",
+        "dataset": "ecommerce",
+        "description": "Calculate total spending per customer with completed orders. Return first_name, city, and total_spent (sum of total_amount), ordered by total_spent descending, limited to 5 rows.",
+        "description_id": "Hitung total pengeluaran per pelanggan berpesanan 'completed'. Tampilkan first_name, city, dan total_spent (jumlah total_amount), diurutkan dari pengeluaran terbanyak, batas 5 baris.",
+        "expected_columns": ["first_name", "city", "total_spent"],
+        "solution_sql": """SELECT c.first_name, c.city, SUM(o.total_amount) AS total_spent
+FROM customers c
+JOIN orders o ON c.id = o.customer_id
+WHERE o.status = 'completed'
+GROUP BY c.id, c.first_name, c.city
+ORDER BY total_spent DESC
+LIMIT 5;""",
+        "starter_sql": """SELECT c.first_name, c.city, SUM(o.total_amount) AS total_spent
+FROM customers c
+JOIN orders o ON c.id = o.customer_id
+-- Tambahkan WHERE, GROUP BY, ORDER BY, dan LIMIT:
+GROUP BY c.id, c.first_name, c.city;""",
+        "hints": [
+            "Filter only completed orders with WHERE o.status = 'completed'.",
+            "Group by customer id and name columns.",
+            "Use ORDER BY total_spent DESC and LIMIT 5."
+        ],
+        "hints_id": [
+            "Saring hanya pesanan selesai dengan WHERE o.status = 'completed'.",
+            "Kelompokkan dengan GROUP BY c.id, c.first_name, c.city.",
+            "Gunakan ORDER BY total_spent DESC dan LIMIT 5."
+        ],
+        "supported_engines": ["sqlite", "postgres", "mysql"],
+    },
+    {
+        "slug": "high-volume-authors",
+        "title": "High Volume Blog Authors",
+        "title_id": "Penulis Artikel Produktif (> 1 Postingan)",
+        "level": "Intermediate",
+        "category": "HAVING Clause",
+        "category_id": "Klausul HAVING",
+        "dataset": "blog",
+        "description": "Find authors who have published strictly more than 1 post. Display author username, post count as post_count, and total views across their posts as total_views, sorted by total_views descending.",
+        "description_id": "Cari penulis dengan lebih dari 1 artikel. Tampilkan username, jumlah artikel sebagai post_count, dan total pembaca sebagai total_views, diurutkan dari total_views terbesar.",
+        "expected_columns": ["username", "post_count", "total_views"],
+        "solution_sql": """SELECT a.username, COUNT(p.id) AS post_count, SUM(p.views) AS total_views
+FROM authors a
+JOIN posts p ON a.id = p.author_id
+GROUP BY a.id, a.username
+HAVING COUNT(p.id) > 1
+ORDER BY total_views DESC;""",
+        "starter_sql": """-- Gunakan COUNT, SUM, GROUP BY dan HAVING:
+SELECT a.username, COUNT(p.id) AS post_count, SUM(p.views) AS total_views
+FROM authors a
+JOIN posts p ON a.id = p.author_id
+GROUP BY a.id, a.username;""",
+        "hints": [
+            "Use COUNT(p.id) for post count and SUM(p.views) for total views.",
+            "Filter grouped results using HAVING COUNT(p.id) > 1.",
+            "Sort with ORDER BY total_views DESC."
+        ],
+        "hints_id": [
+            "Gunakan COUNT(p.id) untuk menghitung post dan SUM(p.views) untuk total tayangan.",
+            "Filter kelompok hasil agregasi menggunakan HAVING COUNT(p.id) > 1.",
+            "Urutkan hasil dengan ORDER BY total_views DESC."
+        ],
+        "supported_engines": ["sqlite", "postgres", "mysql"],
+    },
+    {
+        "slug": "monthly-transfer-channels",
+        "title": "Banking Transfer Channels Volume",
+        "title_id": "Volume Transaksi Saluran Transfer Perbankan",
+        "level": "Intermediate",
+        "category": "Aggregation",
+        "category_id": "Agregasi Keuangan",
+        "dataset": "banking",
+        "description": "Calculate total volume and average fee for transactions with transaction_type = 'TRANSFER', grouped by channel. Display channel, total_volume (sum of amount), and avg_fee (average fee), ordered by total_volume descending.",
+        "description_id": "Hitung total volume dan rata-rata biaya transfer untuk jenis 'TRANSFER' per saluran perbankan. Tampilkan channel, total_volume, dan avg_fee, diurutkan dari total volume tertinggi.",
+        "expected_columns": ["channel", "total_volume", "avg_fee"],
+        "solution_sql": """SELECT channel, SUM(amount) AS total_volume, AVG(fee) AS avg_fee
+FROM transactions
+WHERE transaction_type = 'TRANSFER'
+GROUP BY channel
+ORDER BY total_volume DESC;""",
+        "starter_sql": """-- Analisis transfer per channel perbankan:
+SELECT channel, SUM(amount) AS total_volume, AVG(fee) AS avg_fee
+FROM transactions
+WHERE transaction_type = 'TRANSFER'
+GROUP BY channel
+ORDER BY total_volume DESC;""",
+        "hints": [
+            "Filter WHERE transaction_type = 'TRANSFER'.",
+            "Group by channel and calculate SUM(amount) AS total_volume and AVG(fee) AS avg_fee."
+        ],
+        "hints_id": [
+            "Filter dengan WHERE transaction_type = 'TRANSFER'.",
+            "Kelompokkan berdasarkan channel dan hitung SUM(amount) serta AVG(fee)."
+        ],
+        "supported_engines": ["sqlite", "postgres", "mysql"],
+    },
+    {
+        "slug": "dormant-customers-anti-join",
+        "title": "Dormant Customers (Anti-Join)",
+        "title_id": "Pelanggan Pasif Tanpa Transaksi (Anti-Join)",
+        "level": "Intermediate",
+        "category": "Anti-Join Pattern",
+        "category_id": "Pola Anti-Join",
+        "dataset": "ecommerce",
+        "description": "Identify registered customers who have never placed any order. Return id, first_name, last_name, and email, sorted by customer id ascending.",
+        "description_id": "Temukan pelanggan terdaftar yang belum pernah memesan barang sama sekali. Tampilkan id, first_name, last_name, dan email, diurutkan dari id terkecil.",
+        "expected_columns": ["id", "first_name", "last_name", "email"],
+        "solution_sql": """SELECT c.id, c.first_name, c.last_name, c.email
+FROM customers c
+LEFT JOIN orders o ON c.id = o.customer_id
+WHERE o.id IS NULL
+ORDER BY c.id ASC;""",
+        "starter_sql": """-- Tulis query Anti-Join menggunakan LEFT JOIN dan WHERE ... IS NULL:
+SELECT c.id, c.first_name, c.last_name, c.email
+FROM customers c
+LEFT JOIN orders o ON c.id = o.customer_id
+WHERE o.id IS NULL
+ORDER BY c.id ASC;""",
+        "hints": [
+            "Use a LEFT JOIN from customers to orders.",
+            "Filter for unmatched records using WHERE o.id IS NULL.",
+            "Order by c.id ASC."
+        ],
+        "hints_id": [
+            "Gunakan LEFT JOIN dari tabel customers ke orders.",
+            "Saring baris yang tidak memiliki pasangan pesanan dengan WHERE o.id IS NULL.",
+            "Urutkan dengan ORDER BY c.id ASC."
+        ],
+        "supported_engines": ["sqlite", "postgres", "mysql"],
+    },
+    {
+        "slug": "cumulative-transaction-ledger",
+        "title": "Cumulative Running Total Audit",
+        "title_id": "Buku Kas Akumulasi Saldo Berjalan (Window Function)",
+        "level": "Advanced",
+        "category": "Window Functions",
+        "category_id": "Fungsi Jendela (Window)",
+        "dataset": "banking",
+        "description": "Compute the running cumulative transaction amount across all banking transactions. Display transaction_id, reference_no, amount, and running_total (cumulative sum of amount ordered by transaction_id ascending), sorted by transaction_id ascending.",
+        "description_id": "Hitung akumulasi jumlah transaksi kumulatif berjalan. Tampilkan transaction_id, reference_no, amount, dan running_total (akumulasi jumlah bertahap diurutkan dari transaction_id ASC).",
+        "expected_columns": ["transaction_id", "reference_no", "amount", "running_total"],
+        "solution_sql": """SELECT transaction_id, reference_no, amount,
+       SUM(amount) OVER (ORDER BY transaction_id ASC) AS running_total
+FROM transactions
+ORDER BY transaction_id ASC;""",
+        "starter_sql": """-- Terapkan Window Function SUM(...) OVER (ORDER BY ...):
+SELECT transaction_id, reference_no, amount,
+       SUM(amount) OVER (ORDER BY transaction_id ASC) AS running_total
+FROM transactions
+ORDER BY transaction_id ASC;""",
+        "hints": [
+            "Use the window aggregate syntax: SUM(amount) OVER (ORDER BY transaction_id ASC).",
+            "Assign alias AS running_total.",
+            "Keep the outer ORDER BY transaction_id ASC."
+        ],
+        "hints_id": [
+            "Gunakan sintaks fungsi jendela: SUM(amount) OVER (ORDER BY transaction_id ASC).",
+            "Beri alias AS running_total.",
+            "Pastikan query luar diurutkan dengan ORDER BY transaction_id ASC."
+        ],
+        "supported_engines": ["sqlite", "postgres", "mysql"],
+    },
+    {
+        "slug": "product-price-category-rank",
+        "title": "Category Price Ranking (DENSE_RANK)",
+        "title_id": "Peringkat Harga per Kategori (DENSE_RANK)",
+        "level": "Advanced",
+        "category": "Window Ranking",
+        "category_id": "Peringkat Jendela",
+        "dataset": "ecommerce",
+        "description": "Rank products by price within each category from highest to lowest. Return category_id, name, price, and price_rank using DENSE_RANK() partitioned by category_id and ordered by price descending. Sort final output by category_id ASC, price_rank ASC.",
+        "description_id": "Urutkan produk berdasarkan harga tertinggi dalam setiap kategori. Tampilkan category_id, name, price, dan price_rank menggunakan DENSE_RANK() dipartisi per category_id dan diurutkan dari harga termahal. Urutkan output akhir berdasarkan category_id ASC, price_rank ASC.",
+        "expected_columns": ["category_id", "name", "price", "price_rank"],
+        "solution_sql": """SELECT category_id, name, price,
+       DENSE_RANK() OVER (PARTITION BY category_id ORDER BY price DESC) AS price_rank
+FROM products
+ORDER BY category_id ASC, price_rank ASC;""",
+        "starter_sql": """-- Terapkan DENSE_RANK() OVER (PARTITION BY ... ORDER BY ...):
+SELECT category_id, name, price,
+       DENSE_RANK() OVER (PARTITION BY category_id ORDER BY price DESC) AS price_rank
+FROM products
+ORDER BY category_id ASC, price_rank ASC;""",
+        "hints": [
+            "Partition the ranking window using PARTITION BY category_id.",
+            "Order within each category window using ORDER BY price DESC.",
+            "Outer sorting should be ORDER BY category_id ASC, price_rank ASC."
+        ],
+        "hints_id": [
+            "Partisi jendela ranking menggunakan PARTITION BY category_id.",
+            "Urutkan dalam jendela kategori dengan ORDER BY price DESC.",
+            "Pengurutan luar harus berupa ORDER BY category_id ASC, price_rank ASC."
+        ],
+        "supported_engines": ["sqlite", "postgres", "mysql"],
+    },
+    {
+        "slug": "category-revenue-cte",
+        "title": "Category Revenue Contribution (CTE)",
+        "title_id": "Kontribusi Pendapatan Kategori (Common Table Expression)",
+        "level": "Advanced",
+        "category": "Common Table Expressions",
+        "category_id": "Ekspresi Tabel Umum (CTE)",
+        "dataset": "ecommerce",
+        "description": "Using a Common Table Expression (WITH clause), calculate the total revenue generated per category. Display category_name (from categories.name) and total_revenue (sum of quantity * unit_price from order_items), sorted by total_revenue descending.",
+        "description_id": "Gunakan Common Table Expression (klausa WITH) untuk menghitung total pendapatan per kategori. Tampilkan category_name (dari categories.name) dan total_revenue (jumlah quantity * unit_price), diurutkan dari total_revenue terbesar.",
+        "expected_columns": ["category_name", "total_revenue"],
+        "solution_sql": """WITH category_sales AS (
+    SELECT p.category_id, SUM(oi.quantity * oi.unit_price) AS total_revenue
+    FROM order_items oi
+    JOIN products p ON oi.product_id = p.id
+    GROUP BY p.category_id
+)
+SELECT c.name AS category_name, cs.total_revenue
+FROM category_sales cs
+JOIN categories c ON cs.category_id = c.id
+ORDER BY cs.total_revenue DESC;""",
+        "starter_sql": """-- Definisikan CTE category_sales lalu gabungkan dengan categories:
+WITH category_sales AS (
+    SELECT p.category_id, SUM(oi.quantity * oi.unit_price) AS total_revenue
+    FROM order_items oi
+    JOIN products p ON oi.product_id = p.id
+    GROUP BY p.category_id
+)
+SELECT c.name AS category_name, cs.total_revenue
+FROM category_sales cs
+JOIN categories c ON cs.category_id = c.id
+ORDER BY cs.total_revenue DESC;""",
+        "hints": [
+            "Define the CTE with: WITH category_sales AS (SELECT ... GROUP BY p.category_id).",
+            "Calculate revenue as SUM(oi.quantity * oi.unit_price).",
+            "Join the CTE with categories on cs.category_id = c.id and order by total_revenue DESC."
+        ],
+        "hints_id": [
+            "Definisikan CTE dengan: WITH category_sales AS (SELECT ... GROUP BY p.category_id).",
+            "Hitung total pendapatan dengan SUM(oi.quantity * oi.unit_price).",
+            "Hubungkan CTE dengan tabel categories pada cs.category_id = c.id dan urutkan dari total_revenue terbesar."
+        ],
+        "supported_engines": ["sqlite", "postgres", "mysql"],
     },
 ]
 
@@ -111,6 +363,7 @@ ORDER BY s.name ASC;
 class ChallengeSubmitRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=50000)
     language: str = "id"
+    engine: str = "sqlite"
 
 
 class ChallengeSubmitResponse(BaseModel):
@@ -120,8 +373,108 @@ class ChallengeSubmitResponse(BaseModel):
     expected_row_count: int
     user_columns: list[str]
     expected_columns: list[str]
+    sample_user_rows: list[list[Any]] = []
+    sample_expected_rows: list[list[Any]] = []
     elapsed_ms: float
     feedback: list[str]
+    hints: list[str] = []
+
+
+def _execute_sqlite(dataset_slug: str, ref_sql: str, user_sql: str) -> tuple[list[str], list[list[Any]], list[str], list[list[Any]], float, str | None]:
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    seed_sql = TEMPLATES.get(dataset_slug, TEMPLATES["ecommerce"])["sql"]
+    conn.executescript(seed_sql)
+
+    cur_ref = conn.execute(ref_sql)
+    ref_columns = [d[0] for d in cur_ref.description]
+    ref_rows = [list(r) for r in cur_ref.fetchall()]
+
+    adapter = SQLiteAdapter()
+    adapter._conn = conn
+    start_time = time.perf_counter()
+    user_res = adapter.execute(user_sql, max_rows=100, read_only=True)
+    elapsed_ms = round((time.perf_counter() - start_time) * 1000, 2)
+    conn.close()
+
+    if not user_res.get("success"):
+        return ref_columns, ref_rows, [], [], elapsed_ms, user_res.get("error")
+    return ref_columns, ref_rows, user_res.get("columns", []), user_res.get("rows", []), elapsed_ms, None
+
+
+def _execute_postgres(dataset_slug: str, ref_sql: str, user_sql: str) -> tuple[list[str], list[list[Any]], list[str], list[list[Any]], float, str | None]:
+    schema_name = f"learn_{secrets.token_hex(4)}"
+    seed_sql = TEMPLATES.get(dataset_slug, TEMPLATES["ecommerce"])["sql"]
+
+    with psycopg.connect(settings.postgres_sandbox_url, autocommit=True) as conn:
+        with conn.cursor() as cur:
+            cur.execute(f'CREATE SCHEMA "{schema_name}";')
+            cur.execute(f'SET search_path TO "{schema_name}", public;')
+            if seed_sql.strip():
+                statements = sqlglot.transpile(seed_sql, read="sqlite", write="postgres")
+                for stmt in statements:
+                    cur.execute(stmt)
+
+            cur.execute(ref_sql)
+            ref_columns = [d.name for d in cur.description] if cur.description else []
+            ref_rows = [list(r) for r in cur.fetchall()]
+
+            start_time = time.perf_counter()
+            err_msg = None
+            user_cols: list[str] = []
+            user_rows: list[list[Any]] = []
+            try:
+                cur.execute(user_sql)
+                if cur.description:
+                    user_cols = [d.name for d in cur.description]
+                    user_rows = [list(r) for r in cur.fetchall()[:100]]
+            except Exception as e:
+                err_msg = str(e)
+            elapsed_ms = round((time.perf_counter() - start_time) * 1000, 2)
+
+            cur.execute(f'DROP SCHEMA "{schema_name}" CASCADE;')
+            return ref_columns, ref_rows, user_cols, user_rows, elapsed_ms, err_msg
+
+
+def _execute_mysql(dataset_slug: str, ref_sql: str, user_sql: str) -> tuple[list[str], list[list[Any]], list[str], list[list[Any]], float, str | None]:
+    db_name = f"learn_{secrets.token_hex(4)}"
+    seed_sql = TEMPLATES.get(dataset_slug, TEMPLATES["ecommerce"])["sql"]
+
+    conn = pymysql.connect(
+        host="127.0.0.1",
+        port=3307,
+        user="wiyata",
+        password="change-this-dev-password",
+        autocommit=True
+    )
+    with conn.cursor() as cur:
+        cur.execute(f"CREATE DATABASE `{db_name}`;")
+        cur.execute(f"USE `{db_name}`;")
+        if seed_sql.strip():
+            statements = sqlglot.transpile(seed_sql, read="sqlite", write="mysql")
+            for stmt in statements:
+                cur.execute(stmt)
+
+        cur.execute(ref_sql)
+        ref_columns = [d[0] for d in cur.description] if cur.description else []
+        ref_rows = [list(r) for r in cur.fetchall()]
+
+        start_time = time.perf_counter()
+        err_msg = None
+        user_cols: list[str] = []
+        user_rows: list[list[Any]] = []
+        try:
+            cur.execute(user_sql)
+            if cur.description:
+                user_cols = [d[0] for d in cur.description]
+                user_rows = [list(r) for r in cur.fetchall()[:100]]
+        except Exception as e:
+            err_msg = str(e)
+        elapsed_ms = round((time.perf_counter() - start_time) * 1000, 2)
+
+        cur.execute(f"DROP DATABASE `{db_name}`;")
+    conn.close()
+    return ref_columns, ref_rows, user_cols, user_rows, elapsed_ms, err_msg
 
 
 @router.get("/exercises")
@@ -132,77 +485,126 @@ async def list_exercises() -> list[dict]:
             "title": c["title"],
             "title_id": c["title_id"],
             "level": c["level"],
+            "category": c["category"],
+            "category_id": c["category_id"],
             "dataset": c["dataset"],
             "description": c["description"],
             "description_id": c["description_id"],
             "expected_columns": c["expected_columns"],
             "starter_sql": c["starter_sql"],
+            "hints": c["hints"],
+            "hints_id": c["hints_id"],
+            "supported_engines": c["supported_engines"],
         }
         for c in CHALLENGES
     ]
 
 
+@router.get("/datasets/{dataset_slug}/schema")
+async def get_dataset_schema(dataset_slug: str) -> dict:
+    template = TEMPLATES.get(dataset_slug)
+    if not template:
+        raise HTTPException(status_code=404, detail="Dataset template not found")
+
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    conn.executescript(template["sql"])
+
+    tables_res = conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name;"
+    ).fetchall()
+
+    schema_tables = []
+    for t_row in tables_res:
+        t_name = t_row["name"]
+        cols_res = conn.execute(f"PRAGMA table_info('{t_name}');").fetchall()
+        columns = [
+            {
+                "cid": c["cid"],
+                "name": c["name"],
+                "type": c["type"],
+                "notnull": bool(c["notnull"]),
+                "pk": bool(c["pk"]),
+            }
+            for c in cols_res
+        ]
+        row_count = conn.execute(f"SELECT COUNT(*) FROM '{t_name}';").fetchone()[0]
+        schema_tables.append({"name": t_name, "columns": columns, "row_count": row_count})
+
+    conn.close()
+    return {"dataset": dataset_slug, "tables": schema_tables}
+
+
 @router.post("/exercises/{slug}/submit", response_model=ChallengeSubmitResponse)
-async def submit_exercise(
-    slug: str, body: ChallengeSubmitRequest
-) -> ChallengeSubmitResponse:
+async def submit_exercise(slug: str, body: ChallengeSubmitRequest) -> ChallengeSubmitResponse:
     challenge = next((c for c in CHALLENGES if c["slug"] == slug), None)
     if not challenge:
         raise HTTPException(status_code=404, detail="Exercise challenge not found")
 
     is_id = body.language == "id"
-
-    # Spin in-memory SQLite with the required template dataset
-    conn = sqlite3.connect(":memory:")
-    conn.row_factory = sqlite3.Row
+    hints = challenge["hints_id"] if is_id else challenge["hints"]
+    engine = body.engine.lower() if body.engine else "sqlite"
     dataset_slug = challenge["dataset"]
-    seed_sql = TEMPLATES.get(dataset_slug, TEMPLATES["ecommerce"])["sql"]
-    conn.executescript(seed_sql)
 
-    # 1. Run reference solution to get ground truth
-    cur_ref = conn.execute(challenge["solution_sql"])
-    ref_columns = [d[0] for d in cur_ref.description]
-    ref_rows = [list(r) for r in cur_ref.fetchall()]
-
-    # 2. Run user query
-    adapter = SQLiteAdapter()
-    adapter._conn = conn
-
-    result = adapter.execute(body.query, max_rows=100, read_only=True)
-    conn.close()
-
-    if not result.get("success"):
+    try:
+        if engine == "postgres":
+            ref_columns, ref_rows, user_cols, user_rows, elapsed_ms, err_msg = _execute_postgres(
+                dataset_slug, challenge["solution_sql"], body.query
+            )
+        elif engine == "mysql":
+            ref_columns, ref_rows, user_cols, user_rows, elapsed_ms, err_msg = _execute_mysql(
+                dataset_slug, challenge["solution_sql"], body.query
+            )
+        else:
+            ref_columns, ref_rows, user_cols, user_rows, elapsed_ms, err_msg = _execute_sqlite(
+                dataset_slug, challenge["solution_sql"], body.query
+            )
+    except Exception as exc:
         return ChallengeSubmitResponse(
             passed=False,
-            message=f"SQL Error: {result.get('error')}",
+            message=f"Execution Exception: {exc}",
+            row_count=0,
+            expected_row_count=0,
+            user_columns=[],
+            expected_columns=challenge["expected_columns"],
+            sample_user_rows=[],
+            sample_expected_rows=[],
+            elapsed_ms=0,
+            feedback=[str(exc)],
+            hints=hints,
+        )
+
+    if err_msg:
+        return ChallengeSubmitResponse(
+            passed=False,
+            message=f"SQL Error: {err_msg}",
             row_count=0,
             expected_row_count=len(ref_rows),
             user_columns=[],
             expected_columns=challenge["expected_columns"],
-            elapsed_ms=result.get("elapsed_ms", 0),
+            sample_user_rows=[],
+            sample_expected_rows=ref_rows[:5],
+            elapsed_ms=elapsed_ms,
             feedback=[
                 "Periksa kembali sintaks SQL dan nama kolom yang Anda gunakan."
                 if is_id
                 else "Check your SQL syntax and projected column names."
             ],
+            hints=hints,
         )
 
-    user_cols = [c.lower() for c in result.get("columns", [])]
-    expected_cols = [c.lower() for c in challenge["expected_columns"]]
-    user_rows = result.get("rows", [])
+    user_cols_clean = [c.lower() for c in user_cols]
+    expected_cols_clean = [c.lower() for c in challenge["expected_columns"]]
 
     feedback: list[str] = []
-
-    # Column comparison
-    col_match = user_cols == expected_cols
+    col_match = user_cols_clean == expected_cols_clean
     if not col_match:
         feedback.append(
-            f"Kolom tidak cocok. Diharapkan: {expected_cols}, Diterima: {user_cols}"
+            f"Kolom tidak cocok. Diharapkan: {expected_cols_clean}, Diterima: {user_cols_clean}"
             if is_id
-            else f"Columns mismatch. Expected: {expected_cols}, Got: {user_cols}"
+            else f"Columns mismatch. Expected: {expected_cols_clean}, Got: {user_cols_clean}"
         )
 
-    # Row count comparison
     count_match = len(user_rows) == len(ref_rows)
     if not count_match:
         feedback.append(
@@ -211,16 +613,14 @@ async def submit_exercise(
             else f"Row count mismatch. Expected: {len(ref_rows)} rows, Got: {len(user_rows)} rows."
         )
 
-    # Content comparison (loosely sorted or first element comparison)
     passed = col_match and count_match
-    if passed and user_rows:
-        # Check first row values match
+    if passed and user_rows and ref_rows:
         first_user = [str(x).strip() for x in user_rows[0]]
         first_ref = [str(x).strip() for x in ref_rows[0]]
         if first_user != first_ref:
             passed = False
             feedback.append(
-                "Urutan data atau nilai baris pertama tidak sesuai dengan ekspektasi ORDER BY."
+                "Urutan baris data atau nilai tidak sesuai ekspektasi ORDER BY."
                 if is_id
                 else "Row order or values do not match expected ORDER BY sorting."
             )
@@ -232,7 +632,7 @@ async def submit_exercise(
         if passed
         else "Hasil query belum sesuai dengan kriteria yang diharapkan."
         if is_id
-        else "Query results do not match expected output."
+        else "Query results do not match expected criteria."
     )
 
     return ChallengeSubmitResponse(
@@ -240,8 +640,11 @@ async def submit_exercise(
         message=msg,
         row_count=len(user_rows),
         expected_row_count=len(ref_rows),
-        user_columns=result.get("columns", []),
+        user_columns=user_cols,
         expected_columns=challenge["expected_columns"],
-        elapsed_ms=result.get("elapsed_ms", 0),
+        sample_user_rows=user_rows[:5],
+        sample_expected_rows=ref_rows[:5],
+        elapsed_ms=elapsed_ms,
         feedback=feedback,
+        hints=hints,
     )

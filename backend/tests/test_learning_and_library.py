@@ -34,6 +34,30 @@ async def test_list_and_submit_learning_exercise() -> None:
         assert data["passed"] is True
         assert data["row_count"] == 4  # 4 distinct customers with completed orders
 
+        # Test PostgreSQL submission
+        sub_pg = await client.post(
+            "/api/v1/learning/exercises/low-stock-alert/submit",
+            json={
+                "query": "SELECT name, price, stock FROM products WHERE stock < 35 ORDER BY stock ASC;",
+                "engine": "postgres",
+                "language": "en",
+            },
+        )
+        assert sub_pg.status_code == 200
+        assert sub_pg.json()["passed"] is True
+
+        # Test MySQL submission
+        sub_my = await client.post(
+            "/api/v1/learning/exercises/low-stock-alert/submit",
+            json={
+                "query": "SELECT name, price, stock FROM products WHERE stock < 35 ORDER BY stock ASC;",
+                "engine": "mysql",
+                "language": "en",
+            },
+        )
+        assert sub_my.status_code == 200
+        assert sub_my.json()["passed"] is True
+
 
 @pytest.mark.asyncio
 async def test_query_optimizer_rules() -> None:
