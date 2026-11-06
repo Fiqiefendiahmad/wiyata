@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: wiyata
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-this-dev-password}
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:5436:5432"
     volumes:
       - wiyata-postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -22,7 +22,7 @@ services:
     container_name: wiyata-redis
     command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
     ports:
-      - "127.0.0.1:6379:6379"
+      - "127.0.0.1:6381:6379"
     volumes:
       - wiyata-redis-data:/data
     healthcheck:
@@ -41,8 +41,10 @@ services:
     environment:
       PLATFORM_DATABASE_URL: postgresql+asyncpg://wiyata:${POSTGRES_PASSWORD:-change-this-dev-password}@postgres:5432/wiyata
       REDIS_URL: redis://redis:6379/0
+      API_BASE_URL: https://wiyata.sadeyan.my.id
+      APP_BASE_URL: https://wiyata.sadeyan.my.id
     ports:
-      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:8090:8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -61,20 +63,8 @@ services:
     environment:
       NEXT_PUBLIC_API_URL: /api/v1
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:3050:3000"
     depends_on:
-      - backend
-    restart: unless-stopped
-
-  nginx:
-    image: nginx:alpine
-    container_name: wiyata-nginx
-    ports:
-      - "80:80"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - frontend
       - backend
     restart: unless-stopped
 

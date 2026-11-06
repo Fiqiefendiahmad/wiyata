@@ -1,34 +1,69 @@
+"use client";
+
+import React, { useState } from "react";
+import { Header } from "@/components/layout/header";
+import { QueryWorkbench } from "@/components/workbench/query-workbench";
+import { KnowledgeCenter } from "@/components/knowledge/knowledge-center";
+import { ToolsCatalog } from "@/components/tools/tools-catalog";
+import { api } from "@/lib/api";
+
 export default function Home() {
+  const [activeTab, setActiveTab] = useState<"workbench" | "knowledge" | "tools">("workbench");
+  const [language, setLanguage] = useState<"en" | "id">("id");
+  const [sandboxId, setSandboxId] = useState<string | null>(null);
+  const [sandboxStatus, setSandboxStatus] = useState<string>("Ready");
+  const [isResetting, setIsResetting] = useState<boolean>(false);
+
+  const handleResetSandbox = async () => {
+    if (!sandboxId) return;
+    setIsResetting(true);
+    setSandboxStatus("Resetting...");
+    try {
+      await api.post(`/sandboxes/${sandboxId}/reset`);
+      setSandboxStatus("Ready");
+      // Force trigger state refresh
+      setSandboxId(sandboxId);
+    } catch (err) {
+      console.error("Reset error:", err);
+      setSandboxStatus("Error");
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-[var(--background)] text-[var(--foreground)]">
-      <div className="max-w-2xl text-center space-y-6">
-        <div className="inline-block px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-full bg-[var(--surface)] text-[var(--wiyata-gold)] border border-[var(--wiyata-gold)]/20">
-          Database Workbench & Learning Ecosystem
-        </div>
-        <h1 className="text-5xl font-extrabold tracking-tight text-[var(--foreground)] sm:text-6xl">
-          WIYATA
-        </h1>
-        <p className="text-xl text-[var(--muted)]">
-          Your Database Learning Center
-        </p>
-        <p className="text-sm text-[var(--muted)] max-w-md mx-auto leading-relaxed">
-          Learn, build, explore, and master database technologies — from your first SQL query to professional DBA workflows.
-        </p>
-        <div className="pt-4 flex flex-wrap justify-center gap-3 text-xs text-[var(--muted)]">
-          <span className="px-3 py-1.5 rounded-md bg-[var(--surface)] border border-slate-700/50">
-            ✔ SQLite Sandbox
-          </span>
-          <span className="px-3 py-1.5 rounded-md bg-[var(--surface)] border border-slate-700/50">
-            ✔ Query Studio
-          </span>
-          <span className="px-3 py-1.5 rounded-md bg-[var(--surface)] border border-slate-700/50">
-            ✔ Knowledge Center
-          </span>
-          <span className="px-3 py-1.5 rounded-md bg-[var(--surface)] border border-slate-700/50">
-            ✔ Professional Tools
-          </span>
-        </div>
+    <div className="flex min-h-screen flex-col bg-[#071A3A] font-sans antialiased">
+      <Header
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        language={language}
+        setLanguage={setLanguage}
+        sandboxStatus={sandboxStatus}
+        onResetSandbox={handleResetSandbox}
+        isResetting={isResetting}
+      />
+
+      <div className="flex-1 w-full overflow-hidden">
+        {activeTab === "workbench" && (
+          <QueryWorkbench
+            sandboxId={sandboxId}
+            onSandboxChange={(id) => {
+              setSandboxId(id);
+              setSandboxStatus("Ready");
+            }}
+            language={language}
+          />
+        )}
+
+        {activeTab === "knowledge" && (
+          <KnowledgeCenter
+            language={language}
+            onOpenLab={() => setActiveTab("workbench")}
+          />
+        )}
+
+        {activeTab === "tools" && <ToolsCatalog language={language} />}
       </div>
-    </main>
+    </div>
   );
 }
