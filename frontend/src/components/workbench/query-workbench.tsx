@@ -189,7 +189,7 @@ export function QueryWorkbench({
   };
 
   const [activeEngine, setActiveEngine] = useState<
-    "sqlite" | "postgres" | "mysql" | "oracle"
+    "sqlite" | "postgres" | "mysql" | "oracle" | "mssql"
   >("sqlite");
 
   // Initialize or fetch sandbox schema
@@ -203,7 +203,7 @@ export function QueryWorkbench({
 
   const createSandbox = async (
     templateSlug: string,
-    engineChoice?: "sqlite" | "postgres" | "mysql" | "oracle"
+    engineChoice?: "sqlite" | "postgres" | "mysql" | "oracle" | "mssql"
   ) => {
     const engineToUse = engineChoice || activeEngine;
     try {
@@ -221,7 +221,7 @@ export function QueryWorkbench({
   };
 
   const handleEngineChange = (
-    engine: "sqlite" | "postgres" | "mysql" | "oracle"
+    engine: "sqlite" | "postgres" | "mysql" | "oracle" | "mssql"
   ) => {
     setActiveEngine(engine);
     createSandbox(activeTemplate, engine);
@@ -387,6 +387,8 @@ export function QueryWorkbench({
       explainSql = `EXPLAIN ${query.trim()};`;
     } else if (activeEngine === "oracle") {
       explainSql = `EXPLAIN PLAN FOR ${query.trim()};`;
+    } else if (activeEngine === "mssql") {
+      explainSql = `SET SHOWPLAN_TEXT ON; ${query.trim()};`;
     }
 
     try {
@@ -511,6 +513,8 @@ export function QueryWorkbench({
               ? "MySQL 11"
               : activeEngine === "oracle"
               ? "Oracle 23ai"
+              : activeEngine === "mssql"
+              ? "SQL Server 2022"
               : "SQLite 3.45"}
           </span>
           <span className="hidden sm:inline-block rounded-lg bg-slate-900/60 px-2 py-1 border border-slate-800 text-slate-400 capitalize">
@@ -525,17 +529,18 @@ export function QueryWorkbench({
           showMobileSidebar ? "flex" : "hidden"
         } lg:flex w-full lg:w-72 flex-col border-b lg:border-b-0 lg:border-r border-slate-800 bg-[#071A3A]/98 text-slate-200 z-30 max-h-[70vh] lg:max-h-none overflow-y-auto no-scrollbar touch-scroll`}
       >
-        {/* Engine Switcher (SQLite / PostgreSQL / MySQL / Oracle) */}
+        {/* Engine Switcher (SQLite / PostgreSQL / MySQL / Oracle / MSSQL) */}
         <div className="border-b border-slate-800 p-3 bg-[#10264A]/30">
           <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block mb-1.5">
             {isId ? "Mesin Database Sandbox" : "Sandbox Database Engine"}
           </label>
-          <div className="grid grid-cols-2 gap-1.5">
+          <div className="grid grid-cols-2 xs:grid-cols-3 gap-1.5">
             {[
               { id: "sqlite" as const, name: "SQLite", badge: "3.45" },
               { id: "postgres" as const, name: "Postgres", badge: "17" },
               { id: "mysql" as const, name: "MySQL", badge: "11" },
               { id: "oracle" as const, name: "Oracle", badge: "23ai" },
+              { id: "mssql" as const, name: "SQL Server", badge: "2022" },
             ].map((eng) => (
               <button
                 key={eng.id}

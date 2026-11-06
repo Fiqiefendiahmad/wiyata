@@ -101,7 +101,7 @@ export function LearningChallenges({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [result, setResult] = useState<VerificationResult | null>(null);
   const [activeEngine, setActiveEngine] = useState<
-    "sqlite" | "postgres" | "mysql" | "oracle"
+    "sqlite" | "postgres" | "mysql" | "oracle" | "mssql"
   >("sqlite");
 
   // Filtering & Search
@@ -602,6 +602,16 @@ export function LearningChallenges({
                       }`}
                     >
                       Oracle 23ai
+                    </button>
+                    <button
+                      onClick={() => setActiveEngine("mssql")}
+                      className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+                        activeEngine === "mssql"
+                          ? "bg-[#F2B84B] text-[#071A3A] shadow-xs"
+                          : "text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      SQL Server
                     </button>
                   </div>
                 </div>

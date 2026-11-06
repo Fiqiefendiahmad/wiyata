@@ -143,9 +143,27 @@ async def test_multi_engine_sandboxes() -> None:
         assert schema_ora.status_code == 200
         assert any(t["name"] == "ACCOUNTS" for t in schema_ora.json())
 
+        # 5. MSSQL sandbox (T-SQL Transpiled / Emulated)
+        sb_ms = await client.post("/api/v1/sandboxes", json={"engine": "mssql", "template_slug": "banking"})
+        assert sb_ms.status_code == 201
+        ms_id = sb_ms.json()["id"]
+
+        exec_ms = await client.post(
+            f"/api/v1/sandboxes/{ms_id}/execute",
+            json={"query": "SELECT TOP 5 COUNT(*) AS total FROM [accounts];", "read_only": True},
+        )
+        assert exec_ms.status_code == 200
+        assert exec_ms.json()["success"] is True
+        assert exec_ms.json()["rows"][0][0] == 6
+
+        schema_ms = await client.get(f"/api/v1/sandboxes/{ms_id}/schema")
+        assert schema_ms.status_code == 200
+        assert any(t["name"] == "accounts" for t in schema_ms.json())
+
         # Clean up
         await client.delete(f"/api/v1/sandboxes/{lite_id}")
         await client.delete(f"/api/v1/sandboxes/{pg_id}")
         await client.delete(f"/api/v1/sandboxes/{my_id}")
         await client.delete(f"/api/v1/sandboxes/{ora_id}")
+        await client.delete(f"/api/v1/sandboxes/{ms_id}")
 

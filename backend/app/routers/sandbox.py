@@ -16,6 +16,7 @@ from app.adapters.sqlite import SQLiteAdapter
 from app.adapters.postgres import PostgresAdapter
 from app.adapters.mysql import MySQLAdapter
 from app.adapters.oracle import OracleAdapter
+from app.adapters.mssql import MSSQLAdapter
 from app.config import settings
 from app.deps import get_db
 from app.models.sandbox import Sandbox
@@ -88,6 +89,10 @@ def _get_adapter(engine: str, storage_ref: str) -> DatabaseAdapter:
         adapter = OracleAdapter()
         adapter.connect({"path": storage_ref})
         return adapter
+    elif engine == "mssql":
+        adapter = MSSQLAdapter()
+        adapter.connect({"path": storage_ref})
+        return adapter
     else:
         adapter = SQLiteAdapter()
         adapter.connect({"path": storage_ref})
@@ -130,6 +135,11 @@ async def create_sandbox(
         db_path = STORAGE_DIR / f"{sandbox_id}.db"
         storage_ref = str(db_path)
         engine_version = body.engine_version or "23ai (Transpiled)"
+        _init_sqlite_db(db_path, template_slug)
+    elif engine == "mssql":
+        db_path = STORAGE_DIR / f"{sandbox_id}.db"
+        storage_ref = str(db_path)
+        engine_version = body.engine_version or "2022 (Transpiled)"
         _init_sqlite_db(db_path, template_slug)
     else:
         # Default to SQLite
@@ -252,7 +262,7 @@ async def export_sandbox(
 
     storage_ref = sandbox.storage_reference or (str(STORAGE_DIR / f"{sandbox_id}.db"))
 
-    if sandbox.engine in ("sqlite", "oracle"):
+    if sandbox.engine in ("sqlite", "oracle", "mssql"):
         db_path = Path(storage_ref)
         if not db_path.exists():
             raise HTTPException(status_code=404, detail="Sandbox storage file missing")
