@@ -205,6 +205,7 @@ interface ToolCategory {
 interface ToolsCatalogProps {
   language: "en" | "id";
   initialToolSlug?: string | null;
+  onSelectTool?: (slug: string | null) => void;
   onNavigateToKnowledge?: (slug: string) => void;
   onNavigateToRole?: (roleSlug: string) => void;
   onNavigateToChallenge?: (challengeSlug: string) => void;
@@ -224,6 +225,7 @@ type DetailTab =
 export function ToolsCatalog({
   language,
   initialToolSlug,
+  onSelectTool,
   onNavigateToKnowledge,
   onNavigateToRole,
   onNavigateToChallenge,
@@ -324,6 +326,7 @@ export function ToolsCatalog({
   const handleOpenDetail = async (slug: string) => {
     try {
       setActiveToolSlug(slug);
+      onSelectTool?.(slug);
       setLoadingDetail(true);
       setActiveTab("overview");
       const res = await api.get(`/tools/${slug}`);
@@ -337,9 +340,20 @@ export function ToolsCatalog({
     }
   };
 
+  const handleCloseDetail = () => {
+    setActiveToolSlug(null);
+    setActiveDetail(null);
+    onSelectTool?.(null);
+  };
+
   useEffect(() => {
     if (initialToolSlug) {
-      handleOpenDetail(initialToolSlug);
+      if (activeToolSlug !== initialToolSlug) {
+        handleOpenDetail(initialToolSlug);
+      }
+    } else if (activeToolSlug !== null) {
+      setActiveToolSlug(null);
+      setActiveDetail(null);
     }
   }, [initialToolSlug]);
 
@@ -674,10 +688,7 @@ export function ToolsCatalog({
               )}
 
               <button
-                onClick={() => {
-                  setActiveToolSlug(null);
-                  setActiveDetail(null);
-                }}
+                onClick={handleCloseDetail}
                 className="rounded-lg p-2 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0"
               >
                 <X className="h-5 w-5" />
@@ -1362,10 +1373,7 @@ export function ToolsCatalog({
                 WIYATA Database Learning Center • {isId ? "Katalog Terverifikasi" : "Verified Reference"}
               </span>
               <button
-                onClick={() => {
-                  setActiveToolSlug(null);
-                  setActiveDetail(null);
-                }}
+                onClick={handleCloseDetail}
                 className="rounded-lg bg-slate-800 hover:bg-slate-700 px-4 py-1.5 font-bold text-white transition-colors"
               >
                 {isId ? "Tutup" : "Close"}

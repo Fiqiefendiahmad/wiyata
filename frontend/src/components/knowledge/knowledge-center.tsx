@@ -563,6 +563,7 @@ interface KnowledgeCenterProps {
   language: "en" | "id";
   onOpenLab: () => void;
   initialArticleSlug?: string | null;
+  onSelectArticle?: (slug: string | null) => void;
   onNavigateToRole?: (roleSlug: string) => void;
   onNavigateToChallenge?: (challengeSlug: string) => void;
   onNavigateToTool?: (toolSlug: string) => void;
@@ -572,6 +573,7 @@ export function KnowledgeCenter({
   language,
   onOpenLab,
   initialArticleSlug,
+  onSelectArticle,
   onNavigateToRole,
   onNavigateToChallenge,
   onNavigateToTool,
@@ -685,7 +687,11 @@ export function KnowledgeCenter({
 
   // Sync initialArticleSlug when provided
   useEffect(() => {
-    if (!initialArticleSlug || articles.length === 0) return;
+    if (!initialArticleSlug) {
+      setMobileViewingArticle(false);
+      return;
+    }
+    if (articles.length === 0) return;
     const target = articles.find((a) => a.slug === initialArticleSlug);
     if (target) {
       setSelectedArticle(target);
@@ -777,6 +783,7 @@ export function KnowledgeCenter({
   const handleSelect = (art: ArticleItem) => {
     setSelectedArticle(art);
     setMobileViewingArticle(true);
+    onSelectArticle?.(art.slug);
   };
 
   const articleBodyToRender =
@@ -920,7 +927,10 @@ export function KnowledgeCenter({
                 <div className="mx-auto w-full max-w-4xl p-4 sm:p-8">
                   {/* Mobile Back Button */}
                   <button
-                    onClick={() => setMobileViewingArticle(false)}
+                    onClick={() => {
+                      setMobileViewingArticle(false);
+                      onSelectArticle?.(null);
+                    }}
                     className="lg:hidden mb-4 flex items-center gap-1.5 text-xs text-[#F2B84B] font-semibold"
                   >
                     <ArrowLeft className="h-4 w-4" />

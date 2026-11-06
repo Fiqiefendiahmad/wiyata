@@ -106,6 +106,7 @@ interface UserProgressData {
 
 interface ProfessionsMatrixProps {
   language: "en" | "id";
+  onSelectRole?: (roleSlug: string) => void;
   onSelectChallenge: (challengeSlug: string) => void;
   onOpenTool: (toolSlug: string) => void;
   onOpenKnowledgeArticle?: (articleSlug: string) => void;
@@ -130,6 +131,7 @@ const ROLE_ICONS: Record<string, React.ElementType> = {
 
 export function ProfessionsMatrix({
   language,
+  onSelectRole,
   onSelectChallenge,
   onOpenTool,
   onOpenKnowledgeArticle,
@@ -262,7 +264,10 @@ export function ProfessionsMatrix({
             return (
               <div
                 key={r.id}
-                onClick={() => setSelectedRole(r)}
+                onClick={() => {
+                  setSelectedRole(r);
+                  onSelectRole?.(r.id);
+                }}
                 className={`p-3 rounded-xl border cursor-pointer transition-all ${
                   isSelected
                     ? "border-[#F2B84B] bg-[#10264A] shadow-md ring-1 ring-[#F2B84B]/20"

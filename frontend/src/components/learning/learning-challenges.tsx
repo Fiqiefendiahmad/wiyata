@@ -75,6 +75,7 @@ interface LearningChallengesProps {
   language: "en" | "id";
   onOpenLabWithQuery: (query: string, template: string) => void;
   initialChallengeSlug?: string | null;
+  onSelectChallenge?: (slug: string) => void;
   onNavigateToKnowledge?: (slug: string) => void;
   onNavigateToRole?: (roleSlug: string) => void;
   onNavigateToTool?: (toolSlug: string) => void;
@@ -107,6 +108,7 @@ export function LearningChallenges({
   language,
   onOpenLabWithQuery,
   initialChallengeSlug,
+  onSelectChallenge,
   onNavigateToKnowledge,
   onNavigateToRole,
   onNavigateToTool,
@@ -191,6 +193,7 @@ export function LearningChallenges({
     setResult(null);
     setRevealedHintIndex(-1);
     setShowSchemaDrawer(false);
+    onSelectChallenge?.(ex.slug);
   };
 
   const handleResetQuery = () => {
