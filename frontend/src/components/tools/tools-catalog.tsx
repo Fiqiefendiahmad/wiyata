@@ -1,26 +1,27 @@
 "use client";
 
-import React, { useState } from "react";
-import { Wrench, ExternalLink, Search } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Wrench, ExternalLink, Search, CheckCircle, Database } from "lucide-react";
+import { api } from "@/lib/api";
 
 interface Tool {
   slug: string;
   name: string;
   vendor: string;
   category: string;
-  license: "Open Source" | "Free Tier" | "Commercial" | "Freemium";
+  license: string;
   engines: string[];
   summary: string;
-  summaryId: string;
+  summaryId?: string;
   url: string;
 }
 
-const TOOLS: Tool[] = [
+const DEFAULT_TOOLS: Tool[] = [
   {
     slug: "dbeaver",
     name: "DBeaver Community",
     vendor: "DBeaver Corp",
-    category: "GUI / IDE",
+    category: "Clients & Administration",
     license: "Open Source",
     engines: ["SQLite", "PostgreSQL", "MySQL", "Oracle", "SQL Server"],
     summary:
@@ -46,7 +47,7 @@ const TOOLS: Tool[] = [
     slug: "pgmustard",
     name: "pgMustard",
     vendor: "pgMustard",
-    category: "Performance Tuning",
+    category: "Monitoring & Observability",
     license: "Commercial",
     engines: ["PostgreSQL"],
     summary:
@@ -59,7 +60,7 @@ const TOOLS: Tool[] = [
     slug: "bytebase",
     name: "Bytebase",
     vendor: "Bytebase Inc",
-    category: "Database CI/CD & Schema Migration",
+    category: "Backup & Migration",
     license: "Freemium",
     engines: ["PostgreSQL", "MySQL", "Snowflake", "ClickHouse", "Oracle"],
     summary:
@@ -72,7 +73,7 @@ const TOOLS: Tool[] = [
     slug: "litecli",
     name: "LiteCLI",
     vendor: "DBCLI community",
-    category: "CLI / Terminal",
+    category: "Clients & Administration",
     license: "Open Source",
     engines: ["SQLite"],
     summary:
@@ -85,7 +86,7 @@ const TOOLS: Tool[] = [
     slug: "pgadmin",
     name: "pgAdmin 4",
     vendor: "PostgreSQL Global Development Group",
-    category: "GUI / Administration",
+    category: "Clients & Administration",
     license: "Open Source",
     engines: ["PostgreSQL"],
     summary:
@@ -93,6 +94,84 @@ const TOOLS: Tool[] = [
     summaryId:
       "Platform administrasi dan pengembangan resmi paling populer dan lengkap untuk PostgreSQL.",
     url: "https://www.pgadmin.org",
+  },
+  {
+    slug: "prometheus",
+    name: "Prometheus",
+    vendor: "CNCF",
+    category: "Monitoring & Observability",
+    license: "Open Source",
+    engines: ["PostgreSQL", "MySQL", "Oracle", "Universal"],
+    summary:
+      "Open-source systems monitoring and alerting toolkit with dimensional data model and PromQL query language.",
+    summaryId:
+      "Sistem monitoring dan alerting open-source berbasis time-series dengan bahasa query PromQL.",
+    url: "https://prometheus.io/",
+  },
+  {
+    slug: "grafana",
+    name: "Grafana",
+    vendor: "Grafana Labs",
+    category: "Monitoring & Observability",
+    license: "Open Source / AGPL",
+    engines: ["PostgreSQL", "MySQL", "Oracle", "ClickHouse", "Universal"],
+    summary:
+      "Visual query analytics, interactive dashboards, and multi-source observability platform.",
+    summaryId:
+      "Platform visualisasi dan dashboard analitik metrik performa database terpopuler di dunia.",
+    url: "https://grafana.com/",
+  },
+  {
+    slug: "pgbackrest",
+    name: "pgBackRest",
+    vendor: "pgBackRest Community",
+    category: "Backup & Migration",
+    license: "Open Source",
+    engines: ["PostgreSQL"],
+    summary:
+      "Reliable, high-performance backup and restore solution for PostgreSQL with compression and parallel streaming.",
+    summaryId:
+      "Solusi backup dan restore terpercaya berperforma tinggi untuk PostgreSQL dengan kompresi dan multi-threading.",
+    url: "https://pgbackrest.org/",
+  },
+  {
+    slug: "xtrabackup",
+    name: "Percona XtraBackup",
+    vendor: "Percona",
+    category: "Backup & Migration",
+    license: "Open Source",
+    engines: ["MySQL"],
+    summary:
+      "Non-blocking physical hot backup utility for MySQL and Percona Server without database downtime.",
+    summaryId:
+      "Aplikasi backup fisik tanpa penguncian (hot backup) untuk MySQL tanpa menghentikan layanan database.",
+    url: "https://www.percona.com/software/mysql-database/percona-xtrabackup",
+  },
+  {
+    slug: "flyway",
+    name: "Flyway",
+    vendor: "Redgate",
+    category: "Backup & Migration",
+    license: "Open Source / Commercial",
+    engines: ["PostgreSQL", "MySQL", "Oracle", "SQL Server", "SQLite"],
+    summary:
+      "Database version control and evolutionary migration tool supporting 25+ database engines.",
+    summaryId:
+      "Alat version control database dan migrasi skema evolusioner yang mendukung lebih dari 25 mesin database.",
+    url: "https://www.red-gate.com/products/flyway/",
+  },
+  {
+    slug: "mysql-workbench",
+    name: "MySQL Workbench",
+    vendor: "Oracle Corporation",
+    category: "Clients & Administration",
+    license: "Open Source",
+    engines: ["MySQL"],
+    summary:
+      "Unified visual tool for database architects, developers, and DBAs working with MySQL.",
+    summaryId:
+      "Alat visual terpadu untuk perancangan skema, administrasi, dan pengembangan kueri MySQL.",
+    url: "https://www.mysql.com/products/workbench/",
   },
 ];
 
@@ -102,15 +181,47 @@ interface ToolsCatalogProps {
 
 export function ToolsCatalog({ language }: ToolsCatalogProps) {
   const isId = language === "id";
+  const [tools, setTools] = useState<Tool[]>(DEFAULT_TOOLS);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
 
+  useEffect(() => {
+    api
+      .get("/tools")
+      .then((res) => {
+        if (Array.isArray(res.data) && res.data.length > 0) {
+          const apiMapped: Tool[] = res.data.map((t: any) => ({
+            slug: t.slug,
+            name: t.name,
+            vendor: t.vendor || "Community",
+            category: t.license_model === "Open Source" ? "Clients & Administration" : "Monitoring & Observability",
+            license: t.license_model || "Open Source",
+            engines: t.supported_engines || ["Universal"],
+            summary: t.summary || "",
+            summaryId: t.summary || "",
+            url: t.official_url || "https://wiyata.sadeyan.my.id",
+          }));
+          // Merge unique
+          const combined = [...DEFAULT_TOOLS];
+          for (const item of apiMapped) {
+            if (!combined.some((c) => c.slug === item.slug)) {
+              combined.push(item);
+            }
+          }
+          setTools(combined);
+        }
+      })
+      .catch((err) => console.error("Error fetching live tools:", err));
+  }, []);
+
   const categories = [
     "All",
-    ...Array.from(new Set(TOOLS.map((t) => t.category))),
+    "Clients & Administration",
+    "Monitoring & Observability",
+    "Backup & Migration",
   ];
 
-  const filtered = TOOLS.filter((t) => {
+  const filtered = tools.filter((t) => {
     const matchesSearch =
       t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       t.engines.some((e) =>
@@ -142,7 +253,7 @@ export function ToolsCatalog({ language }: ToolsCatalogProps) {
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl leading-relaxed">
             {isId
-              ? "Koleksi software terverifikasi untuk DBA, insinyur performa, dan pengembang data. Lisensi dan status kepemilikan selalu transparan."
+              ? "Koleksi software terverifikasi untuk DBA, insinyur performa, dan pengembang data. Lisensi, kompatibilitas mesin, dan dokumentasi resmi."
               : "Curated software applications for DBAs, reliability engineers, and developers. Licensing, compatibility, and vendor details are verified against official documentation."}
           </p>
         </div>
@@ -160,7 +271,7 @@ export function ToolsCatalog({ language }: ToolsCatalogProps) {
               }
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded bg-slate-900 border border-slate-800 pl-9 pr-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-[#F2B84B] min-h-[40px]"
+              className="w-full rounded bg-slate-900 border border-slate-800 pl-9 pr-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-[#F2B84B] min-h-[44px]"
             />
           </div>
 
@@ -169,9 +280,9 @@ export function ToolsCatalog({ language }: ToolsCatalogProps) {
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors whitespace-nowrap min-h-[40px] shrink-0 ${
+                className={`px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap min-h-[40px] shrink-0 active:scale-95 ${
                   selectedCategory === cat
-                    ? "bg-[#10264A] text-[#F2B84B] border border-[#F2B84B]/40 font-semibold"
+                    ? "bg-[#10264A] text-[#F2B84B] border border-[#F2B84B]/40 shadow-sm"
                     : "bg-slate-900/60 text-slate-400 hover:text-slate-200 border border-slate-800"
                 }`}
               >
@@ -182,7 +293,7 @@ export function ToolsCatalog({ language }: ToolsCatalogProps) {
         </div>
 
         {/* Grid of Tools */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-8">
           {filtered.map((tool) => (
             <div
               key={tool.slug}
@@ -198,30 +309,30 @@ export function ToolsCatalog({ language }: ToolsCatalogProps) {
                   </div>
                   <span
                     className={`px-2 py-0.5 rounded text-[10px] font-semibold tracking-wide border shrink-0 ${
-                      tool.license === "Open Source"
-                        ? "bg-emerald-950/60 border-emerald-600/40 text-emerald-300"
+                      tool.license.includes("Open Source")
+                        ? "bg-emerald-950/60 text-emerald-400 border-emerald-800/80"
                         : tool.license === "Commercial"
-                        ? "bg-indigo-950/60 border-indigo-600/40 text-indigo-300"
-                        : "bg-amber-950/60 border-amber-600/40 text-amber-300"
+                        ? "bg-purple-950/60 text-purple-400 border-purple-800/80"
+                        : "bg-amber-950/60 text-amber-400 border-amber-800/80"
                     }`}
                   >
                     {tool.license}
                   </span>
                 </div>
 
-                <p className="text-xs text-slate-300 line-clamp-3 leading-relaxed mb-4">
-                  {isId ? tool.summaryId : tool.summary}
+                <p className="text-xs text-slate-300 leading-relaxed line-clamp-3 mb-4">
+                  {isId && tool.summaryId ? tool.summaryId : tool.summary}
                 </p>
               </div>
 
               <div>
                 <div className="flex flex-wrap gap-1 mb-4">
-                  {tool.engines.map((eng) => (
+                  {tool.engines.map((e) => (
                     <span
-                      key={eng}
-                      className="rounded bg-slate-900 px-1.5 py-0.5 text-[10px] font-mono text-slate-400 border border-slate-800"
+                      key={e}
+                      className="rounded bg-slate-900 px-2 py-0.5 text-[10px] font-mono text-slate-400 border border-slate-800"
                     >
-                      {eng}
+                      {e}
                     </span>
                   ))}
                 </div>
@@ -229,13 +340,13 @@ export function ToolsCatalog({ language }: ToolsCatalogProps) {
                 <a
                   href={tool.url}
                   target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center justify-center gap-1.5 w-full rounded border border-slate-700 bg-slate-800/80 py-2.5 text-xs font-semibold text-slate-200 hover:bg-[#F2B84B] hover:text-[#071A3A] hover:border-[#F2B84B] transition-colors min-h-[44px]"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 py-2.5 text-xs font-semibold text-slate-200 hover:text-white hover:border-[#F2B84B] transition-colors min-h-[44px]"
                 >
                   <span>
-                    {isId ? "Kunjungi Situs Resmi" : "Official Website"}
+                    {isId ? "Kunjungi Dokumentasi Resmi" : "Official Website"}
                   </span>
-                  <ExternalLink className="h-3.5 w-3.5" />
+                  <ExternalLink className="h-3 w-3" />
                 </a>
               </div>
             </div>

@@ -64,5 +64,19 @@ async def test_list_templates() -> None:
     assert res.status_code == 200
     templates = res.json()
     slugs = [t["slug"] for t in templates]
+    assert "banking" in slugs
     assert "ecommerce" in slugs
     assert "school" in slugs
+
+
+@pytest.mark.asyncio
+async def test_list_tools_and_knowledge() -> None:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        tools_res = await client.get("/api/v1/tools")
+        assert tools_res.status_code == 200
+
+        articles_res = await client.get("/api/v1/knowledge/articles?language=id")
+        assert articles_res.status_code == 200
+        assert len(articles_res.json()) >= 1

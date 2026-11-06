@@ -22,6 +22,7 @@ import {
   Lightbulb,
   SidebarClose,
   SidebarOpen,
+  Download,
 } from "lucide-react";
 import { SqlEditor } from "@/components/editor/sql-editor";
 import { api } from "@/lib/api";
@@ -312,6 +313,13 @@ export function QueryWorkbench({
     } finally {
       setIsTranspiling(false);
     }
+  };
+
+  // Export Sandbox SQL Dump
+  const handleExportSql = () => {
+    if (!sandboxId) return;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
+    window.open(`${apiUrl}/sandboxes/${sandboxId}/export?format=sql`, "_blank");
   };
 
   // Explain Query Plan
@@ -696,6 +704,16 @@ export function QueryWorkbench({
                 <span>Konversi</span>
               </button>
             </div>
+
+            {/* Export SQL */}
+            <button
+              onClick={handleExportSql}
+              title="Unduh DDL/DML SQL Database"
+              className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-700/60 transition-colors min-h-[42px]"
+            >
+              <Download className="h-3.5 w-3.5 text-emerald-400" />
+              <span>Export</span>
+            </button>
           </div>
 
           {/* Safety Mode Toggle */}

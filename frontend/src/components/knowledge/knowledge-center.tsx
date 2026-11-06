@@ -101,6 +101,28 @@ Pada **mode WAL** (\`PRAGMA journal_mode=WAL;\`):
 - Penulis (writers) tidak pernah memblokir pembaca (readers).
 - Operasi commit ditulis ke file \`-wal\` tambahan dan secara berkala dikonsolidasikan (checkpointing) ke file database utama.`,
   },
+  {
+    slug: "database-isolation-levels",
+    title: "SQL Transaction Isolation Levels & Concurrency Phenomena",
+    titleId: "Tingkat Isolasi Transaksi SQL & Fenomena Konkurensi",
+    category: "Architecture",
+    engine: "Universal",
+    readTime: "6 min read",
+    summary:
+      "Understanding Dirty Reads, Non-repeatable Reads, and Phantom Reads across the 4 ANSI SQL isolation levels.",
+    summaryId:
+      "Memahami fenomena Dirty Reads, Non-repeatable Reads, dan Phantom Reads pada 4 tingkatan isolasi standar ANSI SQL.",
+    body: `### The 4 ANSI SQL Isolation Levels
+1. **Read Uncommitted**: Lowest isolation. Transactions can read uncommitted rows (Dirty Reads possible).
+2. **Read Committed**: Guarantees transactions only read committed changes. Default level in PostgreSQL.
+3. **Repeatable Read**: Re-reading a row returns identical data. Guarantees consistent snapshot throughout transaction.
+4. **Serializable**: Strictest isolation level. Transactions behave as if executed in strict serial order without concurrency anomalies.`,
+    bodyId: `### 4 Tingkat Isolasi Standar ANSI SQL
+1. **Read Uncommitted**: Tingkat terendah. Transaksi dapat membaca baris data yang belum di-commit transaksi lain (memungkinkan fenomena Dirty Read).
+2. **Read Committed**: Menjamin transaksi hanya dapat membaca data yang sudah di-commit. Merupakan tingkat default pada PostgreSQL.
+3. **Repeatable Read**: Menjamin baris data yang dibaca ulang akan selalu menghasilkan nilai yang konsisten selama transaksi berjalan.
+4. **Serializable**: Tingkat isolasi tertinggi dan terketat. Seluruh transaksi dieksekusi seolah-olah berurutan satu per satu tanpa ada anomali konkurensi.`,
+  },
 ];
 
 interface KnowledgeCenterProps {

@@ -4,7 +4,8 @@ import sqlite3
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.sqlite import SQLiteAdapter
@@ -160,6 +161,40 @@ async def reset_sandbox(
     await db.commit()
     await db.refresh(sandbox)
     return SandboxResponse.model_validate(sandbox)
+
+
+@router.get("/{sandbox_id}/export")
+async def export_sandbox(
+    sandbox_id: uuid.UUID,
+    format: str = "sql",
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    sandbox = await db.get(Sandbox, sandbox_id)
+    if not sandbox or sandbox.status == "deleted":
+        raise HTTPException(status_code=404, detail="Sandbox not found")
+
+    db_path = Path(sandbox.storage_reference or (STORAGE_DIR / f"{sandbox_id}.db"))
+    if not db_path.exists():
+        raise HTTPException(status_code=404, detail="Sandbox storage file missing")
+
+    if format == "db":
+        return FileResponse(
+            path=str(db_path),
+            filename=f"wiyata_{sandbox.template_slug}_{sandbox_id}.sqlite3",
+            media_type="application/x-sqlite3",
+        )
+    else:
+        conn = sqlite3.connect(str(db_path))
+        dump_lines = list(conn.iterdump())
+        conn.close()
+        sql_content = "\n".join(dump_lines)
+        return Response(
+            content=sql_content,
+            media_type="application/sql",
+            headers={
+                "Content-Disposition": f'attachment; filename="wiyata_{sandbox.template_slug}_{sandbox_id}.sql"'
+            },
+        )
 
 
 @router.delete("/{sandbox_id}", status_code=204)
