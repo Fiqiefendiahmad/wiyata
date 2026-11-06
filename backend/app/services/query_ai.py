@@ -146,8 +146,44 @@ async def generate_sql_from_prompt(
     generated_sql = ""
     explanation = []
 
+    # Banking / Core Banking System matching
+    if any(k in p_lower for k in ["bank", "rekening", "saldo", "nasabah", "account", "balance", "transfer", "mutasi", "pinjaman", "loan", "cif"]):
+        if any(k in p_lower for k in ["transaksi", "transfer", "mutasi", "trx", "kirim"]):
+            generated_sql = (
+                "SELECT t.reference_no, t.from_account_number, t.to_account_number, t.transaction_type, t.amount, t.fee, t.channel, t.description\n"
+                "FROM transactions t\n"
+                "ORDER BY t.created_at DESC\n"
+                "LIMIT 10;"
+            )
+            explanation = [
+                "Menampilkan daftar mutasi transaksi perbankan terbaru" if is_id else "Queries recent banking transactions with reference numbers and fee details",
+                "Diurutkan berdasarkan waktu transaksi terbaru" if is_id else "Sorted by most recent transaction timestamp"
+            ]
+        elif any(k in p_lower for k in ["pinjaman", "loan", "kredit", "cicilan"]):
+            generated_sql = (
+                "SELECT l.loan_id, c.full_name, l.loan_type, l.principal_amount, l.tenor_months, l.monthly_installment, l.status\n"
+                "FROM loans l\n"
+                "JOIN customers c ON l.customer_id = c.customer_id\n"
+                "WHERE l.status = 'ACTIVE'\n"
+                "ORDER BY l.principal_amount DESC;"
+            )
+            explanation = [
+                "Menampilkan portofolio fasilitas kredit/pinjaman aktif nasabah" if is_id else "Lists active credit and loan accounts across bank customers"
+            ]
+        else:
+            generated_sql = (
+                "SELECT c.cif_number, c.full_name, a.account_number, a.account_type, a.balance, b.branch_name\n"
+                "FROM accounts a\n"
+                "JOIN customers c ON a.customer_id = c.customer_id\n"
+                "JOIN branches b ON a.branch_id = b.branch_id\n"
+                "ORDER BY a.balance DESC;"
+            )
+            explanation = [
+                "Menampilkan rekap saldo rekening nasabah diurutkan dari yang tertinggi" if is_id else "Ranks customer bank accounts by current balance in descending order"
+            ]
+
     # Heuristic intent matching with schema awareness
-    if "customer" in p_lower or "pelanggan" in p_lower or "user" in p_lower or "pembeli" in p_lower:
+    elif "customer" in p_lower or "pelanggan" in p_lower or "user" in p_lower or "pembeli" in p_lower:
         if "order" in table_names or "orders" in table_names:
             generated_sql = (
                 "SELECT c.first_name, c.last_name, c.email, COUNT(o.id) AS total_orders, SUM(o.total_amount) AS total_spend\n"

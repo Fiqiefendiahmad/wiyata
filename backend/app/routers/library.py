@@ -15,6 +15,39 @@ DEFAULT_WORKSPACE_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
 
 STARTER_QUERIES = [
     {
+        "title": "Core Banking: Saldo & Profil Nasabah Prioritas",
+        "engine": "sqlite",
+        "dialect": "sqlite",
+        "description": "Menampilkan rekap saldo rekening nasabah per cabang diurutkan dari saldo tertinggi.",
+        "query_text": """SELECT
+    c.cif_number,
+    c.full_name,
+    c.city,
+    a.account_number,
+    a.account_type,
+    a.balance,
+    b.branch_name
+FROM accounts a
+JOIN customers c ON a.customer_id = c.customer_id
+JOIN branches b ON a.branch_id = b.branch_id
+ORDER BY a.balance DESC;""",
+    },
+    {
+        "title": "Core Banking: Mutasi Transaksi & Akumulasi Biaya Admin",
+        "engine": "sqlite",
+        "dialect": "sqlite",
+        "description": "Menganalisis volume transaksi per kanal (Mobile, QRIS, ATM) beserta total biaya administrasi.",
+        "query_text": """SELECT
+    channel,
+    COUNT(transaction_id) AS total_transaksi,
+    SUM(amount) AS total_volume_rupiah,
+    SUM(fee) AS total_fee_pendapatan
+FROM transactions
+WHERE status = 'SUCCESS'
+GROUP BY channel
+ORDER BY total_volume_rupiah DESC;""",
+    },
+    {
         "title": "Customer Lifetime Value (LTV) Summary",
         "engine": "sqlite",
         "dialect": "sqlite",

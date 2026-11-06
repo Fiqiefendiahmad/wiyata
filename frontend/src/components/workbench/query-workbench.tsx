@@ -62,6 +62,19 @@ interface QueryWorkbenchProps {
   initialTemplate?: string;
 }
 
+const DEFAULT_BANKING_SQL = `-- Analisis Saldo Rekening Nasabah (Core Banking System)
+SELECT
+  c.cif_number,
+  c.full_name,
+  a.account_number,
+  a.account_type,
+  a.balance,
+  b.branch_name
+FROM accounts a
+JOIN customers c ON a.customer_id = c.customer_id
+JOIN branches b ON a.branch_id = b.branch_id
+ORDER BY a.balance DESC;`;
+
 export function QueryWorkbench({
   sandboxId,
   onSandboxChange,
@@ -73,8 +86,7 @@ export function QueryWorkbench({
 
   // State
   const [query, setQuery] = useState<string>(
-    initialQuery ||
-      "SELECT c.first_name, c.last_name, COUNT(o.id) AS total_orders, SUM(o.total_amount) AS total_spent\nFROM customers c\nJOIN orders o ON c.id = o.customer_id\nGROUP BY c.id\nORDER BY total_spent DESC\nLIMIT 5;"
+    initialQuery || DEFAULT_BANKING_SQL
   );
   const [transpileTarget, setTranspileTarget] = useState<string>("postgres");
   const [transpiledSql, setTranspiledSql] = useState<string>("");
@@ -101,11 +113,11 @@ export function QueryWorkbench({
   // Schema & Templates
   const [templates, setTemplates] = useState<TemplateItem[]>([]);
   const [activeTemplate, setActiveTemplate] = useState<string>(
-    initialTemplate || "ecommerce"
+    initialTemplate || "banking"
   );
   const [schema, setSchema] = useState<TableSchema[]>([]);
   const [expandedTables, setExpandedTables] = useState<Record<string, boolean>>(
-    { customers: true, orders: true }
+    { accounts: true, customers: true, transactions: true }
   );
 
   // Execution State
@@ -174,20 +186,27 @@ export function QueryWorkbench({
   const handleTemplateChange = (slug: string) => {
     setActiveTemplate(slug);
     createSandbox(slug);
-    if (slug === "ecommerce") {
+    if (slug === "banking") {
+      setQuery(DEFAULT_BANKING_SQL);
+      setExpandedTables({ accounts: true, customers: true, transactions: true });
+    } else if (slug === "ecommerce") {
       setQuery(
         "SELECT c.first_name, c.last_name, COUNT(o.id) AS total_orders, SUM(o.total_amount) AS total_spent\nFROM customers c\nJOIN orders o ON c.id = o.customer_id\nGROUP BY c.id\nORDER BY total_spent DESC\nLIMIT 5;"
       );
+      setExpandedTables({ customers: true, orders: true });
     } else if (slug === "school") {
       setQuery(
         "SELECT s.name AS student, c.title AS course, e.grade\nFROM enrollments e\nJOIN students s ON e.student_id = s.id\nJOIN courses c ON e.course_id = c.id\nWHERE e.grade = 'A';"
       );
+      setExpandedTables({ students: true, courses: true });
     } else if (slug === "blog") {
       setQuery(
         "SELECT p.title, a.username AS author, p.views\nFROM posts p\nJOIN authors a ON p.author_id = a.id\nORDER BY p.views DESC;"
       );
+      setExpandedTables({ posts: true, authors: true });
     } else {
       setQuery("CREATE TABLE demo (\n  id INTEGER PRIMARY KEY,\n  title TEXT\n);");
+      setExpandedTables({});
     }
     setShowMobileSidebar(false);
   };
@@ -398,10 +417,10 @@ export function QueryWorkbench({
   return (
     <div className="relative flex flex-col lg:flex-row h-auto lg:h-[calc(100dvh-3.5rem)] w-full overflow-hidden bg-[#071A3A]">
       {/* MOBILE TOP CONTROLS BAR (< lg) */}
-      <div className="lg:hidden flex items-center justify-between border-b border-slate-800 bg-[#10264A]/90 px-3 py-2 text-xs">
+      <div className="lg:hidden flex items-center justify-between border-b border-slate-800 bg-[#10264A]/90 px-3 py-2 text-xs gap-2">
         <button
           onClick={() => setShowMobileSidebar(!showMobileSidebar)}
-          className="flex items-center gap-1.5 rounded bg-slate-800 px-3 py-1.5 font-semibold text-[#F2B84B] border border-slate-700 min-h-[36px]"
+          className="flex items-center gap-1.5 rounded-lg bg-slate-800 px-3 py-2 font-semibold text-[#F2B84B] border border-slate-700 min-h-[40px] shrink-0 active:bg-slate-700"
         >
           {showMobileSidebar ? (
             <SidebarClose className="h-4 w-4" />
@@ -409,39 +428,55 @@ export function QueryWorkbench({
             <SidebarOpen className="h-4 w-4" />
           )}
           <span>
-            {isId ? "Dataset & Tabel" : "Datasets & Schema"} ({schema.length})
+            {isId ? "Skema & Tabel" : "Schema"} ({schema.length})
           </span>
         </button>
 
-        <span className="text-[11px] font-mono text-slate-400 capitalize">
-          {activeTemplate} dataset
-        </span>
+        {/* Quick Template Switcher Pills on Mobile */}
+        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar touch-scroll">
+          {templates.slice(0, 3).map((tpl) => (
+            <button
+              key={tpl.slug}
+              onClick={() => handleTemplateChange(tpl.slug)}
+              className={`rounded-full px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap transition-colors min-h-[32px] ${
+                activeTemplate === tpl.slug
+                  ? "bg-[#F2B84B] text-[#071A3A]"
+                  : "bg-slate-900 text-slate-400 border border-slate-800"
+              }`}
+            >
+              {tpl.slug === "banking" ? "🏦 Bank" : tpl.name.split(" ")[0]}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* SIDEBAR: Desktop static, Mobile slide-down/drawer */}
       <aside
         className={`${
           showMobileSidebar ? "flex" : "hidden"
-        } lg:flex w-full lg:w-72 flex-col border-b lg:border-b-0 lg:border-r border-slate-800 bg-[#071A3A]/98 text-slate-200 z-30 max-h-[70vh] lg:max-h-none overflow-y-auto`}
+        } lg:flex w-full lg:w-72 flex-col border-b lg:border-b-0 lg:border-r border-slate-800 bg-[#071A3A]/98 text-slate-200 z-30 max-h-[70vh] lg:max-h-none overflow-y-auto no-scrollbar touch-scroll`}
       >
         {/* Template Selector */}
         <div className="border-b border-slate-800 p-3">
           <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-            {isId ? "Dataset Pembelajaran" : "Learning Dataset"}
+            {isId ? "Database Sandbox Aktif" : "Active Database Sandbox"}
           </label>
-          <div className="mt-2 grid grid-cols-2 gap-1.5">
+          <div className="mt-2 grid grid-cols-1 xs:grid-cols-2 gap-1.5">
             {templates.map((tpl) => (
               <button
                 key={tpl.slug}
                 onClick={() => handleTemplateChange(tpl.slug)}
-                className={`flex flex-col items-start rounded border p-2 text-left transition-all min-h-[44px] ${
+                className={`flex flex-col items-start rounded-lg border p-2.5 text-left transition-all min-h-[48px] ${
                   activeTemplate === tpl.slug
-                    ? "border-[#F2B84B] bg-[#10264A] text-white shadow-sm"
-                    : "border-slate-800 bg-slate-900/40 text-slate-400 hover:border-slate-700 hover:text-slate-200"
+                    ? "border-[#F2B84B] bg-[#10264A] text-white shadow-sm ring-1 ring-[#F2B84B]/40"
+                    : "border-slate-800 bg-slate-900/40 text-slate-400 hover:border-slate-700 hover:text-slate-200 active:bg-slate-800"
                 }`}
               >
-                <span className="text-xs font-semibold">{tpl.name}</span>
-                <span className="mt-0.5 line-clamp-1 text-[10px] text-slate-500">
+                <span className="text-xs font-bold text-slate-100 flex items-center gap-1">
+                  {tpl.slug === "banking" && "🏦 "}
+                  {tpl.name}
+                </span>
+                <span className="mt-0.5 line-clamp-1 text-[10px] text-slate-400">
                   {tpl.description}
                 </span>
               </button>
@@ -461,17 +496,17 @@ export function QueryWorkbench({
           <div className="flex-1 overflow-y-auto p-2 space-y-1">
             {schema.length === 0 ? (
               <div className="p-4 text-center text-xs text-slate-500">
-                {isId ? "Belum ada tabel" : "No tables found"}
+                {isId ? "Memuat tabel..." : "Loading tables..."}
               </div>
             ) : (
               schema.map((tbl) => (
                 <div
                   key={tbl.name}
-                  className="rounded border border-slate-800/80 bg-slate-900/30 overflow-hidden"
+                  className="rounded-lg border border-slate-800/80 bg-slate-900/30 overflow-hidden"
                 >
                   <div
                     onClick={() => toggleTableExpand(tbl.name)}
-                    className="flex cursor-pointer items-center justify-between px-2.5 py-2 text-xs hover:bg-slate-800/40 min-h-[36px]"
+                    className="flex cursor-pointer items-center justify-between px-2.5 py-2 text-xs hover:bg-slate-800/40 min-h-[40px]"
                   >
                     <div className="flex items-center gap-1.5 font-mono font-medium text-slate-200">
                       {expandedTables[tbl.name] ? (
@@ -487,7 +522,7 @@ export function QueryWorkbench({
                         insertQueryForTable(tbl.name);
                       }}
                       title="SELECT * FROM table"
-                      className="rounded bg-[#10264A] px-2 py-1 text-[11px] font-mono text-[#F2B84B] hover:bg-[#F2B84B] hover:text-[#071A3A] transition-colors"
+                      className="rounded bg-[#10264A] px-2.5 py-1 text-[11px] font-mono font-semibold text-[#F2B84B] hover:bg-[#F2B84B] hover:text-[#071A3A] transition-colors min-h-[30px]"
                     >
                       query
                     </button>
@@ -504,11 +539,11 @@ export function QueryWorkbench({
                             {col.pk && (
                               <Key className="h-3 w-3 text-[#F2B84B]" />
                             )}
-                            <span className={col.pk ? "text-[#F2B84B]" : ""}>
+                            <span className={col.pk ? "text-[#F2B84B] font-semibold" : ""}>
                               {col.name}
                             </span>
                           </div>
-                          <span className="text-[10px] text-slate-600">
+                          <span className="text-[10px] text-slate-500">
                             {col.type}
                           </span>
                         </div>
@@ -530,12 +565,12 @@ export function QueryWorkbench({
             </span>
             <button
               onClick={() => setShowSavedModal(true)}
-              className="text-[#F2B84B] hover:underline text-[11px] p-1"
+              className="text-[#F2B84B] hover:underline text-[11px] p-1 font-semibold"
             >
               + {isId ? "Simpan" : "Save"}
             </button>
           </div>
-          <div className="space-y-1 max-h-24 overflow-y-auto">
+          <div className="space-y-1 max-h-24 overflow-y-auto no-scrollbar">
             {savedQueries.map((sq) => (
               <div
                 key={sq.id}
@@ -556,27 +591,29 @@ export function QueryWorkbench({
       {/* MAIN QUERY WORKBENCH */}
       <main className="flex flex-1 flex-col overflow-hidden min-w-0">
         {/* AI Natural Language SQL Bar (Responsive layout) */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 border-b border-slate-800 bg-[#071A3A] p-2 sm:px-3 sm:py-1.5">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-[#F2B84B]">
-            <Sparkles className="h-3.5 w-3.5 text-[#F2B84B]" />
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 border-b border-slate-800 bg-[#071A3A] p-2.5 sm:px-3 sm:py-2">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-[#F2B84B] shrink-0">
+            <Sparkles className="h-4 w-4 text-[#F2B84B]" />
             <span>AI SQL:</span>
           </div>
           <input
             type="text"
             placeholder={
               isId
-                ? "Ketik: 'tampilkan 5 pelanggan belanja terbanyak'..."
-                : "Type: 'show top 5 spending customers'..."
+                ? activeTemplate === "banking"
+                  ? "Contoh: cari 5 nasabah dengan saldo tabungan tertinggi..."
+                  : "Ketik: tampilkan 5 pelanggan belanja terbanyak..."
+                : "Type: find top 5 customers by account balance..."
             }
             value={naturalPrompt}
             onChange={(e) => setNaturalPrompt(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleGenerateSql()}
-            className="flex-1 rounded bg-[#10264A]/80 border border-slate-700/60 px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#F2B84B] min-h-[38px] sm:min-h-0"
+            className="flex-1 rounded-lg bg-[#10264A]/80 border border-slate-700/60 px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#F2B84B] min-h-[42px]"
           />
           <button
             onClick={handleGenerateSql}
             disabled={isGenerating || !naturalPrompt.trim()}
-            className="rounded bg-[#F2B84B] px-3.5 py-1.5 text-xs font-bold text-[#071A3A] hover:opacity-90 disabled:opacity-50 transition-opacity min-h-[38px] sm:min-h-0"
+            className="rounded-lg bg-[#F2B84B] px-4 py-2 text-xs font-bold text-[#071A3A] hover:opacity-90 disabled:opacity-50 transition-opacity min-h-[42px] shrink-0 active:scale-95"
           >
             {isGenerating
               ? isId
@@ -588,24 +625,24 @@ export function QueryWorkbench({
           </button>
         </div>
 
-        {/* Editor Toolbar (Horizontally scrollable on small screens) */}
-        <div className="flex h-auto sm:h-11 items-center justify-between border-b border-slate-800 bg-[#10264A]/50 p-2 sm:px-4 overflow-x-auto gap-2">
+        {/* Editor Toolbar (Smooth touch scroll on mobile) */}
+        <div className="flex items-center justify-between border-b border-slate-800 bg-[#10264A]/50 px-2 py-1.5 sm:px-3 overflow-x-auto no-scrollbar touch-scroll gap-2">
           <div className="flex items-center gap-1.5 sm:gap-2 flex-nowrap shrink-0">
-            {/* Run Button */}
+            {/* Run Button (Prominent 44px hit target) */}
             <button
               onClick={handleRunQuery}
               disabled={isRunning}
-              className="flex items-center gap-1.5 rounded bg-[#F2B84B] px-3 py-1.5 text-xs font-bold text-[#071A3A] hover:bg-[#F2B84B]/90 transition-colors shadow-sm disabled:opacity-50 min-h-[36px]"
+              className="flex items-center gap-1.5 rounded-lg bg-[#F2B84B] px-3.5 py-2 text-xs font-bold text-[#071A3A] hover:bg-[#F2B84B]/90 transition-colors shadow-sm disabled:opacity-50 min-h-[42px] active:scale-95"
             >
-              <Play className="h-3.5 w-3.5 fill-current" />
-              <span>{isId ? "Jalankan" : "Run"}</span>
+              <Play className="h-4 w-4 fill-current" />
+              <span>{isRunning ? "..." : isId ? "Jalankan" : "Run"}</span>
             </button>
 
             {/* Format Button */}
             <button
               onClick={handleFormat}
               disabled={isFormatting}
-              className="flex items-center gap-1.5 rounded border border-slate-700 bg-slate-800/60 px-2.5 py-1.5 text-xs text-slate-300 hover:bg-slate-700/60 transition-colors min-h-[36px]"
+              className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-700/60 transition-colors min-h-[42px]"
             >
               <Code2 className="h-3.5 w-3.5" />
               <span>Format</span>
@@ -614,27 +651,25 @@ export function QueryWorkbench({
             {/* Plain AI Explain */}
             <button
               onClick={handleExplainNatural}
-              className="flex items-center gap-1.5 rounded border border-slate-700 bg-slate-800/60 px-2.5 py-1.5 text-xs text-slate-300 hover:bg-slate-700/60 transition-colors min-h-[36px]"
+              className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-700/60 transition-colors min-h-[42px]"
             >
               <HelpCircle className="h-3.5 w-3.5 text-[#F2B84B]" />
-              <span className="hidden sm:inline">
-                {isId ? "Jelaskan" : "Explain"}
-              </span>
+              <span>{isId ? "Jelaskan" : "Explain"}</span>
             </button>
 
             {/* Lint & Optimize */}
             <button
               onClick={handleOptimizeCheck}
-              className="flex items-center gap-1.5 rounded border border-slate-700 bg-slate-800/60 px-2.5 py-1.5 text-xs text-slate-300 hover:bg-slate-700/60 transition-colors min-h-[36px]"
+              className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-700/60 transition-colors min-h-[42px]"
             >
               <Lightbulb className="h-3.5 w-3.5 text-amber-400" />
-              <span className="hidden sm:inline">Audit</span>
+              <span>Audit</span>
             </button>
 
             {/* Explain Plan */}
             <button
               onClick={handleExplain}
-              className="flex items-center gap-1.5 rounded border border-slate-700 bg-slate-800/60 px-2.5 py-1.5 text-xs text-slate-300 hover:bg-slate-700/60 transition-colors min-h-[36px]"
+              className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-700/60 transition-colors min-h-[42px]"
             >
               <Layers className="h-3.5 w-3.5" />
               <span>Plan</span>
@@ -645,7 +680,7 @@ export function QueryWorkbench({
               <select
                 value={transpileTarget}
                 onChange={(e) => setTranspileTarget(e.target.value)}
-                className="rounded bg-slate-800 border border-slate-700 text-slate-200 text-xs px-2 py-1.5 focus:outline-none min-h-[36px]"
+                className="rounded-lg bg-slate-800 border border-slate-700 text-slate-200 text-xs px-2.5 py-2 focus:outline-none min-h-[42px]"
               >
                 <option value="postgres">PostgreSQL</option>
                 <option value="mysql">MySQL</option>
@@ -655,9 +690,9 @@ export function QueryWorkbench({
               <button
                 onClick={handleTranspile}
                 disabled={isTranspiling}
-                className="flex items-center gap-1 rounded bg-[#10264A] border border-[#F2B84B]/40 px-2 py-1.5 text-xs text-[#F2B84B] hover:bg-[#F2B84B] hover:text-[#071A3A] transition-colors min-h-[36px]"
+                className="flex items-center gap-1 rounded-lg bg-[#10264A] border border-[#F2B84B]/40 px-3 py-2 text-xs font-semibold text-[#F2B84B] hover:bg-[#F2B84B] hover:text-[#071A3A] transition-colors min-h-[42px]"
               >
-                <ArrowRightLeft className="h-3 w-3" />
+                <ArrowRightLeft className="h-3.5 w-3.5" />
                 <span>Konversi</span>
               </button>
             </div>
@@ -667,7 +702,7 @@ export function QueryWorkbench({
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => setAllowDdl(!allowDdl)}
-              className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-[11px] font-mono transition-colors border min-h-[36px] ${
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-mono transition-colors border min-h-[42px] ${
                 allowDdl
                   ? "border-amber-500/50 bg-amber-500/10 text-amber-300"
                   : "border-emerald-500/50 bg-emerald-500/10 text-emerald-300"
@@ -675,12 +710,12 @@ export function QueryWorkbench({
             >
               {allowDdl ? (
                 <>
-                  <ShieldAlert className="h-3.5 w-3.5" />
+                  <ShieldAlert className="h-4 w-4" />
                   <span>DML/DDL</span>
                 </>
               ) : (
                 <>
-                  <ShieldCheck className="h-3.5 w-3.5" />
+                  <ShieldCheck className="h-4 w-4" />
                   <span>Hanya Baca</span>
                 </>
               )}
@@ -698,13 +733,13 @@ export function QueryWorkbench({
         </div>
 
         {/* OUTPUT & RESULTS TABS */}
-        <div className="flex flex-1 flex-col overflow-hidden border-t border-slate-800 bg-[#071A3A] min-h-[220px]">
-          {/* Output Tab Header */}
-          <div className="flex h-9 items-center justify-between border-b border-slate-800 bg-[#10264A]/30 px-2 sm:px-3 overflow-x-auto">
+        <div className="flex flex-1 flex-col overflow-hidden border-t border-slate-800 bg-[#071A3A] min-h-[240px]">
+          {/* Output Tab Header (Touch scrollable) */}
+          <div className="flex h-10 items-center justify-between border-b border-slate-800 bg-[#10264A]/30 px-2 sm:px-3 overflow-x-auto no-scrollbar touch-scroll gap-2">
             <div className="flex items-center gap-1 sm:gap-2 shrink-0">
               <button
                 onClick={() => setActiveOutputTab("results")}
-                className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold transition-colors border-b-2 whitespace-nowrap ${
+                className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold transition-colors border-b-2 whitespace-nowrap min-h-[38px] ${
                   activeOutputTab === "results"
                     ? "border-[#F2B84B] text-[#F2B84B]"
                     : "border-transparent text-slate-400 hover:text-slate-200"
@@ -716,7 +751,7 @@ export function QueryWorkbench({
 
               <button
                 onClick={() => setActiveOutputTab("ai_explain")}
-                className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold transition-colors border-b-2 whitespace-nowrap ${
+                className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold transition-colors border-b-2 whitespace-nowrap min-h-[38px] ${
                   activeOutputTab === "ai_explain"
                     ? "border-[#F2B84B] text-[#F2B84B]"
                     : "border-transparent text-slate-400 hover:text-slate-200"
@@ -728,19 +763,19 @@ export function QueryWorkbench({
 
               <button
                 onClick={() => setActiveOutputTab("optimize")}
-                className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold transition-colors border-b-2 whitespace-nowrap ${
+                className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold transition-colors border-b-2 whitespace-nowrap min-h-[38px] ${
                   activeOutputTab === "optimize"
                     ? "border-[#F2B84B] text-[#F2B84B]"
                     : "border-transparent text-slate-400 hover:text-slate-200"
                 }`}
               >
                 <Lightbulb className="h-3.5 w-3.5 text-amber-400" />
-                <span>{isId ? "Audit" : "Audit"}</span>
+                <span>Audit</span>
               </button>
 
               <button
                 onClick={() => setActiveOutputTab("transpile")}
-                className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold transition-colors border-b-2 whitespace-nowrap ${
+                className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold transition-colors border-b-2 whitespace-nowrap min-h-[38px] ${
                   activeOutputTab === "transpile"
                     ? "border-[#F2B84B] text-[#F2B84B]"
                     : "border-transparent text-slate-400 hover:text-slate-200"
@@ -752,7 +787,7 @@ export function QueryWorkbench({
 
               <button
                 onClick={() => setActiveOutputTab("explain")}
-                className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold transition-colors border-b-2 whitespace-nowrap ${
+                className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold transition-colors border-b-2 whitespace-nowrap min-h-[38px] ${
                   activeOutputTab === "explain"
                     ? "border-[#F2B84B] text-[#F2B84B]"
                     : "border-transparent text-slate-400 hover:text-slate-200"
@@ -765,7 +800,7 @@ export function QueryWorkbench({
 
             {/* Execution Stats */}
             {results && !results.error && activeOutputTab === "results" && (
-              <div className="flex items-center gap-2 sm:gap-3 text-xs font-mono text-slate-400 shrink-0">
+              <div className="flex items-center gap-2 sm:gap-3 text-xs font-mono text-slate-400 shrink-0 pr-1">
                 <span className="flex items-center gap-1">
                   <CheckCircle2 className="h-3 w-3 text-emerald-400" />
                   {results.rowCount} {isId ? "baris" : "rows"}
@@ -779,12 +814,12 @@ export function QueryWorkbench({
           </div>
 
           {/* Tab Contents */}
-          <div className="flex-1 overflow-auto p-2">
+          <div className="flex-1 overflow-auto p-2 no-scrollbar touch-scroll">
             {/* 1. Results View */}
             {activeOutputTab === "results" && (
               <>
                 {results?.error ? (
-                  <div className="m-2 rounded border border-rose-700/60 bg-rose-950/40 p-3 text-xs text-rose-300 font-mono">
+                  <div className="m-2 rounded-lg border border-rose-700/60 bg-rose-950/40 p-3 text-xs text-rose-300 font-mono">
                     <div className="flex items-center gap-2 font-bold mb-1">
                       <AlertTriangle className="h-4 w-4 text-rose-400" />
                       <span>
@@ -794,10 +829,10 @@ export function QueryWorkbench({
                     <p className="whitespace-pre-wrap">{results.error}</p>
                   </div>
                 ) : !results ? (
-                  <div className="flex h-full items-center justify-center text-xs text-slate-500 py-6">
+                  <div className="flex h-full items-center justify-center text-xs text-slate-500 py-8">
                     {isId
-                      ? "Tekan 'Jalankan' atau Ctrl+Enter untuk mengeksekusi query"
-                      : "Press 'Run' or Ctrl+Enter to execute query"}
+                      ? "Tekan 'Jalankan' untuk mengeksekusi query database"
+                      : "Press 'Run' to execute database query"}
                   </div>
                 ) : results.columns.length === 0 ? (
                   <div className="p-4 text-center text-xs text-slate-400">
@@ -806,21 +841,21 @@ export function QueryWorkbench({
                       : "Query executed with no returned rows."}
                   </div>
                 ) : (
-                  <div className="inline-block min-w-full overflow-x-auto rounded border border-slate-800">
-                    <table className="min-w-full divide-y divide-slate-800 text-left font-mono text-xs">
-                      <thead className="bg-[#10264A]/80 text-slate-300">
+                  <div className="w-full max-w-full overflow-x-auto no-scrollbar touch-scroll rounded-lg border border-slate-800 bg-slate-900/30">
+                    <table className="w-full min-w-[500px] divide-y divide-slate-800 text-left font-mono text-xs">
+                      <thead className="bg-[#10264A]/90 text-slate-300 sticky top-0">
                         <tr>
                           {results.columns.map((col, idx) => (
                             <th
                               key={idx}
-                              className="px-3 py-2 font-semibold tracking-wider text-[11px]"
+                              className="px-3 py-2 font-bold tracking-wider text-[11px] text-slate-200"
                             >
                               {col}
                             </th>
                           ))}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-800/60 bg-slate-900/30 text-slate-200">
+                      <tbody className="divide-y divide-slate-800/60 text-slate-200">
                         {results.rows.map((row, rIdx) => (
                           <tr
                             key={rIdx}
@@ -829,11 +864,15 @@ export function QueryWorkbench({
                             {row.map((val, cIdx) => (
                               <td
                                 key={cIdx}
-                                className="whitespace-nowrap px-3 py-1.5 text-slate-300"
+                                className="whitespace-nowrap px-3 py-2 text-slate-300"
                               >
                                 {val === null ? (
                                   <span className="italic text-slate-600">
                                     NULL
+                                  </span>
+                                ) : typeof val === "number" ? (
+                                  <span className="text-emerald-400">
+                                    {val.toLocaleString("id-ID")}
                                   </span>
                                 ) : (
                                   String(val)
@@ -867,7 +906,7 @@ export function QueryWorkbench({
                       : "Click 'Explain' to inspect the query execution flow."}
                   </div>
                 ) : (
-                  <div className="space-y-1.5 font-sans text-xs text-slate-200 bg-[#10264A]/40 p-3 rounded border border-slate-800">
+                  <div className="space-y-1.5 font-sans text-xs text-slate-200 bg-[#10264A]/40 p-3 rounded-lg border border-slate-800">
                     {aiExplanation.map((step, idx) => (
                       <div key={idx} className="flex items-start gap-2 py-0.5">
                         <span className="text-[#F2B84B] font-bold">•</span>
@@ -901,7 +940,7 @@ export function QueryWorkbench({
                     {optimizations.map((opt, idx) => (
                       <div
                         key={idx}
-                        className="rounded border border-amber-800/60 bg-amber-950/30 p-2.5 text-xs text-amber-200"
+                        className="rounded-lg border border-amber-800/60 bg-amber-950/30 p-2.5 text-xs text-amber-200"
                       >
                         <div className="flex items-center justify-between font-bold text-[11px] mb-1">
                           <span className="uppercase tracking-wider text-amber-400">
@@ -925,7 +964,7 @@ export function QueryWorkbench({
             {activeOutputTab === "transpile" && (
               <div className="h-full flex flex-col space-y-2">
                 {transpileWarnings.length > 0 && (
-                  <div className="rounded border border-amber-600/40 bg-amber-950/20 p-2 text-xs text-amber-300">
+                  <div className="rounded-lg border border-amber-600/40 bg-amber-950/20 p-2 text-xs text-amber-300">
                     <p className="font-semibold flex items-center gap-1">
                       <AlertTriangle className="h-3.5 w-3.5" />
                       {isId
@@ -939,7 +978,7 @@ export function QueryWorkbench({
                     </ul>
                   </div>
                 )}
-                <div className="flex-1">
+                <div className="flex-1 min-h-[140px]">
                   <SqlEditor
                     value={
                       transpiledSql ||
@@ -962,7 +1001,7 @@ export function QueryWorkbench({
                       : "Click 'Plan' to inspect the execution plan"}
                   </div>
                 ) : (
-                  <div className="rounded border border-slate-800 bg-[#10264A]/40 p-3 font-mono text-xs overflow-x-auto">
+                  <div className="rounded-lg border border-slate-800 bg-[#10264A]/40 p-3 font-mono text-xs overflow-x-auto no-scrollbar touch-scroll">
                     <div className="font-bold text-[#F2B84B] mb-2">
                       SQLite Query Plan:
                     </div>
@@ -991,22 +1030,22 @@ export function QueryWorkbench({
             </p>
             <input
               type="text"
-              placeholder="e.g. Analisis Pelanggan VIP"
+              placeholder="e.g. Analisis Nasabah Saldo Terbesar"
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
-              className="w-full rounded bg-slate-900 border border-slate-700 px-3 py-2 text-xs text-white focus:outline-none focus:border-[#F2B84B] mb-4 min-h-[40px]"
+              className="w-full rounded bg-slate-900 border border-slate-700 px-3 py-2 text-xs text-white focus:outline-none focus:border-[#F2B84B] mb-4 min-h-[44px]"
             />
             <div className="flex justify-end gap-2 text-xs">
               <button
                 onClick={() => setShowSavedModal(false)}
-                className="px-4 py-2 rounded text-slate-400 hover:text-white min-h-[40px]"
+                className="px-4 py-2 rounded text-slate-400 hover:text-white min-h-[44px]"
               >
                 {isId ? "Batal" : "Cancel"}
               </button>
               <button
                 onClick={handleSaveQuery}
                 disabled={!newTitle.trim()}
-                className="px-5 py-2 rounded bg-[#F2B84B] font-bold text-[#071A3A] hover:opacity-90 disabled:opacity-50 min-h-[40px]"
+                className="px-5 py-2 rounded bg-[#F2B84B] font-bold text-[#071A3A] hover:opacity-90 disabled:opacity-50 min-h-[44px]"
               >
                 {isId ? "Simpan" : "Save"}
               </button>

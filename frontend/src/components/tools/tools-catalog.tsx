@@ -164,12 +164,12 @@ export function ToolsCatalog({ language }: ToolsCatalogProps) {
             />
           </div>
 
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar touch-scroll pb-1 sm:pb-0">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-1.5 rounded text-xs font-medium transition-colors whitespace-nowrap min-h-[36px] ${
+                className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors whitespace-nowrap min-h-[40px] shrink-0 ${
                   selectedCategory === cat
                     ? "bg-[#10264A] text-[#F2B84B] border border-[#F2B84B]/40 font-semibold"
                     : "bg-slate-900/60 text-slate-400 hover:text-slate-200 border border-slate-800"

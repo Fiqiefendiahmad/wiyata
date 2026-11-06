@@ -189,11 +189,11 @@ export function KnowledgeCenter({ language, onOpenLab }: KnowledgeCenterProps) {
         <div className="lg:hidden mb-4">
           <button
             onClick={() => setMobileViewingArticle(false)}
-            className="flex items-center gap-1.5 text-xs text-[#F2B84B] font-semibold py-1.5 px-2 rounded bg-slate-900 border border-slate-800 min-h-[36px]"
+            className="flex items-center gap-2 text-xs text-[#F2B84B] font-semibold py-2 px-3 rounded-lg bg-slate-900 border border-slate-800 min-h-[44px] active:bg-slate-800"
           >
-            <ArrowLeft className="h-3.5 w-3.5" />
+            <ArrowLeft className="h-4 w-4" />
             <span>
-              {isId ? "Kembali ke Daftar Artikel" : "Back to Article List"}
+              {isId ? "Kembali ke Daftar Panduan" : "Back to Guides List"}
             </span>
           </button>
         </div>

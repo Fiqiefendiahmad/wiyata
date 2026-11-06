@@ -1,9 +1,110 @@
 """Sample dataset schemas and seed data for learning sandboxes."""
 
 TEMPLATES = {
+    "banking": {
+        "name": "Core Banking System",
+        "description": "Nasabah, rekening tabungan/giro, mutasi transaksi (QRIS/Transfer/ATM), dan pinjaman",
+        "sql": """
+CREATE TABLE branches (
+    branch_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    branch_code TEXT UNIQUE NOT NULL,
+    branch_name TEXT NOT NULL,
+    city TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE customers (
+    customer_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    cif_number TEXT UNIQUE NOT NULL,
+    full_name TEXT NOT NULL,
+    nik TEXT UNIQUE NOT NULL,
+    phone_number TEXT NOT NULL,
+    address TEXT,
+    city TEXT DEFAULT 'Jakarta',
+    kyc_status TEXT CHECK(kyc_status IN ('VERIFIED', 'PENDING', 'REJECTED')) DEFAULT 'VERIFIED',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE accounts (
+    account_number TEXT PRIMARY KEY,
+    customer_id INTEGER NOT NULL REFERENCES customers(customer_id),
+    branch_id INTEGER NOT NULL REFERENCES branches(branch_id),
+    account_type TEXT CHECK(account_type IN ('SAVINGS', 'CHECKING', 'TIME_DEPOSIT')) DEFAULT 'SAVINGS',
+    currency TEXT DEFAULT 'IDR',
+    balance REAL NOT NULL DEFAULT 0.0,
+    status TEXT CHECK(status IN ('ACTIVE', 'DORMANT', 'FROZEN', 'CLOSED')) DEFAULT 'ACTIVE',
+    opened_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE transactions (
+    transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    reference_no TEXT UNIQUE NOT NULL,
+    from_account_number TEXT NOT NULL REFERENCES accounts(account_number),
+    to_account_number TEXT REFERENCES accounts(account_number),
+    transaction_type TEXT CHECK(transaction_type IN ('TRANSFER', 'DEPOSIT', 'WITHDRAWAL', 'QRIS', 'BILL_PAYMENT', 'INTEREST')) NOT NULL,
+    amount REAL NOT NULL,
+    fee REAL DEFAULT 0.0,
+    channel TEXT CHECK(channel IN ('MOBILE_BANKING', 'ATM', 'INTERNET_BANKING', 'TELLER', 'EDC', 'QRIS')) DEFAULT 'MOBILE_BANKING',
+    status TEXT CHECK(status IN ('SUCCESS', 'PENDING', 'FAILED')) DEFAULT 'SUCCESS',
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE loans (
+    loan_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_id INTEGER NOT NULL REFERENCES customers(customer_id),
+    loan_type TEXT CHECK(loan_type IN ('MORTGAGE', 'AUTO_LOAN', 'PERSONAL_LOAN', 'SME_LOAN')) NOT NULL,
+    principal_amount REAL NOT NULL,
+    interest_rate_pct REAL NOT NULL DEFAULT 7.5,
+    tenor_months INTEGER NOT NULL,
+    monthly_installment REAL NOT NULL,
+    status TEXT CHECK(status IN ('ACTIVE', 'APPROVED', 'DISBURSED', 'PAID_OFF', 'DEFAULT')) DEFAULT 'ACTIVE',
+    disbursed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Seed Branches
+INSERT INTO branches (branch_code, branch_name, city) VALUES
+('KC-JKT-01', 'Kantor Cabang Sudirman', 'Jakarta'),
+('KC-BDG-01', 'Kantor Cabang Dago', 'Bandung'),
+('KC-SBY-01', 'Kantor Cabang Pemuda', 'Surabaya'),
+('KC-YOG-01', 'Kantor Cabang Malioboro', 'Yogyakarta');
+
+-- Seed Customers
+INSERT INTO customers (cif_number, full_name, nik, phone_number, address, city) VALUES
+('CIF-88201', 'Bambang Hartono', '3171012903850001', '081234567890', 'Jl. Sudirman Kav 25', 'Jakarta'),
+('CIF-88202', 'Siti Nurhaliza', '3273024805900002', '081398765432', 'Jl. Riau No 14', 'Bandung'),
+('CIF-88203', 'Hendra Wijaya', '3578031201780003', '081512344321', 'Jl. Basuki Rahmat 88', 'Surabaya'),
+('CIF-88204', 'Ratna Sari Dewi', '3471046511950004', '082167890123', 'Jl. Kaliurang Km 5', 'Yogyakarta'),
+('CIF-88205', 'Agus Prayitno', '3174051010880005', '081855566677', 'Jl. Gatot Subroto 12', 'Jakarta');
+
+-- Seed Accounts
+INSERT INTO accounts (account_number, customer_id, branch_id, account_type, balance, status) VALUES
+('1020304001', 1, 1, 'CHECKING', 145000000.0, 'ACTIVE'),
+('1020304002', 1, 1, 'SAVINGS', 38500000.0, 'ACTIVE'),
+('1020304003', 2, 2, 'SAVINGS', 18750000.0, 'ACTIVE'),
+('1020304004', 3, 3, 'SAVINGS', 92400000.0, 'ACTIVE'),
+('1020304005', 4, 4, 'SAVINGS', 4500000.0, 'ACTIVE'),
+('1020304006', 5, 1, 'TIME_DEPOSIT', 250000000.0, 'ACTIVE');
+
+-- Seed Transactions (Mutasi Rekening)
+INSERT INTO transactions (reference_no, from_account_number, to_account_number, transaction_type, amount, fee, channel, description) VALUES
+('TRX-20261101-001', '1020304001', '1020304004', 'TRANSFER', 15000000.0, 6500.0, 'MOBILE_BANKING', 'Pembayaran invoice suplai logistik'),
+('TRX-20261102-002', '1020304003', '1020304005', 'QRIS', 350000.0, 0.0, 'QRIS', 'Pembayaran resto Dago Cafe'),
+('TRX-20261102-003', '1020304002', NULL, 'WITHDRAWAL', 2000000.0, 0.0, 'ATM', 'Tarik tunai ATM Sudirman'),
+('TRX-20261103-004', '1020304004', '1020304002', 'TRANSFER', 8500000.0, 6500.0, 'INTERNET_BANKING', 'Transfer pembagian dividen proyek'),
+('TRX-20261104-005', '1020304005', NULL, 'BILL_PAYMENT', 450000.0, 2500.0, 'MOBILE_BANKING', 'Pembayaran tagihan listrik PLN'),
+('TRX-20261105-006', '1020304001', '1020304003', 'TRANSFER', 32000000.0, 6500.0, 'MOBILE_BANKING', 'Transfer pembayaran vendor kantor');
+
+-- Seed Loans
+INSERT INTO loans (customer_id, loan_type, principal_amount, interest_rate_pct, tenor_months, monthly_installment, status) VALUES
+(1, 'MORTGAGE', 850000000.0, 6.8, 120, 9780000.0, 'ACTIVE'),
+(3, 'SME_LOAN', 250000000.0, 8.5, 36, 7890000.0, 'ACTIVE'),
+(4, 'AUTO_LOAN', 180000000.0, 7.2, 48, 4320000.0, 'ACTIVE');
+"""
+    },
     "ecommerce": {
         "name": "E-Commerce Store",
-        "description": "Customers, products, orders, and order items with realistic data",
+        "description": "Pelanggan, produk, kategori, dan transaksi belanja online",
         "sql": """
 CREATE TABLE customers (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -93,7 +194,7 @@ INSERT INTO order_items (order_id, product_id, quantity, unit_price) VALUES
     },
     "school": {
         "name": "University Academy",
-        "description": "Students, instructors, courses, and grade enrollments",
+        "description": "Akademik kampus: mahasiswa, dosen, mata kuliah, dan indeks prestasi",
         "sql": """
 CREATE TABLE departments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -162,7 +263,7 @@ INSERT INTO enrollments (student_id, course_id, grade, semester) VALUES
     },
     "blog": {
         "name": "Tech Blog Platform",
-        "description": "Authors, articles, tags, and reader comments",
+        "description": "Penulis, publikasi artikel teknik, tag, dan komentar pembaca",
         "sql": """
 CREATE TABLE authors (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -222,7 +323,7 @@ INSERT INTO comments (post_id, author_name, content) VALUES
     },
     "blank": {
         "name": "Blank Database",
-        "description": "Clean, empty SQLite database ready for DDL experimentation",
+        "description": "Database SQLite kosong untuk eksperimen skema dan DDL bebas",
         "sql": "-- Clean sandbox\n"
     }
 }

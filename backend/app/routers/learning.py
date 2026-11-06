@@ -10,6 +10,30 @@ router = APIRouter(prefix="/learning", tags=["Learning"])
 
 CHALLENGES = [
     {
+        "slug": "banking-priority-accounts",
+        "title": "Priority Banking Balances (> IDR 30M)",
+        "title_id": "Audit Saldo Nasabah Prioritas (> 30 Juta)",
+        "level": "Intermediate",
+        "dataset": "banking",
+        "description": "Write a query selecting customer full_name, account_number, account_type, and balance for accounts with status 'ACTIVE' and balance greater than 30,000,000. Sort by balance descending.",
+        "description_id": "Tulis query yang menampilkan full_name nasabah, account_number, account_type, dan balance untuk rekening berstatus 'ACTIVE' dengan saldo di atas 30.000.000, diurutkan dari saldo tertinggi.",
+        "expected_columns": ["full_name", "account_number", "account_type", "balance"],
+        "solution_sql": """
+SELECT c.full_name, a.account_number, a.account_type, a.balance
+FROM accounts a
+JOIN customers c ON a.customer_id = c.customer_id
+WHERE a.status = 'ACTIVE' AND a.balance > 30000000.0
+ORDER BY a.balance DESC;
+""",
+        "starter_sql": """-- Lengkapi kueri berikut:
+SELECT c.full_name, a.account_number, a.account_type, a.balance
+FROM accounts a
+JOIN customers c ON a.customer_id = c.customer_id
+WHERE a.status = 'ACTIVE' AND a.balance > 30000000.0
+ORDER BY a.balance DESC;
+""",
+    },
+    {
         "slug": "top-spending-customers",
         "title": "Top Spending Customers",
         "title_id": "5 Pelanggan dengan Pengeluaran Terbesar",
