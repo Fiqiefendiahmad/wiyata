@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+:root {
+  --background: #F7F8FA;
+  --foreground: #071A3A;
+  --surface: #FFFFFF;
+  --muted: #8A96A8;
+  --accent: #F2B84B;
+
+  /* WIYATA Brand Tokens */
+  --wiyata-navy: #071A3A;
+  --wiyata-navy-surface: #10264A;
+  --wiyata-gold: #F2B84B;
+  --wiyata-warm-white: #F7F8FA;
+  --wiyata-neutral: #8A96A8;
+  --wiyata-success: #249B67;
+  --wiyata-warning: #D99A32;
+  --wiyata-danger: #D65353;
+}
+
+.dark {
+  --background: #071A3A;
+  --foreground: #EAF0FA;
+  --surface: #10264A;
+  --muted: #8A96A8;
+  --accent: #F2B84B;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
