@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import {
   Database,
   RefreshCw,
@@ -9,7 +10,6 @@ import {
   GraduationCap,
   Menu,
   X,
-  Server,
 } from "lucide-react";
 
 interface HeaderProps {
@@ -67,14 +67,21 @@ export function Header({
   return (
     <>
       <header className="sticky top-0 z-40 flex h-14 w-full items-center justify-between border-b border-slate-800 bg-[#071A3A]/95 px-3 sm:px-4 backdrop-blur-md">
-        {/* Brand */}
+        {/* Brand with Official App Icon */}
         <div className="flex items-center gap-2 sm:gap-6 min-w-0">
           <div
             onClick={() => setActiveTab("workbench")}
-            className="flex cursor-pointer items-center gap-2 shrink-0"
+            className="flex cursor-pointer items-center gap-2.5 shrink-0"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#F2B84B] to-[#D99A32] shadow-sm shrink-0">
-              <Database className="h-4 w-4 text-[#071A3A]" />
+            <div className="relative h-8 w-8 overflow-hidden rounded-lg shadow-sm shrink-0 border border-[#F2B84B]/40 bg-[#10264A]">
+              <Image
+                src="/wiyata-app-icon.png"
+                alt="WIYATA Platform Icon"
+                width={32}
+                height={32}
+                className="h-full w-full object-cover"
+                priority
+              />
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5">
@@ -116,33 +123,33 @@ export function Header({
 
         {/* Right Controls */}
         <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-          {/* Sandbox Status Badge */}
-          <div className="flex items-center gap-1 sm:gap-2 rounded-md bg-[#10264A]/80 border border-slate-700/60 px-2 py-1 text-xs">
-            <span
-              className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse shrink-0"
-              title="Sandbox SQLite Aktif"
+          {/* Actionable Refresh Sandbox Data Button (Replaces passive status indicator) */}
+          <button
+            onClick={onResetSandbox}
+            disabled={isResetting}
+            title={
+              isId
+                ? "Refresh / Reset Data Sandbox ke Kondisi Awal"
+                : "Refresh & Reset Sandboxed Data to Initial State"
+            }
+            aria-label="Refresh and reset sandboxed data"
+            className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-[#10264A] px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-slate-200 hover:text-white hover:border-[#F2B84B] transition-colors disabled:opacity-50 min-h-[38px] active:scale-95"
+          >
+            <RefreshCw
+              className={`h-3.5 w-3.5 text-[#F2B84B] ${
+                isResetting ? "animate-spin" : ""
+              }`}
             />
-            <span className="hidden sm:inline text-slate-300 font-mono text-[11px] truncate">
-              SQLite ({sandboxStatus})
+            <span className="hidden xs:inline text-[11px] font-semibold">
+              {isResetting
+                ? isId
+                  ? "Merefresh..."
+                  : "Refreshing..."
+                : isId
+                ? "Refresh Data"
+                : "Refresh Data"}
             </span>
-            <button
-              onClick={onResetSandbox}
-              disabled={isResetting}
-              title={
-                isId
-                  ? "Reset database sandbox ke kondisi awal"
-                  : "Reset sandbox database to initial state"
-              }
-              aria-label="Reset database sandbox"
-              className="flex items-center justify-center p-1 text-slate-400 hover:text-[#F2B84B] transition-colors disabled:opacity-50 min-h-[30px] min-w-[30px]"
-            >
-              <RefreshCw
-                className={`h-3 w-3 ${
-                  isResetting ? "animate-spin text-[#F2B84B]" : ""
-                }`}
-              />
-            </button>
-          </div>
+          </button>
 
           {/* Language Switch */}
           <div className="flex items-center rounded-md bg-[#10264A]/60 border border-slate-800 p-0.5 text-xs">
@@ -209,32 +216,29 @@ export function Header({
             })}
           </nav>
 
-          {/* Mobile Status Drawer Card */}
-          <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-3 text-xs">
-            <div className="flex items-center justify-between text-slate-300 mb-2">
-              <span className="flex items-center gap-1.5 text-[11px] font-mono text-slate-400">
-                <Server className="h-3.5 w-3.5 text-[#F2B84B]" />
-                Sandbox: SQLite ({sandboxStatus})
-              </span>
-              <span className="rounded bg-emerald-950 px-2 py-0.5 text-[10px] font-mono text-emerald-400 border border-emerald-800">
-                Online
-              </span>
-            </div>
+          {/* Mobile Refresh Data Button */}
+          <div className="border-t border-slate-800/80 pt-3">
             <button
               onClick={() => {
                 onResetSandbox();
                 setMobileMenuOpen(false);
               }}
               disabled={isResetting}
-              className="w-full flex items-center justify-center gap-2 rounded bg-[#10264A] border border-slate-700 py-2.5 text-xs font-semibold text-slate-200 hover:text-white active:bg-slate-800 min-h-[44px]"
+              className="w-full flex items-center justify-center gap-2 rounded-lg bg-[#10264A] border border-[#F2B84B]/40 py-2.5 text-xs font-bold text-white hover:bg-[#F2B84B] hover:text-[#071A3A] transition-colors min-h-[44px] active:scale-95"
             >
               <RefreshCw
-                className={`h-3.5 w-3.5 text-[#F2B84B] ${
+                className={`h-4 w-4 text-[#F2B84B] ${
                   isResetting ? "animate-spin" : ""
                 }`}
               />
               <span>
-                {isId ? "Reset Database Sandbox" : "Reset Database Sandbox"}
+                {isResetting
+                  ? isId
+                    ? "Memulihkan Data..."
+                    : "Refreshing Data..."
+                  : isId
+                  ? "Refresh & Pulihkan Data Sandbox"
+                  : "Refresh & Reset Sandbox Data"}
               </span>
             </button>
           </div>

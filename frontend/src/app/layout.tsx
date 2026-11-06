@@ -20,6 +20,10 @@ export const metadata: Metadata = {
   title: "WIYATA — Your Database Learning Center",
   description:
     "Learn, build, explore, and master database technologies — all in one place.",
+  icons: {
+    icon: "/wiyata-app-icon.png",
+    apple: "/wiyata-app-icon.png",
+  },
 };
 
 export default function RootLayout({
