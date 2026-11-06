@@ -1,0 +1,34 @@
+# Development infrastructure starter only.
+# Frontend and backend application services must be added after their Dockerfiles exist.
+services:
+  postgres:
+    image: postgres:17
+    container_name: wiyata-platform-postgres
+    environment:
+      POSTGRES_DB: wiyata
+      POSTGRES_USER: wiyata
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-this-development-password}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - wiyata-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wiyata -d wiyata"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7
+    container_name: wiyata-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - wiyata-redis-data:/data
+    restart: unless-stopped
+
+volumes:
+  wiyata-postgres-data:
+  wiyata-redis-data:

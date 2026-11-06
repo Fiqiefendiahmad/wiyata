@@ -1,0 +1,171 @@
+{
+  "catalog_name": "WIYATA Professional Tools - starter seed",
+  "note": "Examples for editorial research. Verify current product status, compatibility, and licensing before publication.",
+  "categories": [
+    {
+      "name": "Database clients and administration",
+      "tools": [
+        {
+          "name": "DBeaver",
+          "url": "https://dbeaver.io/",
+          "documentation": "https://dbeaver.com/docs/dbeaver/"
+        },
+        {
+          "name": "Oracle SQL Developer",
+          "url": "https://www.oracle.com/database/sqldeveloper/",
+          "documentation": "https://docs.oracle.com/en/database/oracle/sql-developer/"
+        },
+        {
+          "name": "pgAdmin",
+          "url": "https://www.pgadmin.org/",
+          "documentation": "https://www.pgadmin.org/docs/"
+        },
+        {
+          "name": "MySQL Workbench",
+          "url": "https://www.mysql.com/products/workbench/",
+          "documentation": "https://dev.mysql.com/doc/workbench/en/"
+        },
+        {
+          "name": "SQL Server Management Studio",
+          "url": "https://learn.microsoft.com/en-us/ssms/",
+          "documentation": "https://learn.microsoft.com/en-us/ssms/"
+        },
+        {
+          "name": "IBM Data Management Console",
+          "url": "https://www.ibm.com/products/data-management-console",
+          "documentation": "https://www.ibm.com/docs/"
+        }
+      ]
+    },
+    {
+      "name": "Monitoring and observability",
+      "tools": [
+        {
+          "name": "Oracle Enterprise Manager",
+          "url": "https://www.oracle.com/enterprise-manager/",
+          "documentation": "https://docs.oracle.com/en/enterprise-manager/"
+        },
+        {
+          "name": "Percona Monitoring and Management",
+          "url": "https://www.percona.com/software/pmm",
+          "documentation": "https://docs.percona.com/percona-monitoring-and-management/"
+        },
+        {
+          "name": "Prometheus",
+          "url": "https://prometheus.io/",
+          "documentation": "https://prometheus.io/docs/"
+        },
+        {
+          "name": "Grafana",
+          "url": "https://grafana.com/",
+          "documentation": "https://grafana.com/docs/"
+        },
+        {
+          "name": "Zabbix",
+          "url": "https://www.zabbix.com/",
+          "documentation": "https://www.zabbix.com/documentation"
+        },
+        {
+          "name": "Datadog",
+          "url": "https://www.datadoghq.com/",
+          "documentation": "https://docs.datadoghq.com/"
+        },
+        {
+          "name": "Dynatrace",
+          "url": "https://www.dynatrace.com/",
+          "documentation": "https://docs.dynatrace.com/"
+        },
+        {
+          "name": "New Relic",
+          "url": "https://newrelic.com/",
+          "documentation": "https://docs.newrelic.com/"
+        },
+        {
+          "name": "Elastic Observability",
+          "url": "https://www.elastic.co/observability",
+          "documentation": "https://www.elastic.co/guide/"
+        },
+        {
+          "name": "Splunk",
+          "url": "https://www.splunk.com/",
+          "documentation": "https://docs.splunk.com/"
+        },
+        {
+          "name": "pgwatch",
+          "url": "https://pgwatch.org/",
+          "documentation": "https://github.com/cybertec-postgresql/pgwatch"
+        }
+      ]
+    },
+    {
+      "name": "Backup, recovery and migration",
+      "tools": [
+        {
+          "name": "pgBackRest",
+          "url": "https://pgbackrest.org/",
+          "documentation": "https://pgbackrest.org/user-guide.html"
+        },
+        {
+          "name": "Barman",
+          "url": "https://pgbarman.org/",
+          "documentation": "https://docs.pgbarman.org/"
+        },
+        {
+          "name": "Percona XtraBackup",
+          "url": "https://www.percona.com/software/mysql-database/percona-xtrabackup",
+          "documentation": "https://docs.percona.com/percona-xtrabackup/"
+        },
+        {
+          "name": "Flyway",
+          "url": "https://www.red-gate.com/products/flyway/",
+          "documentation": "https://documentation.red-gate.com/flyway"
+        },
+        {
+          "name": "Liquibase",
+          "url": "https://www.liquibase.com/",
+          "documentation": "https://docs.liquibase.com/"
+        },
+        {
+          "name": "AWS Database Migration Service",
+          "url": "https://aws.amazon.com/dms/",
+          "documentation": "https://docs.aws.amazon.com/dms/"
+        }
+      ]
+    },
+    {
+      "name": "Infrastructure and automation",
+      "tools": [
+        {
+          "name": "Docker",
+          "url": "https://www.docker.com/",
+          "documentation": "https://docs.docker.com/"
+        },
+        {
+          "name": "Kubernetes",
+          "url": "https://kubernetes.io/",
+          "documentation": "https://kubernetes.io/docs/"
+        },
+        {
+          "name": "Ansible",
+          "url": "https://www.ansible.com/",
+          "documentation": "https://docs.ansible.com/"
+        },
+        {
+          "name": "Terraform",
+          "url": "https://developer.hashicorp.com/terraform",
+          "documentation": "https://developer.hashicorp.com/terraform/docs"
+        },
+        {
+          "name": "Jenkins",
+          "url": "https://www.jenkins.io/",
+          "documentation": "https://www.jenkins.io/doc/"
+        },
+        {
+          "name": "Wazuh",
+          "url": "https://wazuh.com/",
+          "documentation": "https://documentation.wazuh.com/"
+        }
+      ]
+    }
+  ]
+}

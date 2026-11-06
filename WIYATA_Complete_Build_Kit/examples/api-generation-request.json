@@ -1,0 +1,12 @@
+{
+  "engine": "postgres",
+  "engine_version": "17",
+  "schema_reference": "schema_opaque_id",
+  "request": "Show the ten customers with the highest transaction total in the last 30 days",
+  "options": {
+    "include_explanation": true,
+    "include_warnings": true,
+    "include_comments": false
+  },
+  "language": "en"
+}

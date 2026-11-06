@@ -1,0 +1,32 @@
+{
+  "kind": "select",
+  "source": {
+    "table": "customers",
+    "schema": "public",
+    "alias": "c"
+  },
+  "joins": [
+    {
+      "type": "inner",
+      "table": "transactions",
+      "alias": "t",
+      "on": {
+        "left": "c.id",
+        "operator": "=",
+        "right": "t.customer_id"
+      }
+    }
+  ],
+  "columns": [
+    {"expression": "c.name", "alias": "customer_name"},
+    {"expression": "SUM(t.amount)", "alias": "total_amount"}
+  ],
+  "where": [],
+  "group_by": ["c.name"],
+  "having": [],
+  "order_by": [
+    {"expression": "total_amount", "direction": "DESC"}
+  ],
+  "limit": 10,
+  "parameters": []
+}

@@ -1,0 +1,40 @@
+{
+  "product": "WIYATA",
+  "tagline": "Your Database Learning Center",
+  "package_type": "product and engineering build kit",
+  "languages": [
+    "en",
+    "id"
+  ],
+  "generated_files": [
+    "README.md",
+    "architecture/01_SYSTEM_ARCHITECTURE.md",
+    "architecture/02_DATABASE_ADAPTER_CONTRACT.md",
+    "architecture/03_SANDBOX_ARCHITECTURE.md",
+    "assets/README.md",
+    "assets/wiyata-app-icon.png",
+    "database/001_initial_schema.sql",
+    "database/01_PLATFORM_DATA_MODEL.md",
+    "deployment/.env.example",
+    "deployment/README.md",
+    "deployment/docker-compose.yml",
+    "design/BRAND_AND_VISUAL_IDENTITY.md",
+    "docs/01_PRODUCT_VISION_AND_PRD.md",
+    "docs/02_SCOPE_AND_ACCEPTANCE_CRITERIA.md",
+    "docs/03_UX_AND_PAGE_SPECIFICATION.md",
+    "docs/04_KNOWLEDGE_CENTER_SPECIFICATION.md",
+    "docs/05_PROFESSIONAL_TOOLS_CATALOG.md",
+    "docs/06_MONITORING_AND_OBSERVABILITY_CATALOG.md",
+    "docs/07_API_SPECIFICATION.md",
+    "docs/08_SECURITY_AND_PRIVACY.md",
+    "docs/09_I18N_AND_CONTENT_POLICY.md",
+    "docs/10_TESTING_AND_QUALITY_PLAN.md",
+    "docs/11_ROADMAP_AND_BUILD_ORDER.md",
+    "docs/12_DEFINITION_OF_DONE.md",
+    "examples/api-generation-request.json",
+    "examples/knowledge-article-template.md",
+    "examples/professional-tools-catalog.seed.json",
+    "examples/query-ir.example.json"
+  ],
+  "note": "Blueprint and starter assets; not a completed application."
+}
