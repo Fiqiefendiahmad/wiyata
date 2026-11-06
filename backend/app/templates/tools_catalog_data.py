@@ -253,7 +253,8 @@ VERIFIED_TOOLS_DATA: list[dict[str, Any]] = [
             {"article_slug": "b-tree-indexing-mechanics", "title_en": "B-Tree Indexing Mechanics & Optimization", "title_id": "Mekanika Pengindeksan B-Tree & Optimasi", "relationship_type": "troubleshooting"},
         ],
         "exercise_connections": [
-            {"exercise_slug": "ex-02", "title_en": "Aggregate Analytics with GROUP BY", "title_id": "Analisis Agregat dengan GROUP BY", "lab_type": "sql_query"},
+            {"exercise_slug": "low-stock-alert", "title_en": "Restock Warning Alert (WHERE Filter)", "title_id": "Peringatan Stok Barang Menipis", "lab_type": "sql_query"},
+            {"exercise_slug": "academic-grade-a", "title_en": "Honors List: Grade A Students (JOIN)", "title_id": "Daftar Mahasiswa Berprestasi (JOIN)", "lab_type": "sql_query"},
         ],
         "alternatives": [
             {"slug": "datagrip", "name": "JetBrains DataGrip", "product_type": "Commercial Desktop IDE", "license_model": "Commercial Subscription", "tradeoff_en": "DBeaver is fully open-source and free, while DataGrip has deeper refactoring and intelligent code inspections for a paid license.", "tradeoff_id": "DBeaver gratis dan open-source, sedangkan DataGrip menawarkan fitur refactoring kode dan inspeksi cerdas dengan lisensi berbayar."},
@@ -452,7 +453,8 @@ VERIFIED_TOOLS_DATA: list[dict[str, Any]] = [
             {"article_slug": "mvcc-vacuum-freeze-deep-dive", "title_en": "PostgreSQL MVCC & Autovacuum Tuning", "title_id": "Tuning MVCC & Autovacuum PostgreSQL", "relationship_type": "troubleshooting"},
         ],
         "exercise_connections": [
-            {"exercise_slug": "ex-01", "title_en": "Basic SELECT and WHERE Filtering", "title_id": "SELECT Dasar dan Filter WHERE", "lab_type": "sql_query"},
+            {"exercise_slug": "blocking-sessions-root-cause", "title_en": "Triage Blocking Sessions", "title_id": "Triage Sesi Pemblokir Akar", "lab_type": "incident_response"},
+            {"exercise_slug": "banking-priority-accounts", "title_en": "Priority Banking Balances", "title_id": "Audit Saldo Nasabah Prioritas", "lab_type": "sql_query"},
         ],
         "alternatives": [
             {"slug": "dbeaver", "name": "DBeaver Community", "product_type": "Multi-platform Client", "license_model": "Open Source", "tradeoff_en": "DBeaver works across multiple database brands, while pgAdmin has deeper integration with PostgreSQL-exclusive catalogs and server dialogs.", "tradeoff_id": "DBeaver fleksibel untuk multi-database, sedangkan pgAdmin memiliki integrasi terdalam untuk fitur khusus PostgreSQL."},
@@ -641,7 +643,7 @@ VERIFIED_TOOLS_DATA: list[dict[str, Any]] = [
             {"article_slug": "database-connection-pooling-guide", "title_en": "Connection Pooling & Starvation Mitigation", "title_id": "Manajemen Connection Pooling & Mitigasi Saturasi", "relationship_type": "troubleshooting"},
         ],
         "exercise_connections": [
-            {"exercise_slug": "ex-11", "title_en": "Connection Saturation Diagnostics", "title_id": "Diagnostik Saturasi Koneksi", "lab_type": "sql_query"},
+            {"exercise_slug": "k8s-pod-buffer-cache-ratio", "title_en": "Kubernetes Pod Buffer Cache Ratio", "title_id": "Rasio Cache Buffer Pod K8s", "lab_type": "observability"},
         ],
         "alternatives": [
             {"slug": "pmm", "name": "Percona Monitoring and Management (PMM)", "product_type": "All-in-One Database Observability", "license_model": "Open Source", "tradeoff_en": "Prometheus is a general-purpose time-series engine, while PMM bundles Prometheus, Grafana, and specialized Query Analytics specifically for databases.", "tradeoff_id": "Prometheus adalah engine metrik serbaguna, sedangkan PMM mengintegrasikan Prometheus dengan analisis kueri mendalam khusus database."},
@@ -820,7 +822,8 @@ VERIFIED_TOOLS_DATA: list[dict[str, Any]] = [
             {"article_slug": "database-observability-golden-signals", "title_en": "Database Observability: The Four Golden Signals", "title_id": "Observabilitas Database: Empat Sinyal Emas", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
-            {"exercise_slug": "ex-02", "title_en": "Aggregate Analytics with GROUP BY", "title_id": "Analisis Agregat dengan GROUP BY", "lab_type": "sql_query"},
+            {"exercise_slug": "low-stock-alert", "title_en": "Restock Warning Alert (WHERE Filter)", "title_id": "Peringatan Stok Barang Menipis", "lab_type": "sql_query"},
+            {"exercise_slug": "academic-grade-a", "title_en": "Honors List: Grade A Students (JOIN)", "title_id": "Daftar Mahasiswa Berprestasi (JOIN)", "lab_type": "sql_query"},
         ],
         "alternatives": [
             {"slug": "pmm", "name": "Percona Monitoring and Management", "product_type": "Database-Specific Suite", "license_model": "Open Source", "tradeoff_en": "PMM includes pre-built Grafana dashboards out-of-the-box with deep query analytics, while standalone Grafana allows broader multi-cloud telemetry.", "tradeoff_id": "PMM sudah menyertakan template dashboard Grafana siap pakai khusus database, sedangkan Grafana standalone lebih fleksibel untuk segala jenis data source."},
@@ -970,7 +973,8 @@ VERIFIED_TOOLS_DATA: list[dict[str, Any]] = [
             {"article_slug": "database-acid-transactions-deep-dive", "title_en": "ACID Transactions & Isolation Levels", "title_id": "Transaksi ACID & Tingkat Isolasi", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
-            {"exercise_slug": "ex-01", "title_en": "Basic SELECT and WHERE Filtering", "title_id": "SELECT Dasar dan Filter WHERE", "lab_type": "sql_query"},
+            {"exercise_slug": "blocking-sessions-root-cause", "title_en": "Triage Blocking Sessions", "title_id": "Triage Sesi Pemblokir Akar", "lab_type": "incident_response"},
+            {"exercise_slug": "banking-priority-accounts", "title_en": "Priority Banking Balances", "title_id": "Audit Saldo Nasabah Prioritas", "lab_type": "sql_query"},
         ],
         "alternatives": [
             {"slug": "liquibase", "name": "Liquibase", "product_type": "Change Management Engine", "license_model": "Hybrid", "tradeoff_en": "Flyway emphasizes plain SQL scripts, while Liquibase supports database-agnostic XML/YAML changesets and built-in rollbacks.", "tradeoff_id": "Flyway berfokus pada kesederhanaan skrip SQL biasa, sedangkan Liquibase mendukung format netral XML/YAML dan rollback bawaan."},
@@ -1119,7 +1123,8 @@ VERIFIED_TOOLS_DATA: list[dict[str, Any]] = [
             {"article_slug": "postgresql-17-internals-deep-dive", "title_en": "PostgreSQL 17 Architecture & Internals", "title_id": "Arsitektur & Internal PostgreSQL 17", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
-            {"exercise_slug": "ex-01", "title_en": "Basic SELECT and WHERE Filtering", "title_id": "SELECT Dasar dan Filter WHERE", "lab_type": "sql_query"},
+            {"exercise_slug": "blocking-sessions-root-cause", "title_en": "Triage Blocking Sessions", "title_id": "Triage Sesi Pemblokir Akar", "lab_type": "incident_response"},
+            {"exercise_slug": "banking-priority-accounts", "title_en": "Priority Banking Balances", "title_id": "Audit Saldo Nasabah Prioritas", "lab_type": "sql_query"},
         ],
         "alternatives": [
             {"slug": "barman", "name": "Barman", "product_type": "Backup Management Server", "license_model": "Open Source (GPL)", "tradeoff_en": "pgBackRest has superior parallel throughput and direct cloud streaming without a central server, while Barman offers an independent management node architecture.", "tradeoff_id": "pgBackRest lebih unggul dalam kecepatan throughput paralel dan streaming S3 tanpa server perantara."},

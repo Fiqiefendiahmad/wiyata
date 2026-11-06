@@ -179,6 +179,15 @@ export function ProfessionsMatrix({
       .catch((err) => console.error("Error loading learning progress:", err));
   }, [initialRoleSlug]);
 
+  // Dynamic sync when initialRoleSlug changes and roles are already loaded
+  useEffect(() => {
+    if (!initialRoleSlug || roles.length === 0) return;
+    const target = roles.find((r) => r.id === initialRoleSlug);
+    if (target && target.id !== selectedRole?.id) {
+      setSelectedRole(target);
+    }
+  }, [initialRoleSlug, roles]);
+
   // 3. Fetch Sequenced Roadmap when selectedRole changes
   useEffect(() => {
     if (!selectedRole) return;

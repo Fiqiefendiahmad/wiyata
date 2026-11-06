@@ -15,6 +15,16 @@ async def test_list_and_submit_learning_exercise() -> None:
         exercises = res.json()
         assert len(exercises) >= 3
 
+        # Verify ecosystem cross-linking relations on exercises
+        first_ex = exercises[0]
+        assert "related_articles" in first_ex
+        assert "related_roles" in first_ex
+        assert "related_tools" in first_ex
+        top_spending = next(e for e in exercises if e["slug"] == "top-spending-customers")
+        assert len(top_spending["related_articles"]) > 0
+        assert len(top_spending["related_roles"]) > 0
+        assert len(top_spending["related_tools"]) > 0
+
         # Submit correct query for top-spending-customers
         correct_sql = """
         SELECT c.first_name, c.city, SUM(o.total_amount) AS total_spent

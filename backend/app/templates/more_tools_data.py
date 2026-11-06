@@ -143,7 +143,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
             {"article_slug": "database-acid-transactions-deep-dive", "title_en": "ACID Transactions & Isolation Levels", "title_id": "Transaksi ACID & Tingkat Isolasi", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
-            {"exercise_slug": "ex-01", "title_en": "Basic SELECT and WHERE Filtering", "title_id": "SELECT Dasar dan Filter WHERE", "lab_type": "sql_query"},
+            {"exercise_slug": "concurrency-serializable-anomaly", "title_en": "Serializable Anomaly & Write Skew", "title_id": "Anomali Serializable & Write Skew", "lab_type": "sql_query"},
         ],
         "alternatives": [
             {"slug": "azure-data-studio", "name": "Azure Data Studio", "product_type": "Cross-Platform SQL Editor", "license_model": "Open Source", "tradeoff_en": "Azure Data Studio runs on macOS/Linux with Jupyter notebook support, while SSMS offers deeper DBA administrative dialogs for replication, security, and SQL Agent.", "tradeoff_id": "Azure Data Studio lintas platform (macOS/Linux) dengan notebook, sedangkan SSMS jauh lebih lengkap untuk administrasi DBA mendalam."},
@@ -288,7 +288,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
             {"article_slug": "database-acid-transactions-deep-dive", "title_en": "ACID Transactions & Isolation Levels", "title_id": "Transaksi ACID & Tingkat Isolasi", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
-            {"exercise_slug": "ex-01", "title_en": "Basic SELECT and WHERE Filtering", "title_id": "SELECT Dasar dan Filter WHERE", "lab_type": "sql_query"},
+            {"exercise_slug": "concurrency-serializable-anomaly", "title_en": "Serializable Anomaly & Write Skew", "title_id": "Anomali Serializable & Write Skew", "lab_type": "sql_query"},
         ],
         "alternatives": [
             {"slug": "sqlcl", "name": "Oracle SQLcl", "product_type": "Modern Command-Line Utility", "license_model": "Free Proprietary", "tradeoff_en": "SQLcl provides the same engine support inside lightweight, scriptable terminals with Liquibase integration, while SQL Developer provides visual diagrams and GUI debuggers.", "tradeoff_id": "SQLcl adalah alternatif terminal CLI modern dari Oracle yang sangat ringan dan terintegrasi dengan Liquibase."},
@@ -435,7 +435,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
             {"article_slug": "database-observability-golden-signals", "title_en": "Database Observability: The Four Golden Signals", "title_id": "Observabilitas Database: Empat Sinyal Emas", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
-            {"exercise_slug": "ex-02", "title_en": "Aggregate Analytics with GROUP BY", "title_id": "Analisis Agregat dengan GROUP BY", "lab_type": "sql_query"},
+            {"exercise_slug": "top-spending-customers", "title_en": "Aggregate Analytics with GROUP BY", "title_id": "Analisis Agregat dengan GROUP BY", "lab_type": "data_analytics"},
         ],
         "alternatives": [
             {"slug": "prometheus", "name": "Prometheus + Grafana", "product_type": "Custom Monitoring Stack", "license_model": "Open Source", "tradeoff_en": "PMM bundles pre-configured query profiling specifically for databases, whereas a custom Prometheus stack requires building your own exporters and dashboards.", "tradeoff_id": "PMM sudah siap pakai khusus database lengkap dengan Query Analytics, sedangkan Prometheus murni membutuhkan konfigurasi manual."},
@@ -582,7 +582,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
             {"article_slug": "database-acid-transactions-deep-dive", "title_en": "ACID Transactions & Isolation Levels", "title_id": "Transaksi ACID & Tingkat Isolasi", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
-            {"exercise_slug": "ex-01", "title_en": "Basic SELECT and WHERE Filtering", "title_id": "SELECT Dasar dan Filter WHERE", "lab_type": "sql_query"},
+            {"exercise_slug": "concurrency-serializable-anomaly", "title_en": "Serializable Anomaly & Write Skew", "title_id": "Anomali Serializable & Write Skew", "lab_type": "sql_query"},
         ],
         "alternatives": [
             {"slug": "flyway", "name": "Flyway", "product_type": "Migration Engine", "license_model": "Hybrid", "tradeoff_en": "Flyway prefers raw SQL and simplicity, while Liquibase provides declarative XML/YAML formats with native automated rollback calculation.", "tradeoff_id": "Flyway mengutamakan SQL mentah yang sederhana, sedangkan Liquibase unggul dalam format deklaratif dan rollback otomatis."},
@@ -730,7 +730,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
             {"article_slug": "database-acid-transactions-deep-dive", "title_en": "ACID Transactions & Isolation Levels", "title_id": "Transaksi ACID & Tingkat Isolasi", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
-            {"exercise_slug": "ex-01", "title_en": "Basic SELECT and WHERE Filtering", "title_id": "SELECT Dasar dan Filter WHERE", "lab_type": "sql_query"},
+            {"exercise_slug": "concurrency-serializable-anomaly", "title_en": "Serializable Anomaly & Write Skew", "title_id": "Anomali Serializable & Write Skew", "lab_type": "sql_query"},
         ],
         "alternatives": [
             {"slug": "mysqldump", "name": "mysqldump", "product_type": "Logical Dump Utility", "license_model": "Open Source", "tradeoff_en": "mysqldump exports plain SQL text which is slow for terabyte datasets, while XtraBackup copies binary storage blocks at hardware speed.", "tradeoff_id": "mysqldump menghasilkan file SQL teks yang sangat lambat untuk ukuran ratusan GB, sedangkan XtraBackup bekerja di level blok binary storage."},
@@ -874,7 +874,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
             {"article_slug": "database-acid-transactions-deep-dive", "title_en": "ACID Transactions & Isolation Levels", "title_id": "Transaksi ACID & Tingkat Isolasi", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
-            {"exercise_slug": "ex-01", "title_en": "Basic SELECT and WHERE Filtering", "title_id": "SELECT Dasar dan Filter WHERE", "lab_type": "sql_query"},
+            {"exercise_slug": "concurrency-serializable-anomaly", "title_en": "Serializable Anomaly & Write Skew", "title_id": "Anomali Serializable & Write Skew", "lab_type": "sql_query"},
         ],
         "alternatives": [
             {"slug": "oracle-data-pump", "name": "Oracle Data Pump (expdp/impdp)", "product_type": "Logical Export Utility", "license_model": "Built-in", "tradeoff_en": "Data Pump is logical (metadata/rows) and slower for full disaster recovery, while RMAN is physical and capable of block-level repair.", "tradeoff_id": "Data Pump bersifat logikal (dump data), sedangkan RMAN adalah backup fisik biner dengan kemampuan pemulihan per-blok."},
@@ -1007,7 +1007,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
             {"article_slug": "database-acid-transactions-deep-dive", "title_en": "ACID Transactions & Isolation Levels", "title_id": "Transaksi ACID & Tingkat Isolasi", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
-            {"exercise_slug": "ex-01", "title_en": "Basic SELECT and WHERE Filtering", "title_id": "SELECT Dasar dan Filter WHERE", "lab_type": "sql_query"},
+            {"exercise_slug": "concurrency-serializable-anomaly", "title_en": "Serializable Anomaly & Write Skew", "title_id": "Anomali Serializable & Write Skew", "lab_type": "sql_query"},
         ],
         "alternatives": [
             {"slug": "terraform", "name": "Terraform", "product_type": "Infrastructure as Code", "license_model": "BSL", "tradeoff_en": "Terraform provisions cloud resources (VMs, VPCs, managed databases), while Ansible configures the software and parameters inside those instances.", "tradeoff_id": "Terraform membuat infrastruktur cloud (VM/VPC/RDS), sedangkan Ansible mengkonfigurasi perangkat lunak dan parameter di dalamnya."},
@@ -1139,7 +1139,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
             {"article_slug": "database-acid-transactions-deep-dive", "title_en": "ACID Transactions & Isolation Levels", "title_id": "Transaksi ACID & Tingkat Isolasi", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
-            {"exercise_slug": "ex-01", "title_en": "Basic SELECT and WHERE Filtering", "title_id": "SELECT Dasar dan Filter WHERE", "lab_type": "sql_query"},
+            {"exercise_slug": "concurrency-serializable-anomaly", "title_en": "Serializable Anomaly & Write Skew", "title_id": "Anomali Serializable & Write Skew", "lab_type": "sql_query"},
         ],
         "alternatives": [
             {"slug": "ansible", "name": "Ansible", "product_type": "Configuration Management", "license_model": "GPLv3", "tradeoff_en": "Terraform creates cloud resources (databases, subnets), while Ansible manages internal OS and parameter configurations.", "tradeoff_id": "Terraform membuat resource cloud, sedangkan Ansible mengkonfigurasi sistem operasi di dalamnya."},
@@ -1271,7 +1271,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
             {"article_slug": "database-acid-transactions-deep-dive", "title_en": "ACID Transactions & Isolation Levels", "title_id": "Transaksi ACID & Tingkat Isolasi", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
-            {"exercise_slug": "ex-02", "title_en": "Aggregate Analytics with GROUP BY", "title_id": "Analisis Agregat dengan GROUP BY", "lab_type": "sql_query"},
+            {"exercise_slug": "top-spending-customers", "title_en": "Aggregate Analytics with GROUP BY", "title_id": "Analisis Agregat dengan GROUP BY", "lab_type": "data_analytics"},
         ],
         "alternatives": [
             {"slug": "cron", "name": "Linux Cron", "product_type": "OS Scheduler", "license_model": "Open Source", "tradeoff_en": "Cron lacks dependency management, failure retries, execution dashboards, and multi-node distribution provided by Airflow.", "tradeoff_id": "Cron tidak memiliki visualisasi dependensi tugas, retry otomatis, dan dashboard terpusat yang dimiliki Airflow."},
@@ -1413,7 +1413,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
             {"article_slug": "database-acid-transactions-deep-dive", "title_en": "ACID Transactions & Isolation Levels", "title_id": "Transaksi ACID & Tingkat Isolasi", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
-            {"exercise_slug": "ex-02", "title_en": "Aggregate Analytics with GROUP BY", "title_id": "Analisis Agregat dengan GROUP BY", "lab_type": "sql_query"},
+            {"exercise_slug": "top-spending-customers", "title_en": "Aggregate Analytics with GROUP BY", "title_id": "Analisis Agregat dengan GROUP BY", "lab_type": "data_analytics"},
         ],
         "alternatives": [
             {"slug": "stored-procedures", "name": "Raw Database Stored Procedures", "product_type": "Database Procedural Code", "license_model": "Native", "tradeoff_en": "Stored procedures lack automated lineage graphing, cross-database portability, and out-of-the-box CI/CD testing frameworks offered by dbt.", "tradeoff_id": "Stored procedure tradisional tidak memiliki grafik silsilah data otomatis dan framework testing modular seperti dbt."},
@@ -1545,7 +1545,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
             {"article_slug": "database-acid-transactions-deep-dive", "title_en": "ACID Transactions & Isolation Levels", "title_id": "Transaksi ACID & Tingkat Isolasi", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
-            {"exercise_slug": "ex-01", "title_en": "Basic SELECT and WHERE Filtering", "title_id": "SELECT Dasar dan Filter WHERE", "lab_type": "sql_query"},
+            {"exercise_slug": "concurrency-serializable-anomaly", "title_en": "Serializable Anomaly & Write Skew", "title_id": "Anomali Serializable & Write Skew", "lab_type": "sql_query"},
         ],
         "alternatives": [
             {"slug": "aws-secrets-manager", "name": "AWS Secrets Manager", "product_type": "Cloud Secret Service", "license_model": "Commercial Cloud", "tradeoff_en": "Vault is open-source and cloud-agnostic, while AWS Secrets Manager is managed natively within AWS.", "tradeoff_id": "Vault dapat dipasang di mana saja (multi-cloud/on-premise), sedangkan AWS Secrets Manager terikat pada ekosistem AWS."},
@@ -1675,7 +1675,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
             {"article_slug": "database-observability-golden-signals", "title_en": "Database Observability: The Four Golden Signals", "title_id": "Observabilitas Database: Empat Sinyal Emas", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
-            {"exercise_slug": "ex-02", "title_en": "Aggregate Analytics with GROUP BY", "title_id": "Analisis Agregat dengan GROUP BY", "lab_type": "sql_query"},
+            {"exercise_slug": "top-spending-customers", "title_en": "Aggregate Analytics with GROUP BY", "title_id": "Analisis Agregat dengan GROUP BY", "lab_type": "data_analytics"},
         ],
         "alternatives": [
             {"slug": "auto_explain", "name": "auto_explain", "product_type": "Log Analyzer", "license_model": "Open Source", "tradeoff_en": "auto_explain logs full EXPLAIN plans of slow queries to server log files, while pg_stat_statements provides aggregated SQL metrics directly in tabular catalog views.", "tradeoff_id": "auto_explain menuliskan rencana kueri ke berkas teks log, sedangkan pg_stat_statements menyediakan metrik agregat di view database."},
@@ -1806,7 +1806,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
             {"article_slug": "postgresql-17-internals-deep-dive", "title_en": "PostgreSQL 17 Architecture & Internals", "title_id": "Arsitektur & Internal PostgreSQL 17", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
-            {"exercise_slug": "ex-01", "title_en": "Basic SELECT and WHERE Filtering", "title_id": "SELECT Dasar dan Filter WHERE", "lab_type": "sql_query"},
+            {"exercise_slug": "concurrency-serializable-anomaly", "title_en": "Serializable Anomaly & Write Skew", "title_id": "Anomali Serializable & Write Skew", "lab_type": "sql_query"},
         ],
         "alternatives": [
             {"slug": "pgadmin", "name": "pgAdmin 4", "product_type": "Desktop GUI Suite", "license_model": "Open Source", "tradeoff_en": "pgAdmin provides graphical dashboards and point-and-click dialogs, while psql provides instant, low-overhead access directly over SSH.", "tradeoff_id": "pgAdmin unggul dalam antarmuka visual grafis, sedangkan psql sangat cepat dan ringan di terminal server."},
@@ -1937,7 +1937,7 @@ ADDITIONAL_TOOLS_DATA: list[dict[str, Any]] = [
             {"article_slug": "database-acid-transactions-deep-dive", "title_en": "ACID Transactions & Isolation Levels", "title_id": "Transaksi ACID & Tingkat Isolasi", "relationship_type": "operational_guide"},
         ],
         "exercise_connections": [
-            {"exercise_slug": "ex-01", "title_en": "Basic SELECT and WHERE Filtering", "title_id": "SELECT Dasar dan Filter WHERE", "lab_type": "sql_query"},
+            {"exercise_slug": "concurrency-serializable-anomaly", "title_en": "Serializable Anomaly & Write Skew", "title_id": "Anomali Serializable & Write Skew", "lab_type": "sql_query"},
         ],
         "alternatives": [
             {"slug": "dbeaver", "name": "DBeaver ERD", "product_type": "Database Client", "license_model": "Open Source", "tradeoff_en": "DBeaver generates ERDs from live connected databases, while dbdiagram is ideal for greenfield design before the database exists.", "tradeoff_id": "DBeaver membuat ERD dari database yang sudah aktif, sedangkan dbdiagram ideal untuk merancang skema baru dari nol."},

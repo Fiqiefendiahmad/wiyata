@@ -1737,10 +1737,246 @@ async def track_learning_progress(body: ProgressTrackRequest) -> dict:
     return {"status": "ok", "progress": _USER_PROGRESS_STORE}
 
 
+CHALLENGE_ECOSYSTEM_RELATIONS: dict[str, dict[str, list[dict]]] = {
+    "low-stock-alert": {
+        "related_articles": [
+            {"slug": "understanding-acid-properties", "title_en": "ACID Properties & Transaction Consistency", "title_id": "Prinsip ACID & Konsistensi Transaksi"},
+        ],
+        "related_roles": [
+            {"slug": "sql-developer", "title_en": "SQL Developer & Query Engineer", "title_id": "Insinyur Kueri & SQL Developer"},
+        ],
+        "related_tools": [
+            {"slug": "dbeaver", "name": "DBeaver Community"},
+            {"slug": "litecli", "name": "LiteCLI"},
+        ],
+    },
+    "academic-grade-a": {
+        "related_articles": [
+            {"slug": "b-tree-indexes-deep-dive", "title_en": "B-Tree Indexes Deep Dive & Covering Indexes", "title_id": "Bedah Mendalam Indeks B-Tree & Covering Index"},
+        ],
+        "related_roles": [
+            {"slug": "sql-developer", "title_en": "SQL Developer & Query Engineer", "title_id": "Insinyur Kueri & SQL Developer"},
+        ],
+        "related_tools": [
+            {"slug": "dbeaver", "name": "DBeaver Community"},
+            {"slug": "oracle-sql-developer", "name": "Oracle SQL Developer"},
+        ],
+    },
+    "banking-priority-accounts": {
+        "related_articles": [
+            {"slug": "postgresql-17-architecture-internals", "title_en": "PostgreSQL 17 Architecture & Internals", "title_id": "Arsitektur & Internal PostgreSQL 17"},
+            {"slug": "understanding-acid-properties", "title_en": "Understanding ACID Properties in Databases", "title_id": "Memahami Prinsip ACID pada Database"},
+        ],
+        "related_roles": [
+            {"slug": "postgres-dba", "title_en": "PostgreSQL DBA", "title_id": "Administrator PostgreSQL"},
+            {"slug": "sql-developer", "title_en": "SQL Developer", "title_id": "Pengembang SQL"},
+        ],
+        "related_tools": [
+            {"slug": "pgadmin", "name": "pgAdmin 4"},
+            {"slug": "dbeaver", "name": "DBeaver Community"},
+        ],
+    },
+    "top-spending-customers": {
+        "related_articles": [
+            {"slug": "clickhouse-duckdb-columnar-vectorized", "title_en": "Columnar Storage & Vectorized Execution", "title_id": "Penyimpanan Kolumnar & Eksekusi Tervektorisasi"},
+        ],
+        "related_roles": [
+            {"slug": "data-engineer", "title_en": "Data Engineer", "title_id": "Insinyur Data"},
+            {"slug": "sql-developer", "title_en": "SQL Developer", "title_id": "Pengembang SQL"},
+        ],
+        "related_tools": [
+            {"slug": "dbt", "name": "dbt Core"},
+            {"slug": "dbeaver", "name": "DBeaver Community"},
+        ],
+    },
+    "high-volume-authors": {
+        "related_articles": [
+            {"slug": "b-tree-indexes-deep-dive", "title_en": "B-Tree Indexes Deep Dive", "title_id": "Bedah Mendalam Indeks B-Tree"},
+        ],
+        "related_roles": [
+            {"slug": "sql-developer", "title_en": "SQL Developer", "title_id": "Pengembang SQL"},
+        ],
+        "related_tools": [
+            {"slug": "dbeaver", "name": "DBeaver Community"},
+        ],
+    },
+    "monthly-transfer-channels": {
+        "related_articles": [
+            {"slug": "clickhouse-duckdb-columnar-vectorized", "title_en": "Columnar Analytics & Aggregations", "title_id": "Analitik Kolumnar & Agregasi"},
+        ],
+        "related_roles": [
+            {"slug": "data-engineer", "title_en": "Data Engineer", "title_id": "Insinyur Data"},
+        ],
+        "related_tools": [
+            {"slug": "dbt", "name": "dbt Core"},
+        ],
+    },
+    "dormant-customers-anti-join": {
+        "related_articles": [
+            {"slug": "b-tree-indexes-deep-dive", "title_en": "B-Tree Indexing & Anti-Join Optimization", "title_id": "Indeks B-Tree & Optimasi Anti-Join"},
+        ],
+        "related_roles": [
+            {"slug": "sql-developer", "title_en": "SQL Developer", "title_id": "Pengembang SQL"},
+            {"slug": "performance-engineer", "title_en": "Database Performance Engineer", "title_id": "Insinyur Performa Database"},
+        ],
+        "related_tools": [
+            {"slug": "dbeaver", "name": "DBeaver Community"},
+            {"slug": "pgmustard", "name": "pgMustard"},
+        ],
+    },
+    "cumulative-transaction-ledger": {
+        "related_articles": [
+            {"slug": "understanding-acid-properties", "title_en": "ACID Properties & Ledger Integrity", "title_id": "Prinsip ACID & Integritas Buku Besar"},
+        ],
+        "related_roles": [
+            {"slug": "sql-developer", "title_en": "SQL Developer", "title_id": "Pengembang SQL"},
+            {"slug": "data-engineer", "title_en": "Data Engineer", "title_id": "Insinyur Data"},
+        ],
+        "related_tools": [
+            {"slug": "dbeaver", "name": "DBeaver Community"},
+            {"slug": "litecli", "name": "LiteCLI"},
+        ],
+    },
+    "product-price-category-rank": {
+        "related_articles": [
+            {"slug": "clickhouse-duckdb-columnar-vectorized", "title_en": "Vectorized Window Functions", "title_id": "Fungsi Window Tervektorisasi"},
+        ],
+        "related_roles": [
+            {"slug": "sql-developer", "title_en": "SQL Developer", "title_id": "Pengembang SQL"},
+        ],
+        "related_tools": [
+            {"slug": "dbeaver", "name": "DBeaver Community"},
+        ],
+    },
+    "category-revenue-cte": {
+        "related_articles": [
+            {"slug": "snowflake-cloud-data-warehouse-internals", "title_en": "Snowflake Architecture & Query Pruning", "title_id": "Arsitektur Snowflake & Pruning Kueri"},
+        ],
+        "related_roles": [
+            {"slug": "data-engineer", "title_en": "Data Engineer", "title_id": "Insinyur Data"},
+            {"slug": "database-architect", "title_en": "Database Architect", "title_id": "Arsitek Database"},
+        ],
+        "related_tools": [
+            {"slug": "dbt", "name": "dbt Core"},
+            {"slug": "dbeaver", "name": "DBeaver Community"},
+        ],
+    },
+    "tablespace-capacity-alert": {
+        "related_articles": [
+            {"slug": "tablespaces-blocking-locks-and-mirroring-guide", "title_en": "Tablespace Architecture & Capacity Planning", "title_id": "Arsitektur Tablespace & Perencanaan Kapasitas"},
+            {"slug": "oracle-23ai-enterprise-architecture", "title_en": "Oracle 23ai Storage Hierarchy", "title_id": "Hirarki Penyimpanan Oracle 23ai"},
+        ],
+        "related_roles": [
+            {"slug": "oracle-dba", "title_en": "Oracle DBA", "title_id": "Administrator Oracle"},
+            {"slug": "postgres-dba", "title_en": "PostgreSQL DBA", "title_id": "Administrator PostgreSQL"},
+            {"slug": "dbre", "title_en": "Database Reliability Engineer", "title_id": "Insinyur Keandalan Database"},
+        ],
+        "related_tools": [
+            {"slug": "oracle-enterprise-manager", "name": "Oracle Enterprise Manager (OEM)"},
+            {"slug": "ibm-dmc", "name": "IBM Db2 DMC"},
+            {"slug": "pgmustard", "name": "pgMustard"},
+        ],
+    },
+    "blocking-sessions-root-cause": {
+        "related_articles": [
+            {"slug": "tablespaces-blocking-locks-and-mirroring-guide", "title_en": "Lock Contention & Blocking Session Trees", "title_id": "Pohon Antrean Lock & Sesi Pemblokir"},
+            {"slug": "database-monitoring-golden-signals", "title_en": "Database Observability: 4 Golden Signals", "title_id": "Observabilitas Database: 4 Sinyal Emas"},
+        ],
+        "related_roles": [
+            {"slug": "postgres-dba", "title_en": "PostgreSQL DBA", "title_id": "Administrator PostgreSQL"},
+            {"slug": "performance-engineer", "title_en": "Database Performance Engineer", "title_id": "Insinyur Performa Database"},
+            {"slug": "dbre", "title_en": "Database Reliability Engineer", "title_id": "Insinyur Keandalan Database"},
+        ],
+        "related_tools": [
+            {"slug": "pg_stat_statements", "name": "pg_stat_statements"},
+            {"slug": "pmm", "name": "Percona Monitoring and Management (PMM)"},
+            {"slug": "edb-pem", "name": "EDB Postgres Enterprise Manager"},
+        ],
+    },
+    "replication-mirroring-lag-monitor": {
+        "related_articles": [
+            {"slug": "tablespaces-blocking-locks-and-mirroring-guide", "title_en": "Replication Lag & Mirroring Diagnostics", "title_id": "Diagnostik Keterlambatan Replikasi & Mirroring"},
+            {"slug": "mysql-11-innodb-replication-guide", "title_en": "MySQL GTID Replication Guide", "title_id": "Panduan Replikasi GTID MySQL"},
+        ],
+        "related_roles": [
+            {"slug": "postgres-dba", "title_en": "PostgreSQL DBA", "title_id": "Administrator PostgreSQL"},
+            {"slug": "mysql-dba", "title_en": "MySQL/MariaDB DBA", "title_id": "Administrator MySQL/MariaDB"},
+            {"slug": "dbre", "title_en": "Database Reliability Engineer", "title_id": "Insinyur Keandalan Database"},
+        ],
+        "related_tools": [
+            {"slug": "pgwatch", "name": "pgwatch"},
+            {"slug": "pmm", "name": "Percona Monitoring and Management (PMM)"},
+            {"slug": "grafana", "name": "Grafana"},
+        ],
+    },
+    "k8s-pod-buffer-cache-ratio": {
+        "related_articles": [
+            {"slug": "kubernetes-and-docker-for-enterprise-databases", "title_en": "Kubernetes StatefulSets for Databases", "title_id": "Kubernetes StatefulSet untuk Database Enterprise"},
+            {"slug": "database-monitoring-golden-signals", "title_en": "4 Golden Signals & Prometheus Telemetry", "title_id": "4 Sinyal Emas & Telemetri Prometheus"},
+        ],
+        "related_roles": [
+            {"slug": "dbre", "title_en": "Database Reliability Engineer", "title_id": "Insinyur Keandalan Database"},
+            {"slug": "performance-engineer", "title_en": "Performance Engineer", "title_id": "Insinyur Performa"},
+        ],
+        "related_tools": [
+            {"slug": "prometheus", "name": "Prometheus"},
+            {"slug": "grafana", "name": "Grafana"},
+            {"slug": "node-exporter", "name": "Node Exporter"},
+        ],
+    },
+    "deadlock-contention-hotspot": {
+        "related_articles": [
+            {"slug": "database-isolation-levels", "title_en": "SQL Transaction Isolation & Deadlocks", "title_id": "Tingkat Isolasi Transaksi & Deadlock"},
+            {"slug": "mysql-11-innodb-replication-guide", "title_en": "MySQL InnoDB Locking & Undo", "title_id": "Locking & Undo InnoDB MySQL"},
+        ],
+        "related_roles": [
+            {"slug": "mysql-dba", "title_en": "MySQL DBA", "title_id": "Administrator MySQL"},
+            {"slug": "postgres-dba", "title_en": "PostgreSQL DBA", "title_id": "Administrator PostgreSQL"},
+            {"slug": "dbre", "title_en": "Database Reliability Engineer", "title_id": "Insinyur Keandalan Database"},
+        ],
+        "related_tools": [
+            {"slug": "pmm", "name": "Percona Monitoring and Management (PMM)"},
+            {"slug": "mysql-workbench", "name": "MySQL Workbench"},
+        ],
+    },
+    "tablespace-autoextend-exhaustion": {
+        "related_articles": [
+            {"slug": "tablespaces-blocking-locks-and-mirroring-guide", "title_en": "Tablespace Autoextend & Disk Exhaustion", "title_id": "Autoextend Tablespace & Saturasi Disk"},
+            {"slug": "oracle-23ai-enterprise-architecture", "title_en": "Oracle 23ai Storage Architecture", "title_id": "Arsitektur Penyimpanan Oracle 23ai"},
+        ],
+        "related_roles": [
+            {"slug": "oracle-dba", "title_en": "Oracle DBA", "title_id": "Administrator Oracle"},
+            {"slug": "dba-general", "title_en": "Enterprise DBA", "title_id": "Administrator Database Enterprise"},
+        ],
+        "related_tools": [
+            {"slug": "oracle-enterprise-manager", "name": "Oracle Enterprise Manager (OEM)"},
+            {"slug": "rman", "name": "Oracle Recovery Manager (RMAN)"},
+        ],
+    },
+    "concurrency-serializable-anomaly": {
+        "related_articles": [
+            {"slug": "database-isolation-levels", "title_en": "Serializable Isolation & Write Skew", "title_id": "Isolasi Serializable & Anomali Write Skew"},
+            {"slug": "cockroachdb-distributed-sql-raft", "title_en": "Distributed SQL ACID Serializability", "title_id": "Serializability ACID SQL Terdistribusi"},
+        ],
+        "related_roles": [
+            {"slug": "postgres-dba", "title_en": "PostgreSQL DBA", "title_id": "Administrator PostgreSQL"},
+            {"slug": "database-architect", "title_en": "Database Architect", "title_id": "Arsitek Database"},
+            {"slug": "dbre", "title_en": "Database Reliability Engineer", "title_id": "Insinyur Keandalan Database"},
+        ],
+        "related_tools": [
+            {"slug": "psql", "name": "psql Terminal"},
+            {"slug": "dbeaver", "name": "DBeaver Community"},
+        ],
+    },
+}
+
+
 @router.get("/exercises")
 async def list_exercises() -> list[dict]:
-    return [
-        {
+    output = []
+    for c in CHALLENGES:
+        rel = CHALLENGE_ECOSYSTEM_RELATIONS.get(c["slug"], {})
+        output.append({
             "slug": c["slug"],
             "title": c["title"],
             "title_id": c["title_id"],
@@ -1755,9 +1991,11 @@ async def list_exercises() -> list[dict]:
             "hints": c["hints"],
             "hints_id": c["hints_id"],
             "supported_engines": c["supported_engines"],
-        }
-        for c in CHALLENGES
-    ]
+            "related_articles": rel.get("related_articles", []),
+            "related_roles": rel.get("related_roles", []),
+            "related_tools": rel.get("related_tools", []),
+        })
+    return output
 
 
 @router.get("/datasets/{dataset_slug}/schema")

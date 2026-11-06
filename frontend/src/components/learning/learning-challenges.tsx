@@ -19,6 +19,8 @@ import {
   Sparkles,
   ExternalLink,
   Code2,
+  Wrench,
+  BookOpen,
 } from "lucide-react";
 import { SqlEditor } from "@/components/editor/sql-editor";
 import { api } from "@/lib/api";
@@ -38,6 +40,9 @@ interface Exercise {
   hints: string[];
   hints_id: string[];
   supported_engines: string[];
+  related_articles?: { slug: string; title_en: string; title_id: string }[];
+  related_roles?: { slug: string; title_en: string; title_id: string }[];
+  related_tools?: { slug: string; name: string }[];
 }
 
 interface DatasetTable {
@@ -69,7 +74,10 @@ interface VerificationResult {
 interface LearningChallengesProps {
   language: "en" | "id";
   onOpenLabWithQuery: (query: string, template: string) => void;
-  initialChallengeSlug?: string;
+  initialChallengeSlug?: string | null;
+  onNavigateToKnowledge?: (slug: string) => void;
+  onNavigateToRole?: (roleSlug: string) => void;
+  onNavigateToTool?: (toolSlug: string) => void;
 }
 
 const LEVEL_LOCALES: Record<string, { en: string; id: string; badge: string }> = {
@@ -99,6 +107,9 @@ export function LearningChallenges({
   language,
   onOpenLabWithQuery,
   initialChallengeSlug,
+  onNavigateToKnowledge,
+  onNavigateToRole,
+  onNavigateToTool,
 }: LearningChallengesProps) {
   const isId = language === "id";
 
@@ -151,6 +162,15 @@ export function LearningChallenges({
       })
       .catch((err) => console.error("Error loading exercises:", err));
   }, [initialChallengeSlug]);
+
+  // Dynamic challenge sync when initialChallengeSlug changes after initial load
+  useEffect(() => {
+    if (!initialChallengeSlug || exercises.length === 0) return;
+    const target = exercises.find((e) => e.slug === initialChallengeSlug);
+    if (target && target.slug !== selectedExercise?.slug) {
+      handleSelectExercise(target);
+    }
+  }, [initialChallengeSlug, exercises]);
 
   // Fetch dataset schema when exercise changes or drawer opens
   useEffect(() => {
@@ -503,6 +523,61 @@ export function LearningChallenges({
                   </span>
                 ))}
               </div>
+
+              {/* Ecosystem Relations (Knowledge, Career Roles, Practical Tools) */}
+              {selectedExercise &&
+                ((selectedExercise.related_articles && selectedExercise.related_articles.length > 0) ||
+                  (selectedExercise.related_roles && selectedExercise.related_roles.length > 0) ||
+                  (selectedExercise.related_tools && selectedExercise.related_tools.length > 0)) && (
+                  <div className="mt-3.5 pt-3 border-t border-slate-800/80 flex flex-col gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      {isId ? "Ekosistem Terkait (Teori, Jalur Profesi & Alat):" : "Connected Ecosystem (Knowledge, Careers & Tools):"}
+                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {/* Articles */}
+                      {selectedExercise.related_articles?.map((art) => (
+                        <button
+                          key={art.slug}
+                          type="button"
+                          onClick={() => onNavigateToKnowledge?.(art.slug)}
+                          className="flex items-center gap-1.5 rounded-lg border border-amber-600/40 bg-amber-950/30 px-2.5 py-1 text-xs text-amber-300 hover:border-amber-400 hover:text-white transition-colors"
+                        >
+                          <BookOpen className="h-3 w-3 text-amber-400" />
+                          <span>{isId ? art.title_id : art.title_en}</span>
+                          <ExternalLink className="h-2.5 w-2.5 text-amber-400/70" />
+                        </button>
+                      ))}
+
+                      {/* Career Roles */}
+                      {selectedExercise.related_roles?.map((role) => (
+                        <button
+                          key={role.slug}
+                          type="button"
+                          onClick={() => onNavigateToRole?.(role.slug)}
+                          className="flex items-center gap-1.5 rounded-lg border border-purple-600/40 bg-purple-950/30 px-2.5 py-1 text-xs text-purple-300 hover:border-purple-400 hover:text-white transition-colors"
+                        >
+                          <GraduationCap className="h-3 w-3 text-purple-400" />
+                          <span>{isId ? role.title_id : role.title_en}</span>
+                          <ExternalLink className="h-2.5 w-2.5 text-purple-400/70" />
+                        </button>
+                      ))}
+
+                      {/* Tools */}
+                      {selectedExercise.related_tools?.map((tool) => (
+                        <button
+                          key={tool.slug}
+                          type="button"
+                          onClick={() => onNavigateToTool?.(tool.slug)}
+                          className="flex items-center gap-1.5 rounded-lg border border-blue-600/40 bg-blue-950/30 px-2.5 py-1 text-xs text-blue-300 hover:border-blue-400 hover:text-white transition-colors"
+                        >
+                          <Wrench className="h-3 w-3 text-blue-400" />
+                          <span>{tool.name}</span>
+                          <ExternalLink className="h-2.5 w-2.5 text-blue-400/70" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
             </div>
 
             {/* Collapsible Dataset Schema Drawer */}

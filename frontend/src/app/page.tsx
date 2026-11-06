@@ -62,6 +62,27 @@ export default function Home() {
   );
   const [selectedRoleSlug, setSelectedRoleSlug] = useState<string | null>(null);
   const [selectedKnowledgeSlug, setSelectedKnowledgeSlug] = useState<string | null>(null);
+  const [selectedToolSlug, setSelectedToolSlug] = useState<string | null>(null);
+
+  const navigateToKnowledge = (slug: string) => {
+    setSelectedKnowledgeSlug(slug);
+    setActiveTab("knowledge");
+  };
+
+  const navigateToRole = (roleSlug: string) => {
+    setSelectedRoleSlug(roleSlug);
+    setActiveTab("roles");
+  };
+
+  const navigateToChallenge = (challengeSlug: string) => {
+    setSelectedChallengeSlug(challengeSlug);
+    setActiveTab("challenges");
+  };
+
+  const navigateToTool = (toolSlug: string) => {
+    setSelectedToolSlug(toolSlug);
+    setActiveTab("tools");
+  };
 
   const handleResetSandbox = async () => {
     if (!sandboxId) return;
@@ -116,6 +137,9 @@ export default function Home() {
             language={language}
             onOpenLabWithQuery={handleOpenLabWithQuery}
             initialChallengeSlug={selectedChallengeSlug}
+            onNavigateToKnowledge={navigateToKnowledge}
+            onNavigateToRole={navigateToRole}
+            onNavigateToTool={navigateToTool}
           />
         )}
 
@@ -123,17 +147,9 @@ export default function Home() {
           <ProfessionsMatrix
             language={language}
             initialRoleSlug={selectedRoleSlug}
-            onSelectChallenge={(slug) => {
-              setSelectedChallengeSlug(slug);
-              setActiveTab("challenges");
-            }}
-            onOpenTool={(_toolSlug) => {
-              setActiveTab("tools");
-            }}
-            onOpenKnowledgeArticle={(articleSlug) => {
-              setSelectedKnowledgeSlug(articleSlug);
-              setActiveTab("knowledge");
-            }}
+            onSelectChallenge={navigateToChallenge}
+            onOpenTool={navigateToTool}
+            onOpenKnowledgeArticle={navigateToKnowledge}
           />
         )}
 
@@ -142,27 +158,19 @@ export default function Home() {
             language={language}
             onOpenLab={() => setActiveTab("workbench")}
             initialArticleSlug={selectedKnowledgeSlug}
-            onNavigateToRole={(roleSlug) => {
-              setSelectedRoleSlug(roleSlug);
-              setActiveTab("roles");
-            }}
-            onNavigateToChallenge={(slug) => {
-              setSelectedChallengeSlug(slug);
-              setActiveTab("challenges");
-            }}
-            onNavigateToTool={(_toolSlug) => {
-              setActiveTab("tools");
-            }}
+            onNavigateToRole={navigateToRole}
+            onNavigateToChallenge={navigateToChallenge}
+            onNavigateToTool={navigateToTool}
           />
         )}
 
         {activeTab === "tools" && (
           <ToolsCatalog
             language={language}
-            onNavigateToKnowledge={(slug) => {
-              setSelectedKnowledgeSlug(slug);
-              setActiveTab("knowledge");
-            }}
+            initialToolSlug={selectedToolSlug}
+            onNavigateToKnowledge={navigateToKnowledge}
+            onNavigateToRole={navigateToRole}
+            onNavigateToChallenge={navigateToChallenge}
           />
         )}
       </div>

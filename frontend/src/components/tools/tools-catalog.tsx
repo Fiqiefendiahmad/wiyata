@@ -32,6 +32,7 @@ import {
   GraduationCap,
   Sparkles,
   SlidersHorizontal,
+  Zap,
 } from "lucide-react";
 import { api } from "@/lib/api";
 
@@ -203,7 +204,10 @@ interface ToolCategory {
 
 interface ToolsCatalogProps {
   language: "en" | "id";
+  initialToolSlug?: string | null;
   onNavigateToKnowledge?: (slug: string) => void;
+  onNavigateToRole?: (roleSlug: string) => void;
+  onNavigateToChallenge?: (challengeSlug: string) => void;
   onNavigateToExercise?: (slug: string) => void;
 }
 
@@ -219,7 +223,10 @@ type DetailTab =
 
 export function ToolsCatalog({
   language,
+  initialToolSlug,
   onNavigateToKnowledge,
+  onNavigateToRole,
+  onNavigateToChallenge,
   onNavigateToExercise,
 }: ToolsCatalogProps) {
   const isId = language === "id";
@@ -329,6 +336,12 @@ export function ToolsCatalog({
       setLoadingDetail(false);
     }
   };
+
+  useEffect(() => {
+    if (initialToolSlug) {
+      handleOpenDetail(initialToolSlug);
+    }
+  }, [initialToolSlug]);
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -1156,25 +1169,40 @@ export function ToolsCatalog({
                           {activeDetail.career_connections.map((cc, i) => (
                             <div
                               key={i}
-                              className="rounded-xl border border-slate-800 bg-[#071329] p-3.5 space-y-2"
+                              className="rounded-xl border border-slate-800 bg-[#071329] p-3.5 space-y-2 flex flex-col justify-between"
                             >
-                              <div className="flex items-center justify-between">
-                                <span className="font-bold text-white text-xs">
-                                  {isId ? cc.role_name_id : cc.role_name_en}
-                                </span>
-                                <span className="rounded bg-amber-950/80 border border-amber-600/40 px-2 py-0.5 text-[10px] font-mono text-amber-300 uppercase">
-                                  {cc.proficiency_level}
-                                </span>
+                              <div className="space-y-1.5">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-bold text-white text-xs">
+                                    {isId ? cc.role_name_id : cc.role_name_en}
+                                  </span>
+                                  <span className="rounded bg-amber-950/80 border border-amber-600/40 px-2 py-0.5 text-[10px] font-mono text-amber-300 uppercase">
+                                    {cc.proficiency_level}
+                                  </span>
+                                </div>
+                                <div className="text-[11px] text-[#F2B84B] font-medium">
+                                  {isId ? cc.competency_name_id : cc.competency_name_en}
+                                </div>
+                                <p className="text-slate-300 leading-relaxed text-xs">
+                                  <strong className="text-slate-400 block mb-0.5">
+                                    {isId ? "Mengapa alat ini relevan?" : "Why this tool is relevant:"}
+                                  </strong>
+                                  {isId ? cc.relevance_why_id : cc.relevance_why_en}
+                                </p>
                               </div>
-                              <div className="text-[11px] text-[#F2B84B] font-medium">
-                                {isId ? cc.competency_name_id : cc.competency_name_en}
+                              <div className="pt-2 border-t border-slate-800/80 flex justify-end">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    onNavigateToRole?.(cc.role_id);
+                                    setActiveToolSlug(null);
+                                  }}
+                                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#F2B84B] hover:text-white transition-colors"
+                                >
+                                  <span>{isId ? "Jelajahi Jalur Profesi" : "Explore Career Path"}</span>
+                                  <ArrowRight className="h-3 w-3" />
+                                </button>
                               </div>
-                              <p className="text-slate-300 leading-relaxed text-xs">
-                                <strong className="text-slate-400 block mb-0.5">
-                                  {isId ? "Mengapa alat ini relevan?" : "Why this tool is relevant:"}
-                                </strong>
-                                {isId ? cc.relevance_why_id : cc.relevance_why_en}
-                              </p>
                             </div>
                           ))}
                         </div>
@@ -1202,6 +1230,39 @@ export function ToolsCatalog({
                                 className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-1.5 text-xs text-slate-200 hover:border-[#F2B84B] hover:text-[#F2B84B] transition-colors"
                               >
                                 <span>{isId ? kc.title_id : kc.title_en}</span>
+                                <ArrowRight className="h-3 w-3" />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Related Practical SQL Challenges */}
+                      {activeDetail.exercise_connections && activeDetail.exercise_connections.length > 0 && (
+                        <div className="space-y-2 pt-2 border-t border-slate-800">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                            <Zap className="h-4 w-4" />
+                            <span>
+                              {isId ? "Tantangan SQL Terkait (Praktik Lab)" : "Related SQL Challenges & Labs"}
+                            </span>
+                          </h4>
+                          <div className="flex flex-wrap gap-2">
+                            {activeDetail.exercise_connections.map((ec, i) => (
+                              <button
+                                key={i}
+                                type="button"
+                                onClick={() => {
+                                  if (onNavigateToChallenge) {
+                                    onNavigateToChallenge(ec.exercise_slug);
+                                  } else if (onNavigateToExercise) {
+                                    onNavigateToExercise(ec.exercise_slug);
+                                  }
+                                  setActiveToolSlug(null);
+                                }}
+                                className="flex items-center gap-1.5 rounded-lg border border-emerald-700/60 bg-emerald-950/40 px-3 py-1.5 text-xs font-medium text-emerald-300 hover:border-emerald-400 hover:text-white transition-colors min-h-[36px]"
+                              >
+                                <Database className="h-3.5 w-3.5 text-emerald-400" />
+                                <span>{isId ? ec.title_id : ec.title_en}</span>
                                 <ArrowRight className="h-3 w-3" />
                               </button>
                             ))}
