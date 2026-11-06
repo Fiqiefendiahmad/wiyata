@@ -123,7 +123,7 @@ export function Header({
 
         {/* Right Controls */}
         <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-          {/* Actionable Refresh Sandbox Data Button (Replaces passive status indicator) */}
+          {/* Actionable Refresh Sandbox Data Button for Desktop (On mobile, this is located inside the hamburger drawer) */}
           <button
             onClick={onResetSandbox}
             disabled={isResetting}
@@ -133,14 +133,14 @@ export function Header({
                 : "Refresh & Reset Sandboxed Data to Initial State"
             }
             aria-label={isId ? "Segarkan data sandbox" : "Refresh and reset sandboxed data"}
-            className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-[#10264A] px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-slate-200 hover:text-white hover:border-[#F2B84B] transition-colors disabled:opacity-50 min-h-[38px] active:scale-95"
+            className="hidden lg:flex items-center gap-1.5 rounded-lg border border-slate-700 bg-[#10264A] px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-slate-200 hover:text-white hover:border-[#F2B84B] transition-colors disabled:opacity-50 min-h-[38px] active:scale-95"
           >
             <RefreshCw
               className={`h-3.5 w-3.5 text-[#F2B84B] ${
                 isResetting ? "animate-spin" : ""
               }`}
             />
-            <span className="hidden xs:inline text-[11px] font-semibold">
+            <span className="text-[11px] font-semibold">
               {isResetting
                 ? isId
                   ? "Menyegarkan..."
