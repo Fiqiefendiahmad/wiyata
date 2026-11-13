@@ -588,6 +588,7 @@ export function KnowledgeCenter({
   const [fullArticleDetail, setFullArticleDetail] = useState<string | null>(null);
 
   const [careerContext, setCareerContext] = useState<ArticleCareerContext | null>(null);
+  const [ladangLinks, setLadangLinks] = useState<{ base_url: string; description: string; links: { kind: string; title: string; url: string; why: string }[] } | null>(null);
   const [readArticles, setReadArticles] = useState<string[]>([]);
   const [markingRead, setMarkingRead] = useState(false);
 
@@ -718,6 +719,26 @@ export function KnowledgeCenter({
         setCareerContext(null);
       });
   }, [selectedArticle?.slug]);
+
+  // Fetch related LADANG links whenever selectedArticle changes
+  useEffect(() => {
+    if (!selectedArticle) {
+      setLadangLinks(null);
+      return;
+    }
+    api
+      .get(`/knowledge/articles/${selectedArticle.slug}/ladang-links?language=${language}`)
+      .then((res) => {
+        if (res.data?.links) {
+          setLadangLinks(res.data);
+        } else {
+          setLadangLinks(null);
+        }
+      })
+      .catch(() => {
+        setLadangLinks(null);
+      });
+  }, [selectedArticle?.slug, language]);
 
   const handleToggleRead = async () => {
     if (!selectedArticle || markingRead) return;
@@ -1169,6 +1190,68 @@ export function KnowledgeCenter({
                           </div>
                         </div>
                       )}
+                    </div>
+                  )}
+
+                  {/* Related on LADANG */}
+                  {ladangLinks && ladangLinks.links && ladangLinks.links.length > 0 && (
+                    <div className="mt-8 rounded-2xl border border-slate-700 bg-[#0c1f3d] p-5 sm:p-6 shadow-lg">
+                      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-800 pb-4">
+                        <div>
+                          <div className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#F2B84B]">
+                            <Server className="h-4 w-4" />
+                            <span>{isId ? "Terkait di LADANG" : "Related on LADANG"}</span>
+                          </div>
+                          <h3 className="text-sm font-bold text-white sm:text-base">
+                            {isId ? "Pengetahuan & aksi platform server" : "Server platform knowledge & actions"}
+                          </h3>
+                          <p className="mt-1 max-w-2xl text-xs leading-relaxed text-slate-300 sm:text-sm">
+                            {isId
+                              ? "Lanjutkan ke topik server, Linux, container, jaringan, dan operasi di "
+                              : "Continue with server, Linux, containers, networking, and operations at "}
+                            <a
+                              href={ladangLinks.base_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-semibold text-[#F2B84B] underline decoration-[#F2B84B]/40 underline-offset-2 hover:text-amber-300"
+                            >
+                              ladang.sadeyan.my.id
+                            </a>
+                            .
+                          </p>
+                        </div>
+                        <a
+                          href={ladangLinks.base_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-600 bg-[#10264A] px-3 py-2 text-xs font-bold text-slate-200 transition-all hover:border-[#F2B84B]/50 hover:text-white"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                          <span>{isId ? "Buka LADANG" : "Open LADANG"}</span>
+                        </a>
+                      </div>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        {ladangLinks.links.map((link) => (
+                          <a
+                            key={`${link.kind}-${link.url}`}
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group rounded-xl border border-slate-800 bg-[#071A3A] p-3.5 transition-all hover:border-[#F2B84B]/40 hover:bg-[#0a2248]"
+                          >
+                            <div className="mb-2 flex items-center gap-2">
+                              <span className="rounded border border-slate-700 bg-[#10264A] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-300">
+                                {link.kind}
+                              </span>
+                            </div>
+                            <div className="flex items-start justify-between gap-2">
+                              <h4 className="text-sm font-bold text-white group-hover:text-[#F2B84B]">{link.title}</h4>
+                              <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500 group-hover:text-[#F2B84B]" />
+                            </div>
+                            <p className="mt-1 text-xs leading-relaxed text-slate-400">{link.why}</p>
+                          </a>
+                        ))}
+                      </div>
                     </div>
                   )}
 

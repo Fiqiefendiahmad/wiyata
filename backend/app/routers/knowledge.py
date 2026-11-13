@@ -63,6 +63,25 @@ async def get_article_career_context(slug: str) -> dict:
     return get_career_context_for_article(slug)
 
 
+@router.get("/articles/{slug}/ladang-links")
+async def get_article_ladang_links(
+    slug: str,
+    language: str = Query(default="en", pattern="^(en|id)$"),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    from app.templates.ladang_links import get_ladang_links
+
+    result = await db.execute(
+        select(KnowledgeArticle).where(
+            KnowledgeArticle.slug == slug,
+            KnowledgeArticle.language == language,
+        )
+    )
+    article = result.scalar_one_or_none()
+    title = article.title if article else ""
+    return get_ladang_links(slug=slug, title=title)
+
+
 @router.get("/glossary")
 async def list_glossary_terms(
     category: str | None = None,

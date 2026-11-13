@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   Database,
   RefreshCw,
@@ -141,6 +142,12 @@ export function Header({
                 </button>
               );
             })}
+            <Link
+              href="/about"
+              className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-slate-400 transition-colors hover:bg-slate-800/60 hover:text-slate-200"
+            >
+              <span>{isId ? "Tentang" : "About"}</span>
+            </Link>
           </nav>
         </div>
 
@@ -262,6 +269,13 @@ export function Header({
                   </button>
                 );
               })}
+              <Link
+                href="/about"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex min-h-[44px] items-center rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-300 transition-all hover:bg-slate-800/80 hover:text-white"
+              >
+                {isId ? "Tentang WIYATA" : "About WIYATA"}
+              </Link>
             </nav>
 
             {/* Mobile Refresh Data Button */}
